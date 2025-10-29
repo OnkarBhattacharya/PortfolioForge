@@ -1,84 +1,80 @@
 /**
- * @file Firestore Security Rules for PortfolioForge
- * @description This ruleset enforces a strict user-ownership model for user profiles, projects, and portfolios. Themes are publicly readable.
+ * @fileoverview Firestore Security Rules for PortfolioForge application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and their associated projects.
+ * Themes are publicly readable, but write access is not granted, as this area of the application is not editable by end users.
  *
  * Data Structure:
- * - /users/{userId}/profile: User profile data, accessible only by the user.
- * - /users/{userId}/projects/{projectId}: Projects owned by a user, accessible only by the user.
- * - /users/{userId}/portfolio: Portfolio data for a user, accessible only by the user.
- * - /themes/{themeId}: Publicly readable themes.
+ * - /users/{userId}: Stores user profile data, accessible only to the user themselves.
+ * - /users/{userId}/projects/{projectId}: Stores projects belonging to a user, accessible only to the user.
+ * - /themes/{themeId}: Stores themes available for portfolios, publicly readable.
  *
  * Key Security Decisions:
- * - Users can only access their own data (profile, projects, portfolio).
- * - Themes are publicly readable.
- * - User listing is not allowed.
+ * - Users can only access their own profile data and projects.
+ * - Listing of all users is disallowed.
+ * - Themes are publicly readable to allow browsing available customizations.
  *
  * Denormalization for Authorization:
- * - The rules rely on the path-based userId to authorize access to user-specific data.
+ * - UserProfile.id must match the {userId} in /users/{userId} to ensure consistent ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure access to user profiles. Only the user can read/write their own profile.
-     * @path /users/{userId}/profile
-     * @allow (create) User with ID 'user123' creates their profile. request.auth.uid == 'user123'
-     * @deny (create) User with ID 'user123' tries to create profile for 'user456'. request.auth.uid != 'user123'
-     * @principle Enforces document ownership for writes.
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (get) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can read their own profile.
+     * @allow (create) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can create their own profile.
+     * @allow (update) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can update their own profile.
+     * @allow (delete) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can delete their own profile.
+     * @deny (get) User with UID 'otherUserId' cannot read the profile of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (create) User with UID 'otherUserId' cannot create a profile for user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (update) User with UID 'otherUserId' cannot update the profile of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (delete) User with UID 'otherUserId' cannot delete the profile of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @principle Enforces document ownership for all operations.
      */
-    match /users/{userId}/profile {
-      // Users can only read/write their own profile
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false; // Listing profiles is not allowed.
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secure access to user projects. Only the user can read/write their own projects.
+     * @description Controls access to project documents within a user's profile.
      * @path /users/{userId}/projects/{projectId}
-     * @allow (create) User with ID 'user123' creates a project under their user ID. request.auth.uid == 'user123'
-     * @deny (create) User with ID 'user123' tries to create a project under 'user456'. request.auth.uid != 'user123'
-     * @principle Enforces document ownership for writes.
+     * @allow (get) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can read their own project.
+     * @allow (create) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can create a project under their profile.
+     * @allow (update) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can update their own project.
+     * @allow (delete) User with UID 'nZ5MseHSnydSAuGloEiZuB7jTvg1' can delete their own project.
+     * @deny (get) User with UID 'otherUserId' cannot read the project of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (create) User with UID 'otherUserId' cannot create a project for user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (update) User with UID 'otherUserId' cannot update the project of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @deny (delete) User with UID 'otherUserId' cannot delete the project of user 'nZ5MseHSnydSAuGloEiZuB7jTvg1'.
+     * @principle Enforces document ownership for all operations on projects.
      */
     match /users/{userId}/projects/{projectId} {
-      // Users can only read/write their own projects
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) ;
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-
-     /**
-      * @description Secure access to user portfolio. Only the user can read/write their own portfolio.
-      * @path /users/{userId}/portfolio
-      * @allow (create) User with ID 'user123' creates their portfolio. request.auth.uid == 'user123'
-      * @deny (create) User with ID 'user123' tries to create portfolio for 'user456'. request.auth.uid != 'user123'
-      * @principle Enforces document ownership for writes.
-      */
-    match /users/{userId}/portfolio {
-      // Users can only read/write their own portfolio
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userProfileId == userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allow public read access to themes.
+     * @description Controls access to theme documents.
      * @path /themes/{themeId}
-     * @allow (get) Any user can get a theme.
+     * @allow (get) Any user can read theme data.
      * @allow (list) Any user can list themes.
-     * @deny (create) No one can create themes through the client.
-     * @deny (update) No one can update themes through the client.
-     * @deny (delete) No one can delete themes through the client.
+     * @deny (create) No user can create theme data.
+     * @deny (update) No user can update theme data.
+     * @deny (delete) No user can delete theme data.
+     * @principle Themes are publicly readable, writes are disallowed.
      */
     match /themes/{themeId} {
-      // Themes are publicly readable, but not writable
       allow get: if true;
       allow list: if true;
       allow create: if false;
@@ -86,21 +82,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // --- Helper functions ---
-
-    // Check if the user is signed in
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Check if the user is the owner of the resource
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    //Check if the user is the owner of existing resource
     function isExistingOwner(userId) {
-        return isSignedIn() && isOwner(userId) && resource != null;
+        return isOwner(userId) && resource != null;
     }
   }
 }
