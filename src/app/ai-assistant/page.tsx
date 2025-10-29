@@ -27,9 +27,11 @@ import {
   PortfolioContentSuggestionsOutput,
 } from "@/ai/flows/ai-powered-content-suggestions";
 import { useEffect, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, KeyRound } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/firebase";
+import Link from "next/link";
 
 const formSchema = z.object({
   cvData: z.string().optional(),
@@ -43,6 +45,8 @@ export default function AiAssistantPage() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<PortfolioContentSuggestionsOutput | null>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const isReadOnly = !user || user.isAnonymous;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -65,6 +69,14 @@ export default function AiAssistantPage() {
   }, [form]);
 
   async function onSubmit(values: FormValues) {
+    if (isReadOnly) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to use the AI Assistant.",
+      });
+      return;
+    }
     setLoading(true);
     setSuggestions(null);
     try {
@@ -89,6 +101,21 @@ export default function AiAssistantPage() {
           AI Content Assistant
         </h1>
       </div>
+
+       {isReadOnly && (
+        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
+            <CardHeader className="flex flex-row items-center gap-4">
+                <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
+                <div>
+                    <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
+                    <CardDescription className="text-yellow-700 dark:text-yellow-400">
+                        Please <Link href="/login" className="font-bold underline">log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to generate AI-powered content.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+      )}
+
       <div className="grid gap-8 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -160,7 +187,7 @@ export default function AiAssistantPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={loading} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button type="submit" disabled={loading || isReadOnly} className="bg-accent text-accent-foreground hover:bg-accent/90">
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

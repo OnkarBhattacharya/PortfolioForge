@@ -1,5 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+
+'use client';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,27 +11,69 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { CreditCard, LogOut, User } from "lucide-react";
-import Link from "next/link";
+} from '@/components/ui/dropdown-menu';
+import { useAuth, useUser } from '@/firebase';
+import { CreditCard, LogOut, User, LogIn, UserPlus } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
 
 export function UserNav() {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push('/');
+    }
+  };
+
+  if (isUserLoading) {
+    return null;
+  }
+
+  if (!user || user.isAnonymous) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button asChild variant="ghost">
+          <Link href="/login">
+            <LogIn className="mr-2" /> Login
+          </Link>
+        </Button>
+        <Button asChild>
+          <Link href="/signup">
+             <UserPlus className="mr-2" /> Sign Up
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="https://picsum.photos/seed/user-avatar/100/100" alt="@shadcn" />
-            <AvatarFallback>SE</AvatarFallback>
+            <AvatarImage
+              src={user.photoURL || 'https://picsum.photos/seed/user-avatar/100/100'}
+              alt={user.displayName || 'User'}
+            />
+            <AvatarFallback>
+              {user.email?.charAt(0).toUpperCase() || 'U'}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Software Engineer</p>
+            <p className="text-sm font-medium leading-none">
+              {user.displayName || 'Software Engineer'}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
-              user@example.com
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -48,7 +93,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

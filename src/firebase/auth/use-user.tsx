@@ -1,34 +1,32 @@
 
 'use client';
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { useAuth } from '@/firebase/provider';
 
-/**
- * Interface for the return value of the useUser hook.
- */
+
 export interface UseUserResult {
   user: User | null;
-  isLoading: boolean;
-  error: Error | null;
+  isUserLoading: boolean;
+  userError: Error | null;
 }
 
-/**
- * React hook to get the current authenticated user from Firebase.
- *
- * @param {Auth} auth - The Firebase Auth instance.
- * @returns {UseUserResult} - An object containing the user, loading state, and error.
- */
-export const useUser = (auth: Auth): UseUserResult => {
+
+export const useUser = (): UseUserResult => {
+  const auth = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [isUserLoading, setIsLoading] = useState(true);
+  const [userError, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Set initial state
+    if (!auth) {
+        setIsLoading(false);
+        return;
+    };
+    
     setIsLoading(true);
     setError(null);
 
-    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
@@ -42,9 +40,8 @@ export const useUser = (auth: Auth): UseUserResult => {
       }
     );
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth]); // Rerun effect if auth instance changes
+  }, [auth]);
 
-  return { user, isLoading, error };
+  return { user, isUserLoading, userError };
 };

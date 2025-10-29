@@ -11,20 +11,24 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2 } from "lucide-react";
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useUser } from "@/firebase";
+import Link from "next/link";
 
-// Set worker source for pdfjs
 if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
 export default function ImportDataPage() {
+  const { user } = useUser();
+  const isReadOnly = !user || user.isAnonymous;
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
@@ -54,6 +58,14 @@ export default function ImportDataPage() {
   };
 
   const handleUpload = async () => {
+    if (isReadOnly) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to upload your CV.",
+      });
+      return;
+    }
     if (!selectedFile) {
       toast({
         variant: "destructive",
@@ -82,7 +94,7 @@ export default function ImportDataPage() {
           saveCvData(content);
         };
         reader.readAsArrayBuffer(selectedFile);
-        return; // Handled in onload
+        return;
       } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -91,7 +103,7 @@ export default function ImportDataPage() {
           saveCvData(result.value);
         };
         reader.readAsArrayBuffer(selectedFile);
-        return; // Handled in onload
+        return;
       } else if (selectedFile.type === 'text/plain') {
         text = await selectedFile.text();
         saveCvData(text);
@@ -130,6 +142,14 @@ export default function ImportDataPage() {
   }
 
   const handleSaveLinkedIn = () => {
+     if (isReadOnly) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to save your data.",
+      });
+      return;
+    }
     setIsSavingLinkedIn(true);
     try {
       localStorage.setItem('linkedInData', linkedInData);
@@ -170,6 +190,20 @@ export default function ImportDataPage() {
           Import Data
         </h1>
       </div>
+      
+      {isReadOnly && (
+        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
+            <CardHeader className="flex flex-row items-center gap-4">
+                <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
+                <div>
+                    <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
+                    <CardDescription className="text-yellow-700 dark:text-yellow-400">
+                        Please <Link href="/login" className="font-bold underline">log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to import and save your professional data.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -187,8 +221,8 @@ export default function ImportDataPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex w-full items-center space-x-2">
-              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" />
-              <Button onClick={handleUpload} disabled={isUploading || !selectedFile} size="icon">
+              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isReadOnly} />
+              <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} size="icon">
                 <UploadCloud className="h-4 w-4" />
               </Button>
             </div>
@@ -214,7 +248,7 @@ export default function ImportDataPage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <DialogTrigger asChild>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isReadOnly}>
                   <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Add'} LinkedIn Data
                 </Button>
               </DialogTrigger>
@@ -268,6 +302,7 @@ export default function ImportDataPage() {
             <Button
               className="w-full bg-foreground text-background hover:bg-foreground/90"
               onClick={handleConnectGitHub}
+              disabled={isReadOnly}
             >
               <Github className="mr-2 h-4 w-4" /> Connect GitHub
             </Button>
@@ -292,6 +327,7 @@ export default function ImportDataPage() {
                 variant="outline"
                 className="w-full"
                 onClick={handleAddLink}
+                disabled={isReadOnly}
               >
                 <Link2 className="mr-2 h-4 w-4" /> Add Links
               </Button>

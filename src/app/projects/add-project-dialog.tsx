@@ -48,6 +48,7 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
   const { firestore } = useFirebase();
   const { user } = useUser();
   const { toast } = useToast();
+  const isReadOnly = !user || user.isAnonymous;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,15 +60,27 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
       githubUrl: '',
     },
   });
+  
+  const handleTriggerClick = () => {
+    if (isReadOnly) {
+       toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to add a project.",
+      });
+    } else {
+        setOpen(true);
+    }
+  };
 
   async function onSubmit(values: FormValues) {
-    if (!firestore || !user) return;
+    if (!firestore || !user || user.isAnonymous) return;
+
     setIsSubmitting(true);
     const projectsCol = collection(firestore, 'users', user.uid, 'projects');
     const technologiesArray =
       values.technologies?.split(',').map((t) => t.trim()).filter(Boolean) || [];
     
-    // Use a random placeholder image for now
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
     try {
@@ -86,8 +99,6 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
         form.reset();
         setOpen(false);
     } catch (error) {
-        // Errors are handled by the global error handler via non-blocking updates
-        // We still show a toast as a fallback
         toast({
             variant: "destructive",
             title: 'Submission Failed',
@@ -100,7 +111,9 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+       <div onClick={handleTriggerClick}>
+        {children}
+      </div>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Add a New Project</DialogTitle>

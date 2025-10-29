@@ -14,7 +14,7 @@ import Image from 'next/image';
 import { useCollection, useFirebase, useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Github, Loader2, PlusCircle } from 'lucide-react';
+import { Github, Loader2, PlusCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { collection, query } from 'firebase/firestore';
 import { useMemo } from 'react';
@@ -30,9 +30,10 @@ const getPlaceholderImage = (id: string) => {
 export default function ProjectsPage() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const isReadOnly = !user || user.isAnonymous;
 
   const projectsQuery = useMemo(() => {
-    if (!user || !firestore) return null;
+    if (!user || !firestore || user.isAnonymous) return null;
     return query(
       collection(firestore, 'users', user.uid, 'projects')
     );
@@ -44,14 +45,15 @@ export default function ProjectsPage() {
 
   const allProjects = useMemo(() => {
     const combined = [...(firestoreProjects || [])];
-    // A simple check to avoid duplicates if we were to implement full sync
-    githubProjects.forEach(ghProject => {
-      if (!combined.some(p => p.githubUrl === ghProject.githubUrl)) {
-        combined.push(ghProject);
-      }
-    })
+    if (isReadOnly) { // Show sample projects if not logged in
+      githubProjects.forEach(ghProject => {
+        if (!combined.some(p => p.githubUrl === ghProject.githubUrl)) {
+          combined.push(ghProject);
+        }
+      })
+    }
     return combined;
-  }, [firestoreProjects]);
+  }, [firestoreProjects, isReadOnly]);
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -60,11 +62,25 @@ export default function ProjectsPage() {
           My Projects
         </h1>
         <AddProjectDialog>
-          <Button>
+          <Button disabled={isReadOnly}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Project
           </Button>
         </AddProjectDialog>
       </div>
+
+       {isReadOnly && (
+        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
+            <CardHeader className="flex flex-row items-center gap-4">
+                <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
+                <div>
+                    <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
+                    <CardDescription className="text-yellow-700 dark:text-yellow-400">
+                        You are viewing sample projects. <Link href="/login" className="font-bold underline">Log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to add and manage your own.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+        </Card>
+      )}
 
       {isLoading && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -78,7 +94,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && allProjects && allProjects.length === 0 && (
+      {!isLoading && allProjects && allProjects.length === 0 && !isReadOnly && (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-12">
             <div className="flex flex-col items-center gap-1 text-center">
                 <h3 className="text-2xl font-bold tracking-tight">You have no projects</h3>

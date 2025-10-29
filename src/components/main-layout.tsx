@@ -29,7 +29,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isUserLoading, user, auth]);
 
-  if (isUserLoading) {
+  if (isUserLoading && !user) {
     return (
         <div className="flex h-screen w-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
