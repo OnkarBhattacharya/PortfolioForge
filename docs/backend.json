@@ -165,10 +165,7 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com",
-      "apple.com",
-      "microsoft.com"
+      "anonymous"
     ]
   },
   "firestore": {

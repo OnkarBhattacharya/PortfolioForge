@@ -19,33 +19,33 @@ import { errorEmitter } from './error-emitter';
  * @param user - The user object from Firebase Authentication.
  * @param fullName - The user's full name (optional, for email sign-up).
  */
-const createUserProfile = async (firestore: Firestore, user: User, fullName?: string) => {
+const createUserProfile = (firestore: Firestore, user: User, fullName?: string) => {
   const userRef = doc(firestore, 'users', user.uid);
-  const userDoc = await getDoc(userRef);
 
-  // Only create a profile if one doesn't already exist
-  if (!userDoc.exists()) {
-    const profileData = {
-      id: user.uid,
-      email: user.email,
-      fullName: fullName || user.displayName || 'New User',
-      photoURL: user.photoURL,
-      createdAt: new Date().toISOString(),
-      themeId: 'default', // Set a default theme for new users
-    };
-    
-    // Non-blocking write with contextual error handling
-    setDoc(userRef, profileData)
-      .catch((error) => {
-        console.error("Non-blocking profile creation failed:", error);
-        const permissionError = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'create',
-          requestResourceData: profileData,
+  getDoc(userRef).then(userDoc => {
+    // Only create a profile if one doesn't already exist
+    if (!userDoc.exists()) {
+      const profileData = {
+        id: user.uid,
+        email: user.email,
+        fullName: fullName || user.displayName || 'New User',
+        photoURL: user.photoURL,
+        createdAt: new Date().toISOString(),
+        themeId: 'default', // Set a default theme for new users
+      };
+      
+      // Non-blocking write with contextual error handling
+      setDoc(userRef, profileData)
+        .catch(() => {
+          const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
         });
-        errorEmitter.emit('permission-error', permissionError);
-      });
-  }
+    }
+  });
 };
 
 
@@ -61,7 +61,7 @@ export function initiateAnonymousSignIn(authInstance: Auth) {
 export async function initiateEmailSignUp(authInstance: Auth, firestore: Firestore, email: string, password: string, fullName: string) {
     const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
     // The profile creation is now a non-blocking fire-and-forget operation from the UI's perspective
-    await createUserProfile(firestore, userCredential.user, fullName);
+    createUserProfile(firestore, userCredential.user, fullName);
     return userCredential;
 }
 

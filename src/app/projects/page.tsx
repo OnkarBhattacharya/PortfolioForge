@@ -14,7 +14,7 @@ import Image from 'next/image';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Github, Loader2, PlusCircle, KeyRound } from 'lucide-react';
+import { Github, Loader2, PlusCircle, KeyRound, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { collection, query } from 'firebase/firestore';
 import AddProjectDialog from './add-project-dialog';
@@ -25,29 +25,28 @@ import { useMemo } from 'react';
 
 type Project = {
   id: string;
-  title: string;
+  name: string;
   description: string;
   technologies: string[];
-  liveDemoUrl?: string;
-  githubUrl?: string;
+  projectUrl?: string;
   imageId: string;
 };
 
 const sampleProjects: Project[] = [
     {
       "id": "gh-1",
-      "title": "React Component Library",
+      "name": "React Component Library",
       "description": "A collection of reusable UI components built with React and Storybook. Focused on accessibility and ease of use.",
       "technologies": ["React", "Storybook", "TypeScript"],
-      "githubUrl": "https://github.com/example/react-component-library",
+      "projectUrl": "https://github.com/example/react-component-library",
       "imageId": "project-1",
     },
     {
       "id": "gh-2",
-      "title": "GraphQL API Server",
+      "name": "GraphQL API Server",
       "description": "A backend server providing a GraphQL API for a mobile application. Built with Node.js, Express, and Apollo Server.",
       "technologies": ["Node.js", "Express", "GraphQL", "Apollo"],
-      "githubUrl": "https://github.com/example/graphql-api-server",
+      "projectUrl": "https://github.com/example/graphql-api-server",
       "imageId": "project-2",
     }
   ];
@@ -133,7 +132,7 @@ export default function ProjectsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {allProjects.map((project) => {
             const image = getPlaceholderImage(project.imageId);
-            const projectLink = project.liveDemoUrl || project.githubUrl || '#';
+            const projectLink = project.projectUrl || '#';
             
             return (
               <Card key={project.id} className="flex flex-col overflow-hidden">
@@ -141,7 +140,7 @@ export default function ProjectsPage() {
                   {image && (
                       <Image
                         src={image.imageUrl}
-                        alt={project.title}
+                        alt={project.name}
                         width={600}
                         height={400}
                         data-ai-hint={image.imageHint}
@@ -152,7 +151,7 @@ export default function ProjectsPage() {
                 <CardHeader>
                   <CardTitle className="font-headline text-lg">
                     <Link href={projectLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {project.title}
+                      {project.name}
                     </Link>
                   </CardTitle>
                   <CardDescription className="line-clamp-3 h-[60px]">
@@ -169,9 +168,9 @@ export default function ProjectsPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                    {project.githubUrl && (
-                        <Link href={project.githubUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
-                            <Github className="mr-2 h-4 w-4" /> View on GitHub
+                    {project.projectUrl && (
+                        <Link href={project.projectUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
+                            <ExternalLink className="mr-2 h-4 w-4" /> View Project
                         </Link>
                     )}
                 </CardFooter>

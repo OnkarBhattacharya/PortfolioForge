@@ -37,8 +37,7 @@ type Project = {
   name: string;
   description: string;
   technologies: string[];
-  liveDemoUrl?: string;
-  githubUrl?: string;
+  projectUrl?: string;
   imageId: string;
 };
 
@@ -179,8 +178,8 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
                     </div>
                   </CardContent>
                    <CardContent className="flex gap-2">
-                      {project.liveDemoUrl && <Button asChild className="flex-1"><a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2" /> Live Demo</a></Button>}
-                      {project.githubUrl && <Button asChild variant="secondary" className="flex-1"><a href={project.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> Source Code</a></Button>}
+                      {project.projectUrl && <Button asChild className="flex-1"><a href={project.projectUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2" /> Live Demo</a></Button>}
+                      {project.projectUrl && <Button asChild variant="secondary" className="flex-1"><a href={project.projectUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> Source Code</a></Button>}
                   </CardContent>
                 </Card>
               );

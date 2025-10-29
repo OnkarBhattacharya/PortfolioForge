@@ -31,11 +31,10 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  name: z.string().min(1, 'Name is required'),
   description: z.string().min(1, 'Description is required'),
   technologies: z.string().optional(),
-  liveDemoUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
-  githubUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  projectUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,11 +50,10 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
+      name: '',
       description: '',
       technologies: '',
-      liveDemoUrl: '',
-      githubUrl: '',
+      projectUrl: '',
     },
   });
   
@@ -82,15 +80,18 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
     addDocumentNonBlocking(projectsCol, {
-        ...values,
+        name: values.name,
+        description: values.description,
+        projectUrl: values.projectUrl,
         technologies: technologiesArray,
         userProfileId: user.uid,
         imageId,
+        source: 'firebase',
     });
 
     toast({
         title: 'Project Added!',
-        description: `${values.title} has been added to your portfolio.`,
+        description: `${values.name} has been added to your portfolio.`,
     });
 
     form.reset();
@@ -114,10 +115,10 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Title</FormLabel>
+                  <FormLabel>Project Name</FormLabel>
                   <FormControl>
                     <Input placeholder="My Awesome App" {...field} />
                   </FormControl>
@@ -156,26 +157,16 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
             />
              <FormField
               control={form.control}
-              name="liveDemoUrl"
+              name="projectUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Live Demo URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://my-app.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="githubUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>GitHub URL</FormLabel>
+                  <FormLabel>Project URL</FormLabel>
                   <FormControl>
                     <Input placeholder="https://github.com/user/repo" {...field} />
                   </FormControl>
+                   <FormDescription>
+                    Link to the live demo or source code repository.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
