@@ -36,8 +36,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const ProviderButton = ({ provider, icon, onClick, children }: { provider: string, icon: React.ReactNode, onClick: () => void, children: React.ReactNode }) => (
-    <Button variant="outline" className="w-full" onClick={onClick}>
+const ProviderButton = ({ provider, icon, onClick, children, disabled }: { provider: string, icon: React.ReactNode, onClick: () => void, children: React.ReactNode, disabled?: boolean }) => (
+    <Button variant="outline" className="w-full" onClick={onClick} disabled={disabled}>
         {icon}
         {children}
     </Button>
@@ -84,30 +84,24 @@ export default function LoginPage() {
 
   const handleSocialSignIn = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Could not connect to authentication service.",
-        });
-        setProviderLoading(null);
-        return;
-    }
-
-    let signInFunction;
-    switch (provider) {
-        case 'google':
-            signInFunction = initiateGoogleSignIn;
-            break;
-        case 'microsoft':
-            signInFunction = initiateMicrosoftSignIn;
-            break;
-        case 'apple':
-            signInFunction = initiateAppleSignIn;
-            break;
-    }
-
     try {
+        if (!auth) {
+            throw new Error("Authentication service not available.");
+        }
+
+        let signInFunction;
+        switch (provider) {
+            case 'google':
+                signInFunction = initiateGoogleSignIn;
+                break;
+            case 'microsoft':
+                signInFunction = initiateMicrosoftSignIn;
+                break;
+            case 'apple':
+                signInFunction = initiateAppleSignIn;
+                break;
+        }
+
         await signInFunction(auth);
         toast({
             title: 'Login Successful',
@@ -130,22 +124,16 @@ export default function LoginPage() {
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Could not connect to authentication service.",
-        });
-        setLoading(false);
-        return;
-    }
     try {
-      await initiateEmailSignIn(auth, values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: "Welcome back!",
-      });
-      router.push('/');
+        if (!auth) {
+            throw new Error("Authentication service not available.");
+        }
+        await initiateEmailSignIn(auth, values.email, values.password);
+        toast({
+            title: 'Login Successful',
+            description: "Welcome back!",
+        });
+        router.push('/');
     } catch (error: any) {
       console.error('Login failed:', error);
       toast({
@@ -218,13 +206,13 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-             <ProviderButton provider="google" onClick={() => handleSocialSignIn('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}>
+             <ProviderButton provider="google" onClick={() => handleSocialSignIn('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />} disabled={!!providerLoading}>
                 Login with Google
             </ProviderButton>
-             <ProviderButton provider="microsoft" onClick={() => handleSocialSignIn('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />}>
+             <ProviderButton provider="microsoft" onClick={() => handleSocialSignIn('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />} disabled={!!providerLoading}>
                 Login with Microsoft
             </ProviderButton>
-             <ProviderButton provider="apple" onClick={() => handleSocialSignIn('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />}>
+             <ProviderButton provider="apple" onClick={() => handleSocialSignIn('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />} disabled={!!providerLoading}>
                 Login with Apple
             </ProviderButton>
           </div>

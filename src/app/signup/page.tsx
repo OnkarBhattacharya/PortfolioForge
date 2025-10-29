@@ -21,14 +21,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useAuth, initiateEmailSignUp, initiateGoogleSignIn, initiateMicrosoftSignIn, initiateAppleSignIn } from '@/firebase';
+import { useAuth, useFirebase, initiateEmailSignUp, initiateGoogleSignIn, initiateMicrosoftSignIn, initiateAppleSignIn } from '@/firebase';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { UserCredential } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required.'),
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters long.'),
   confirmPassword: z.string(),
@@ -39,8 +42,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const ProviderButton = ({ provider, icon, onClick, children }: { provider: string, icon: React.ReactNode, onClick: () => void, children: React.ReactNode }) => (
-    <Button variant="outline" className="w-full" onClick={onClick}>
+const ProviderButton = ({ provider, icon, onClick, children, disabled }: { provider: string, icon: React.ReactNode, onClick: () => void, children: React.ReactNode, disabled?: boolean }) => (
+    <Button variant="outline" className="w-full" onClick={onClick} disabled={disabled}>
         {icon}
         {children}
     </Button>
@@ -74,45 +77,53 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [providerLoading, setProviderLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const auth = useAuth();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
     },
   });
 
+  const createUserProfile = async (user: UserCredential['user'], fullName?: string) => {
+    if (!firestore) throw new Error("Firestore not available");
+    const userRef = doc(firestore, 'users', user.uid);
+    await setDoc(userRef, {
+      id: user.uid,
+      email: user.email,
+      fullName: fullName || user.displayName || 'New User',
+      themeId: 'default',
+    });
+  };
+
   const handleSocialSignIn = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Could not connect to authentication service.",
-        });
-        setProviderLoading(null);
-        return;
-    }
-
-    let signInFunction;
-    switch (provider) {
-        case 'google':
-            signInFunction = initiateGoogleSignIn;
-            break;
-        case 'microsoft':
-            signInFunction = initiateMicrosoftSignIn;
-            break;
-        case 'apple':
-            signInFunction = initiateAppleSignIn;
-            break;
-    }
-
     try {
-        await signInFunction(auth);
+        if (!auth) {
+            throw new Error("Authentication service not available.");
+        }
+
+        let signInFunction;
+        switch (provider) {
+            case 'google':
+                signInFunction = initiateGoogleSignIn;
+                break;
+            case 'microsoft':
+                signInFunction = initiateMicrosoftSignIn;
+                break;
+            case 'apple':
+                signInFunction = initiateAppleSignIn;
+                break;
+        }
+
+        const userCredential = await signInFunction(auth);
+        await createUserProfile(userCredential.user);
+
         toast({
             title: 'Sign Up Successful',
             description: "Welcome!",
@@ -135,22 +146,18 @@ export default function SignUpPage() {
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Authentication Error",
-            description: "Could not connect to authentication service.",
-        });
-        setLoading(false);
-        return;
-    }
     try {
-      await initiateEmailSignUp(auth, values.email, values.password);
-      toast({
-        title: 'Account Created',
-        description: "Welcome! You have been successfully signed up.",
-      });
-      router.push('/');
+        if (!auth) {
+            throw new Error("Authentication service not available.");
+        }
+        const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
+        await createUserProfile(userCredential.user, values.fullName);
+        
+        toast({
+            title: 'Account Created',
+            description: "Welcome! You have been successfully signed up.",
+        });
+        router.push('/');
     } catch (error: any) {
       console.error('Sign up failed:', error);
       toast({
@@ -175,6 +182,23 @@ export default function SignUpPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Jane Doe"
+                          {...field}
+                          disabled={!!providerLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
                 name="email"
@@ -236,13 +260,13 @@ export default function SignUpPage() {
           </div>
 
           <div className="space-y-2">
-             <ProviderButton provider="google" onClick={() => handleSocialSignIn('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />}>
+             <ProviderButton provider="google" onClick={() => handleSocialSignIn('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />} disabled={!!providerLoading}>
                 Sign up with Google
             </ProviderButton>
-             <ProviderButton provider="microsoft" onClick={() => handleSocialSignIn('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />}>
+             <ProviderButton provider="microsoft" onClick={() => handleSocialSignIn('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />} disabled={!!providerLoading}>
                 Sign up with Microsoft
             </ProviderButton>
-             <ProviderButton provider="apple" onClick={() => handleSocialSignIn('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />}>
+             <ProviderButton provider="apple" onClick={() => handleSocialSignIn('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />} disabled={!!providerLoading}>
                 Sign up with Apple
             </ProviderButton>
           </div>
