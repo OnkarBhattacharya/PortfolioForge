@@ -91,7 +91,7 @@ export default function ImportDataPage() {
             const textContent = await page.getTextContent();
             content += textContent.items.map((item: any) => item.str).join(' ');
           }
-          saveCvData(content);
+          parseAndSaveCv(content);
         };
         reader.readAsArrayBuffer(selectedFile);
         return;
@@ -100,13 +100,13 @@ export default function ImportDataPage() {
         reader.onload = async (e) => {
           if (!e.target?.result) return;
           const result = await mammoth.extractRawText({ arrayBuffer: e.target.result as ArrayBuffer });
-          saveCvData(result.value);
+          parseAndSaveCv(result.value);
         };
         reader.readAsArrayBuffer(selectedFile);
         return;
       } else if (selectedFile.type === 'text/plain') {
         text = await selectedFile.text();
-        saveCvData(text);
+        parseAndSaveCv(text);
       } else {
         throw new Error("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
       }
@@ -121,25 +121,40 @@ export default function ImportDataPage() {
     }
   };
 
-  const saveCvData = (text: string) => {
-     try {
-        localStorage.setItem('cvData', text);
-        setCvUploadSuccess(true);
-        toast({
-          title: "Upload Successful",
-          description: "Your CV has been parsed and saved.",
-        });
-      } catch (error) {
-         toast({
-          variant: "destructive",
-          title: "Save Failed",
-          description: "Could not save CV data. Local storage might be full.",
-        });
-      } finally {
-        setIsUploading(false);
-        setSelectedFile(null);
+  const parseAndSaveCv = async (cvText: string) => {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/api/cv-parser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cvText, userId: user.uid }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'CV parsing failed');
       }
-  }
+
+      localStorage.setItem('cvData', 'true'); // Indicate that CV data has been processed
+      setCvUploadSuccess(true);
+      toast({
+        title: "AI-Powered CV Scan Successful",
+        description: "Your CV has been parsed and the data is now available in your portfolio.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "CV Processing Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsUploading(false);
+      setSelectedFile(null);
+    }
+  };
 
   const handleSaveLinkedIn = () => {
      if (isReadOnly) {
@@ -224,11 +239,11 @@ export default function ImportDataPage() {
               <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isReadOnly} className="flex-1" />
               <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
                 <UploadCloud className="mr-2 h-4 w-4" />
-                Upload
+                {isUploading ? 'Parsing CV...' : 'Upload'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              We&apos;ll parse your CV to pre-fill your portfolio sections.
+             We&apos;ll use AI to parse your CV and pre-fill your portfolio sections.
             </p>
           </CardContent>
         </Card>

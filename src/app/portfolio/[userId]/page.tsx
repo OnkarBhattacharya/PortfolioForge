@@ -17,10 +17,40 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2 } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Star } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
+import { z } from 'zod';
+
+const CvDataSchema = z.object({
+  personalInfo: z.object({
+    name: z.string().optional(),
+    email: z.string().optional(),
+    phone: z.string().optional(),
+    location: z.string().optional(),
+    linkedin: z.string().optional(),
+    github: z.string().optional(),
+  }).optional(),
+  summary: z.string().optional(),
+  experience: z.array(z.object({
+    jobTitle: z.string().optional(),
+    company: z.string().optional(),
+    location: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    responsibilities: z.array(z.string()).optional(),
+  })).optional(),
+  education: z.array(z.object({
+    degree: z.string().optional(),
+    institution: z.string().optional(),
+    location: z.string().optional(),
+    graduationDate: z.string().optional(),
+  })).optional(),
+  skills: z.array(z.string()).optional(),
+});
+
+type CvData = z.infer<typeof CvDataSchema>;
 
 type UserProfile = {
   id: string;
@@ -95,6 +125,14 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
   
   const { data: dbProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
 
+  const cvDataDocRef = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'cvData', userId);
+  }, [firestore, userId]);
+
+  const { data: cvDataDocument, isLoading: isCvDataLoading } = useDoc<{ parsedData: CvData }>(cvDataDocRef);
+  const cvData = cvDataDocument?.parsedData;
+
   const themeDocRef = useMemoFirebase(() => {
     if (!firestore || !dbProfile?.themeId) return null;
     return doc(firestore, 'themes', dbProfile.themeId);
@@ -109,17 +147,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
 
   const { data: dbProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
   
-  const [cvData, setCvData] = useState<string | null>(null);
-  const [linkedInData, setLinkedInData] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        setCvData(localStorage.getItem('cvData'));
-        setLinkedInData(localStorage.getItem('linkedInData'));
-    }
-  }, []);
-
-  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
+  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading || isCvDataLoading;
   
   const profile = !isLoading && !dbProfile && !profileError ? sampleProfile : dbProfile;
   const projects = !isLoading && (!dbProjects || dbProjects.length === 0) && !profileError ? sampleProjects : dbProjects;
@@ -185,8 +213,8 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
           <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
           <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
-        <h1 className="mt-6 font-headline text-5xl font-bold">{profile.fullName || 'User Name'}</h1>
-        <p className="mt-2 text-xl text-muted-foreground">{linkedInData?.split('\n')[0] || 'A passionate full-stack developer with a love for creating beautiful and functional web applications.'}</p>
+        <h1 className="mt-6 font-headline text-5xl font-bold">{cvData?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
+        <p className="mt-2 text-xl text-muted-foreground">{cvData?.summary || 'A passionate full-stack developer with a love for creating beautiful and functional web applications.'}</p>
         <div className="mt-6 flex justify-center gap-4">
           {profile.githubUrl && <Button variant="outline" asChild><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> GitHub</a></Button>}
           {profile.linkedinUrl && <Button variant="outline" asChild><a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="mr-2" /> LinkedIn</a></Button>}
@@ -200,11 +228,69 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
            <Card>
             <CardContent className="pt-6">
                 <p className="text-lg leading-relaxed">
-                    {linkedInData || cvData || "Welcome to my portfolio! I'm a dedicated software engineer specializing in building modern web applications with React, Next.js, and Firebase. My experience spans from creating beautiful user interfaces to designing robust backend systems. I thrive on solving complex problems and am always eager to learn new technologies. This portfolio showcases some of my favorite projects. Feel free to explore and get in touch!"}
+                    {cvData?.summary || "Welcome to my portfolio! I'm a dedicated software engineer specializing in building modern web applications with React, Next.js, and Firebase. My experience spans from creating beautiful user interfaces to designing robust backend systems. I thrive on solving complex problems and am always eager to learn new technologies. This portfolio showcases some of my favorite projects. Feel free to explore and get in touch!"}
                 </p>
             </CardContent>
            </Card>
         </section>
+
+        {cvData?.experience && cvData.experience.length > 0 && (
+          <section id="experience" className="mb-16">
+            <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Work Experience</h2>
+            <div className="space-y-8">
+              {cvData.experience.map((job, index) => (
+                <Card key={index}>
+                  <CardHeader className="flex flex-row items-start gap-4">
+                    <Briefcase className="h-8 w-8 text-accent" />
+                    <div>
+                      <CardTitle className="font-headline text-2xl">{job.jobTitle}</CardTitle>
+                      <CardDescription className="text-lg">{job.company} &middot; {job.location}</CardDescription>
+                      <p className="text-sm text-muted-foreground">{job.startDate} - {job.endDate}</p>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc space-y-2 pl-6">
+                      {job.responsibilities?.map((res, i) => <li key={i}>{res}</li>)}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {cvData?.education && cvData.education.length > 0 && (
+            <section id="education" className="mb-16">
+                <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Education</h2>
+                <div className="space-y-8">
+                    {cvData.education.map((edu, index) => (
+                        <Card key={index}>
+                             <CardHeader className="flex flex-row items-start gap-4">
+                                <GraduationCap className="h-8 w-8 text-accent" />
+                                <div>
+                                    <CardTitle className="font-headline text-2xl">{edu.institution}</CardTitle>
+                                    <CardDescription className="text-lg">{edu.degree}</CardDescription>
+                                    <p className="text-sm text-muted-foreground">Graduated: {edu.graduationDate}</p>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    ))}
+                </div>
+            </section>
+        )}
+
+        {cvData?.skills && cvData.skills.length > 0 && (
+            <section id="skills" className="mb-16">
+                 <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Skills</h2>
+                <Card>
+                    <CardContent className="flex flex-wrap gap-4 pt-6">
+                        {cvData.skills.map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="text-lg px-4 py-2">{skill}</Badge>
+                        ))}
+                    </CardContent>
+                </Card>
+            </section>
+        )}
 
         <section id="projects">
           <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Projects</h2>
@@ -250,10 +336,8 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
         </section>
       </main>
       <footer className="mt-16 bg-muted py-8 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} {profile.fullName}. Built with PortfolioForge.</p>
+        <p>&copy; {new Date().getFullYear()} {cvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
       </footer>
     </div>
   );
 }
-
-    
