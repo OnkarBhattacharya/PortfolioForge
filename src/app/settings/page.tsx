@@ -16,7 +16,7 @@ import { collection, doc, updateDoc } from "firebase/firestore";
 import { Check, Loader2, KeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
 
@@ -30,8 +30,8 @@ type Theme = {
 };
 
 export default function SettingsPage() {
-  const { firestore, user } = useFirebase();
-  const { isUserLoading } = useUser();
+  const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const isReadOnly = !user || user.isAnonymous;
@@ -46,8 +46,8 @@ export default function SettingsPage() {
 
   const { data: themes, isLoading: areThemesLoading } = useCollection<Theme>(themesQuery);
 
-  const userProfileRef = useMemo(() => {
-    if (!user || !firestore) return null;
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !firestore || user.isAnonymous) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
