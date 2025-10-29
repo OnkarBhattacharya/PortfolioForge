@@ -21,7 +21,6 @@ export const githubProjects: any[] = [
       "source": "github"
     }
   ];
-export const firebaseProjects: any[] = [];
 
 export const themes = [
   {

@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { useCollection, useFirebase, useUser } from '@/firebase';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { Github, Loader2, PlusCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
@@ -23,8 +23,15 @@ import { githubProjects } from '@/lib/data';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const getPlaceholderImage = (id: string) => {
-    return PlaceHolderImages.find((img) => img.id === id);
+type Project = {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  liveDemoUrl?: string;
+  githubUrl?: string;
+  imageId: string;
+  source?: string;
 };
 
 export default function ProjectsPage() {
@@ -32,14 +39,14 @@ export default function ProjectsPage() {
   const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
 
-  const projectsQuery = useMemo(() => {
+  const projectsQuery = useMemoFirebase(() => {
     if (!user || !firestore || user.isAnonymous) return null;
     return query(
       collection(firestore, 'users', user.uid, 'projects')
     );
   }, [firestore, user]);
 
-  const { data: firestoreProjects, isLoading: areProjectsLoading } = useCollection<any>(projectsQuery as any);
+  const { data: firestoreProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
   const isLoading = isUserLoading || areProjectsLoading;
 
@@ -111,7 +118,7 @@ export default function ProjectsPage() {
       {!isLoading && allProjects && allProjects.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {allProjects.map((project) => {
-            const image = getPlaceholderImage(project.imageId) || getPlaceholderImage("project-1");
+            const image = getPlaceholderImage(project.imageId);
             return (
               <Card key={project.id} className="flex flex-col overflow-hidden">
                 <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" rel="noopener noreferrer">

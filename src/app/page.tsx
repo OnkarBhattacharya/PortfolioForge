@@ -19,12 +19,12 @@ import {
   Linkedin,
 } from 'lucide-react';
 import Image from 'next/image';
-import { githubProjects, firebaseProjects } from '@/lib/data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { githubProjects } from '@/lib/data';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { useUser } from '@/firebase';
 
-const recentProjects = [...(githubProjects || []), ...(firebaseProjects || [])].slice(0, 3);
+const recentProjects = [...(githubProjects || [])].slice(0, 3);
 
 export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
@@ -56,10 +56,6 @@ export default function DashboardPage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const getPlaceholderImage = (id: string) => {
-    return PlaceHolderImages.find((img) => img.id === id);
-  };
-  
   const liveSiteUrl = user && !user.isAnonymous ? `/portfolio/${user.uid}` : `/login`;
 
   return (
@@ -168,7 +164,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentProjects && recentProjects.length > 0 && recentProjects.map((project) => {
+            {recentProjects.map((project) => {
               const image = getPlaceholderImage(project.imageId);
               return (
                 <Card key={project.id} className="overflow-hidden">

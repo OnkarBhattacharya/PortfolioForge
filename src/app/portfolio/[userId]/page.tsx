@@ -4,12 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   collection,
   doc,
-  DocumentData,
-  getDoc,
-  getDocs,
   query,
 } from 'firebase/firestore';
-import { useFirebase, useMemoFirebase } from '@/firebase';
+import { useFirebase, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -22,8 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Github, Linkedin, Mail, ExternalLink, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { themes } from '@/lib/data';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { themes as staticThemes } from '@/lib/data';
 import { notFound } from 'next/navigation';
 
 type UserProfile = {
@@ -52,18 +49,30 @@ type Theme = {
     accent: string;
 }
 
-const getPlaceholderImage = (id: string) => {
-    return PlaceHolderImages.find((img) => img.id === id);
-};
-
 export default function PortfolioPage({ params }: { params: { userId: string } }) {
   const { userId } = params;
   const { firestore } = useFirebase();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [theme, setTheme] = useState<Theme | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return doc(firestore, 'users', userId);
+  }, [firestore, userId]);
+  
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
+
+  const themeDocRef = useMemoFirebase(() => {
+    if (!firestore || !profile?.themeId) return null;
+    return doc(firestore, 'themes', profile.themeId);
+  }, [firestore, profile?.themeId]);
+
+  const { data: theme, isLoading: isThemeLoading } = useDoc<Theme>(themeDocRef);
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return query(collection(firestore, 'users', userId, 'projects'));
+  }, [firestore, userId]);
+
+  const { data: projects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
   
   const [cvData, setCvData] = useState<string | null>(null);
   const [linkedInData, setLinkedInData] = useState<string | null>(null);
@@ -75,70 +84,34 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     }
   }, []);
 
+  const selectedTheme = useMemo(() => {
+    if (theme) return theme;
+    if (profile?.themeId) {
+      return staticThemes.find(t => t.id === profile.themeId) as Theme;
+    }
+    return staticThemes.find(t => t.id === 'default') as Theme;
+  }, [theme, profile?.themeId]);
+
+
   useEffect(() => {
-    if (!firestore || !userId) return;
+    if (selectedTheme) {
+        document.documentElement.style.setProperty('--background', selectedTheme.background);
+        document.documentElement.style.setProperty('--primary', selectedTheme.primary);
+        document.documentElement.style.setProperty('--accent', selectedTheme.accent);
+    }
 
-    const fetchPortfolioData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Fetch user profile
-        const userDocRef = doc(firestore, 'users', userId);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (!userDocSnap.exists()) {
-          throw new Error('User not found');
-        }
-        const userProfileData = { id: userDocSnap.id, ...userDocSnap.data() } as UserProfile;
-        setProfile(userProfileData);
-
-        // Fetch theme
-        const themeId = userProfileData.themeId || 'default';
-        const themeDocRef = doc(firestore, 'themes', themeId);
-        const themeDocSnap = await getDoc(themeDocRef);
-        
-        let themeData;
-        if (themeDocSnap.exists()) {
-            themeData = themeDocSnap.data() as Theme;
-        } else {
-            // Fallback to static theme if not found in DB
-            themeData = themes.find(t => t.id === themeId) as Theme;
-        }
-        setTheme(themeData);
-        
-        // Dynamically apply theme colors
-        if (themeData) {
-            document.documentElement.style.setProperty('--background', themeData.background);
-            document.documentElement.style.setProperty('--primary', themeData.primary);
-            document.documentElement.style.setProperty('--accent', themeData.accent);
-        }
-
-        // Fetch projects
-        const projectsQuery = query(collection(firestore, 'users', userId, 'projects'));
-        const projectsSnapshot = await getDocs(projectsQuery);
-        const projectsData = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-        setProjects(projectsData);
-      } catch (err: any) {
-        console.error("Failed to fetch portfolio data:", err);
-        setError(err.message);
-        if (err.message === 'User not found') {
-            notFound();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPortfolioData();
-
-    // Cleanup function to reset styles
     return () => {
         document.documentElement.style.removeProperty('--background');
         document.documentElement.style.removeProperty('--primary');
         document.documentElement.style.removeProperty('--accent');
     };
+  }, [selectedTheme]);
 
-  }, [firestore, userId]);
+  if (profileError) {
+      notFound();
+  }
+  
+  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
   
   if (isLoading) {
       return (
@@ -147,17 +120,9 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
           </div>
       )
   }
-  
-  if (error) {
-       return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-            <p className="text-destructive-foreground">Failed to load portfolio: {error}</p>
-        </div>
-      )
-  }
 
   if (!profile) {
-    return null; // Or some other placeholder/error
+    return null; 
   }
 
   return (
@@ -191,7 +156,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
         <section id="projects">
           <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Projects</h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => {
+            {projects?.map((project) => {
               const image = getPlaceholderImage(project.imageId);
               return (
                 <Card key={project.id} className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl">
