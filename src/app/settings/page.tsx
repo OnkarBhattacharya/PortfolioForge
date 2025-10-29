@@ -11,12 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useFirebase, useUser, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirebase, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, updateDoc } from "firebase/firestore";
 import { Check, Loader2, KeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
 
@@ -27,6 +27,11 @@ type Theme = {
   previewImageUrl: string;
   price: number;
   isPremium: boolean;
+};
+
+type UserProfile = {
+    id: string;
+    themeId?: string;
 };
 
 export default function SettingsPage() {
@@ -50,6 +55,15 @@ export default function SettingsPage() {
     if (!user || !firestore || user.isAnonymous) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  useEffect(() => {
+      if (userProfile?.themeId) {
+          setSelectedThemeId(userProfile.themeId);
+      }
+  }, [userProfile]);
+
 
   const handleSelectTheme = (themeId: string) => {
     if (isReadOnly) {
@@ -164,8 +178,8 @@ export default function SettingsPage() {
                       className="aspect-video w-full object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="font-bold">{theme.name}</h3>
-                      <p className="text-sm text-muted-foreground">{theme.description}</p>
+                      <div className="font-bold text-lg">{theme.name}</div>
+                      <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
                       <p className="mt-2 font-semibold">{theme.isPremium ? `$${theme.price}` : 'Free'}</p>
                     </div>
                   </Card>

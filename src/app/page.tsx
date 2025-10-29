@@ -15,21 +15,35 @@ import {
   ArrowUpRight,
   CheckCircle,
   Circle,
-  Github,
-  Linkedin,
 } from 'lucide-react';
 import Image from 'next/image';
-import { githubProjects } from '@/lib/data';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query, limit } from 'firebase/firestore';
 
-const recentProjects = [...(githubProjects || [])].slice(0, 3);
+
+type Project = {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  imageId: string;
+};
 
 export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
   const [linkedInImported, setLinkedInImported] = useState(false);
   const { user } = useUser();
+  const { firestore } = useFirebase();
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user || user.isAnonymous || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'projects'), limit(3));
+  }, [user, firestore]);
+
+  const { data: recentProjects } = useCollection<Project>(projectsQuery);
+
 
   useEffect(() => {
     const cvData = localStorage.getItem('cvData');
@@ -164,7 +178,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentProjects.map((project) => {
+            {recentProjects?.map((project) => {
               const image = getPlaceholderImage(project.imageId);
               return (
                 <Card key={project.id} className="overflow-hidden">

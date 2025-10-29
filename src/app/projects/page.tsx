@@ -17,11 +17,11 @@ import { Button } from '@/components/ui/button';
 import { Github, Loader2, PlusCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { collection, query } from 'firebase/firestore';
-import { useMemo } from 'react';
 import AddProjectDialog from './add-project-dialog';
-import { githubProjects } from '@/lib/data';
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+import { useMemo } from 'react';
+
 
 type Project = {
   id: string;
@@ -31,8 +31,26 @@ type Project = {
   liveDemoUrl?: string;
   githubUrl?: string;
   imageId: string;
-  source?: string;
 };
+
+const sampleProjects: Project[] = [
+    {
+      "id": "gh-1",
+      "title": "React Component Library",
+      "description": "A collection of reusable UI components built with React and Storybook. Focused on accessibility and ease of use.",
+      "technologies": ["React", "Storybook", "TypeScript"],
+      "githubUrl": "https://github.com/example/react-component-library",
+      "imageId": "project-1",
+    },
+    {
+      "id": "gh-2",
+      "title": "GraphQL API Server",
+      "description": "A backend server providing a GraphQL API for a mobile application. Built with Node.js, Express, and Apollo Server.",
+      "technologies": ["Node.js", "Express", "GraphQL", "Apollo"],
+      "githubUrl": "https://github.com/example/graphql-api-server",
+      "imageId": "project-2",
+    }
+  ];
 
 export default function ProjectsPage() {
   const { firestore } = useFirebase();
@@ -51,16 +69,12 @@ export default function ProjectsPage() {
   const isLoading = isUserLoading || areProjectsLoading;
 
   const allProjects = useMemo(() => {
-    const combined = [...(firestoreProjects || [])];
-    if (isReadOnly) { // Show sample projects if not logged in
-      githubProjects.forEach(ghProject => {
-        if (!combined.some(p => p.githubUrl === ghProject.githubUrl)) {
-          combined.push(ghProject);
-        }
-      })
+    if (isReadOnly) {
+        return sampleProjects;
     }
-    return combined;
+    return firestoreProjects || [];
   }, [firestoreProjects, isReadOnly]);
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -119,9 +133,11 @@ export default function ProjectsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {allProjects.map((project) => {
             const image = getPlaceholderImage(project.imageId);
+            const projectLink = project.liveDemoUrl || project.githubUrl || '#';
+            
             return (
               <Card key={project.id} className="flex flex-col overflow-hidden">
-                <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" rel="noopener noreferrer">
+                <Link href={projectLink} target="_blank" rel="noopener noreferrer">
                   {image && (
                       <Image
                         src={image.imageUrl}
@@ -135,7 +151,7 @@ export default function ProjectsPage() {
                 </Link>
                 <CardHeader>
                   <CardTitle className="font-headline text-lg">
-                    <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <Link href={projectLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
                       {project.title}
                     </Link>
                   </CardTitle>
@@ -153,7 +169,7 @@ export default function ProjectsPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                    {project.source === 'github' && project.githubUrl && (
+                    {project.githubUrl && (
                         <Link href={project.githubUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
                             <Github className="mr-2 h-4 w-4" /> View on GitHub
                         </Link>

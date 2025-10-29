@@ -13,7 +13,6 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Firestore } from 'firebase/firestore';
 
-// Create a single, stable instance for each provider
 const googleProvider = new GoogleAuthProvider();
 const microsoftProvider = new OAuthProvider('microsoft.com');
 const appleProvider = new OAuthProvider('apple.com');
@@ -24,7 +23,6 @@ const createUserProfile = async (firestore: Firestore, user: UserCredential['use
     if (!firestore) throw new Error("Firestore not available");
     const userRef = doc(firestore, 'users', user.uid);
 
-    // Check if the document already exists before creating it
     const docSnap = await getDoc(userRef);
     if (!docSnap.exists()) {
         await setDoc(userRef, {
@@ -39,86 +37,48 @@ const createUserProfile = async (firestore: Firestore, user: UserCredential['use
 export function initiateAnonymousSignIn(authInstance: Auth): void {
   signInAnonymously(authInstance).catch(error => {
     console.error("Anonymous sign-in failed:", error);
-    // In a real app, you might want to handle this more gracefully
   });
 }
 
 // --- EMAIL AUTH ---
 export async function initiateEmailSignUp(authInstance: Auth, firestore: Firestore, email: string, password: string, fullName: string): Promise<UserCredential> {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
-    await createUserProfile(firestore, userCredential.user, fullName);
+  const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
+  await createUserProfile(firestore, userCredential.user, fullName);
+  return userCredential;
+}
+
+export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
+  return signInWithEmailAndPassword(authInstance, email, password);
+}
+
+// --- SOCIAL AUTH (SIGN UP) ---
+
+async function handleSocialSignUp(authInstance: Auth, firestore: Firestore, provider: GoogleAuthProvider | OAuthProvider): Promise<UserCredential> {
+    const userCredential = await signInWithPopup(authInstance, provider);
+    await createUserProfile(firestore, userCredential.user);
     return userCredential;
-  } catch (error) {
-     console.error("Sign-up failed:", error);
-     throw error;
-  }
 }
 
-export async function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
-  try {
-    return await signInWithEmailAndPassword(authInstance, email, password);
-  } catch (error) {
-      console.error("Sign-in failed:", error);
-      throw error;
-  }
+export const initiateGoogleSignUp = (auth: Auth, firestore: Firestore) => handleSocialSignUp(auth, firestore, googleProvider);
+export const initiateMicrosoftSignUp = (auth: Auth, firestore: Firestore) => handleSocialSignUp(auth, firestore, microsoftProvider);
+export const initiateAppleSignUp = (auth: Auth, firestore: Firestore) => handleSocialSignUp(auth, firestore, appleProvider);
+
+// --- SOCIAL AUTH (SIGN IN) ---
+
+export function initiateGoogleSignIn(authInstance: Auth): Promise<UserCredential> {
+    return signInWithPopup(authInstance, googleProvider);
 }
 
-// --- SOCIAL AUTH ---
-
-async function handleSocialAuth(authInstance: Auth, firestore: Firestore, provider: GoogleAuthProvider | OAuthProvider): Promise<UserCredential> {
-    try {
-        const userCredential = await signInWithPopup(authInstance, provider);
-        // This is a sign-up, so create the profile
-        await createUserProfile(firestore, userCredential.user);
-        return userCredential;
-    } catch (error) {
-        console.error("Social sign-up failed:", error);
-        throw error;
-    }
+export function initiateMicrosoftSignIn(authInstance: Auth): Promise<UserCredential> {
+    return signInWithPopup(authInstance, microsoftProvider);
 }
 
-export const initiateGoogleSignUp = (auth: Auth, firestore: Firestore) => handleSocialAuth(auth, firestore, googleProvider);
-export const initiateMicrosoftSignUp = (auth: Auth, firestore: Firestore) => handleSocialAuth(auth, firestore, microsoftProvider);
-export const initiateAppleSignUp = (auth: Auth, firestore: Firestore) => handleSocialAuth(auth, firestore, appleProvider);
-
-
-export async function initiateGoogleSignIn(authInstance: Auth): Promise<UserCredential> {
-    try {
-        return await signInWithPopup(authInstance, googleProvider);
-    } catch (error) {
-        console.error("Google sign-in failed:", error);
-        throw error;
-    }
-}
-
-export async function initiateMicrosoftSignIn(authInstance: Auth): Promise<UserCredential> {
-    try {
-        return await signInWithPopup(authInstance, microsoftProvider);
-    } catch (error) {
-        console.error("Microsoft sign-in failed:", error);
-        throw error;
-    }
-}
-
-export async function initiateAppleSignIn(authInstance: Auth): Promise<UserCredential> {
-    try {
-        return await signInWithPopup(authInstance, appleProvider);
-    } catch (error) {
-        console.error("Apple sign-in failed:", error);
-        throw error;
-    }
+export function initiateAppleSignIn(authInstance: Auth): Promise<UserCredential> {
+    return signInWithPopup(authInstance, appleProvider);
 }
 
 
 // --- SIGN OUT ---
-export async function initiateSignOut(authInstance: Auth): Promise<void> {
-    try {
-        await signOut(authInstance);
-    } catch (error) {
-        console.error("Sign-out failed:", error);
-        throw error;
-    }
+export function initiateSignOut(authInstance: Auth): Promise<void> {
+    return signOut(authInstance);
 }
-
-    

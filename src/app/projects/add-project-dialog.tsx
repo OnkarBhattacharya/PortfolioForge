@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -22,14 +21,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useFirebase, useUser } from '@/firebase';
+import { useFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -83,30 +81,21 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
     
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
-    try {
-        await addDocumentNonBlocking(projectsCol, {
-            ...values,
-            technologies: technologiesArray,
-            userProfileId: user.uid,
-            imageId,
-        });
+    addDocumentNonBlocking(projectsCol, {
+        ...values,
+        technologies: technologiesArray,
+        userProfileId: user.uid,
+        imageId,
+    });
 
-        toast({
-            title: 'Project Added!',
-            description: `${values.title} has been added to your portfolio.`,
-        });
+    toast({
+        title: 'Project Added!',
+        description: `${values.title} has been added to your portfolio.`,
+    });
 
-        form.reset();
-        setOpen(false);
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: 'Submission Failed',
-            description: 'Could not add the project. Please try again.',
-        });
-    } finally {
-        setIsSubmitting(false);
-    }
+    form.reset();
+    setOpen(false);
+    setIsSubmitting(false);
   }
 
   return (
