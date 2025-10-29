@@ -148,7 +148,9 @@ export default function SignUpPage() {
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: error.message || 'An unknown error occurred. Please try again.',
+        description: error.code === 'auth/email-already-in-use' 
+            ? 'This email is already in use. Please log in.'
+            : error.message || 'An unknown error occurred. Please try again.',
       });
     } finally {
       setLoading(false);
@@ -267,5 +269,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    

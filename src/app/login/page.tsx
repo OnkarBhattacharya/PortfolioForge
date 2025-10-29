@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useAuth, initiateEmailSignIn, initiateGoogleSignIn, initiateMicrosoftSignIn, initiateAppleSignIn } from '@/firebase';
+import { useFirebase, initiateEmailSignIn, initiateGoogleSignIn, initiateMicrosoftSignIn, initiateAppleSignIn } from '@/firebase';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +71,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [providerLoading, setProviderLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const auth = useAuth();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
 
   const form = useForm<FormValues>({
@@ -85,7 +85,7 @@ export default function LoginPage() {
   const handleSocialSignIn = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
     try {
-        if (!auth) {
+        if (!auth || !firestore) {
             throw new Error("Authentication service not available.");
         }
 
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 break;
         }
 
-        await signInFunction(auth);
+        await signInFunction(auth, firestore);
         toast({
             title: 'Login Successful',
             description: "Welcome back!",
@@ -228,5 +228,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
