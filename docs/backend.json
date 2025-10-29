@@ -40,12 +40,12 @@
         },
         "themeId": {
           "type": "string",
-          "description": "Reference to Theme. (Relationship: Theme 1:N UserProfile)"
+          "description": "Reference to the selected Theme for the portfolio.",
+          "default": "default"
         }
       },
       "required": [
         "id",
-        "fullName",
         "email"
       ]
     },
@@ -97,6 +97,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "imageId": {
+            "type": "string",
+            "description": "ID for placeholder image from placeholder-images.json"
         }
       },
       "required": [
@@ -129,27 +133,34 @@
           "description": "URL to a preview image of the theme.",
           "format": "uri"
         },
-        "primaryColor": {
-          "type": "string",
-          "description": "Primary color of the theme (e.g., hex code)."
+        "price": {
+          "type": "number",
+          "description": "Price of the theme in USD. 0 is free."
         },
-        "secondaryColor": {
-          "type": "string",
-          "description": "Secondary color of the theme."
+        "isPremium": {
+          "type": "boolean",
+          "description": "Whether the theme is a premium theme."
         },
-        "headlineFont": {
-          "type": "string",
-          "description": "Font used for headlines in the theme."
+        "primary": {
+            "type": "string",
+            "description": "Primary color HSL value."
         },
-        "bodyFont": {
-          "type": "string",
-          "description": "Font used for the body text in the theme."
+        "background": {
+            "type": "string",
+            "description": "Background color HSL value."
+        },
+        "accent": {
+            "type": "string",
+            "description": "Accent color HSL value."
         }
       },
       "required": [
         "id",
         "name",
-        "description"
+        "description",
+        "primary",
+        "background",
+        "accent"
       ]
     }
   },

@@ -22,12 +22,14 @@ import Image from 'next/image';
 import { githubProjects, firebaseProjects } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
+import { useUser } from '@/firebase';
 
 const recentProjects = [...(githubProjects || []), ...(firebaseProjects || [])].slice(0, 3);
 
 export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
   const [linkedInImported, setLinkedInImported] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     const cvData = localStorage.getItem('cvData');
@@ -57,6 +59,8 @@ export default function DashboardPage() {
   const getPlaceholderImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id);
   };
+  
+  const liveSiteUrl = user && !user.isAnonymous ? `/portfolio/${user.uid}` : `/login`;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
@@ -149,7 +153,7 @@ export default function DashboardPage() {
               <Link href="/settings">Settings</Link>
             </Button>
             <Button asChild className="bg-accent text-accent-foreground">
-              <Link href="#">View Live Site</Link>
+              <Link href={liveSiteUrl}>View Live Site</Link>
             </Button>
           </CardContent>
         </Card>
@@ -188,7 +192,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tag: any) => (
+                      {project.technologies?.map((tag: any) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
