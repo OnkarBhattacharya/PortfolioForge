@@ -187,7 +187,7 @@ export default function AiAssistantPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={loading || isReadOnly} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button type="submit" disabled={loading || isReadOnly} className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

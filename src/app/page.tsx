@@ -67,7 +67,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="flex flex-col">
+        <Card className="flex flex-col lg:col-span-1">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">
               Welcome to PortfolioForge
@@ -94,7 +94,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="font-headline">Profile Status</CardTitle>
             <CardDescription>
@@ -131,14 +131,14 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="font-headline">Quick Links</CardTitle>
             <CardDescription>
               Jump to any section to manage your portfolio.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Button variant="outline" asChild>
               <Link href="/projects">View Projects</Link>
             </Button>
@@ -164,7 +164,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentProjects.map((project) => {
+            {recentProjects && recentProjects.length > 0 && recentProjects.map((project) => {
               const image = getPlaceholderImage(project.imageId);
               return (
                 <Card key={project.id} className="overflow-hidden">
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tag) => (
+                      {project.technologies.map((tag: any) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>

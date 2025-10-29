@@ -220,10 +220,11 @@ export default function ImportDataPage() {
              {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex w-full items-center space-x-2">
-              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isReadOnly} />
-              <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} size="icon">
-                <UploadCloud className="h-4 w-4" />
+            <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
+              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isReadOnly} className="flex-1" />
+              <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Upload
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
