@@ -7,8 +7,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/default-theme/600/400",
     "price": 0,
     "isPremium": false,
-    "primary": "231 48% 48%",
     "background": "220 13% 95%",
+    "foreground": "222.2 84% 4.9%",
+    "primary": "231 48% 48%",
     "accent": "174 100% 29%"
   },
   {
@@ -18,8 +19,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/dark-sapphire/600/400",
     "price": 9.99,
     "isPremium": true,
-    "primary": "210 40% 98%",
     "background": "222.2 84% 4.9%",
+    "foreground": "210 40% 98%",
+    "primary": "217 91% 60%",
     "accent": "217 91% 60%"
   },
   {
@@ -29,8 +31,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/sunny-day/600/400",
     "price": 4.99,
     "isPremium": true,
-    "primary": "35 92% 55%",
     "background": "45 100% 98%",
+    "foreground": "25 95% 23%",
+    "primary": "35 92% 55%",
     "accent": "25 95% 53%"
   },
   {
@@ -40,8 +43,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/forest-calm/600/400",
     "price": 4.99,
     "isPremium": true,
-    "primary": "142 76% 36%",
     "background": "140 20% 97%",
+    "foreground": "142 76% 16%",
+    "primary": "142 76% 36%",
     "accent": "142 60% 50%"
   },
   {
@@ -51,8 +55,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/vintage-rose/600/400",
     "price": 4.99,
     "isPremium": true,
-    "primary": "347 71% 60%",
     "background": "345 33% 97%",
+    "foreground": "347 71% 20%",
+    "primary": "347 71% 60%",
     "accent": "347 90% 70%"
   },
     {
@@ -62,8 +67,9 @@ export const themes = [
     "previewImageUrl": "https://picsum.photos/seed/mono-industrial/600/400",
     "price": 9.99,
     "isPremium": true,
-    "primary": "240 5% 50%",
     "background": "0 0% 100%",
+    "foreground": "240 5% 15%",
+    "primary": "240 5% 50%",
     "accent": "240 5% 25%"
   }
 ];

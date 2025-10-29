@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useMemo, useState, use } from 'react';
+import { useEffect, useMemo, use } from 'react';
 import {
   collection,
   doc,
@@ -45,6 +45,7 @@ type Theme = {
     id: string;
     primary: string;
     background: string;
+    foreground: string;
     accent: string;
 }
 
@@ -95,12 +96,14 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
   useEffect(() => {
     if (selectedTheme) {
         document.documentElement.style.setProperty('--background', selectedTheme.background);
+        document.documentElement.style.setProperty('--foreground', selectedTheme.foreground);
         document.documentElement.style.setProperty('--primary', selectedTheme.primary);
         document.documentElement.style.setProperty('--accent', selectedTheme.accent);
     }
 
     return () => {
         document.documentElement.style.removeProperty('--background');
+        document.documentElement.style.removeProperty('--foreground');
         document.documentElement.style.removeProperty('--primary');
         document.documentElement.style.removeProperty('--accent');
     };
