@@ -12,6 +12,12 @@ import {
 } from 'firebase/auth';
 import { errorEmitter } from './error-emitter';
 
+// Create a single, stable instance for each provider
+const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider('microsoft.com');
+const appleProvider = new OAuthProvider('apple.com');
+
+
 export function initiateAnonymousSignIn(authInstance: Auth): void {
   signInAnonymously(authInstance).catch(error => {
     console.error("Anonymous sign-in failed:", error);
@@ -43,8 +49,7 @@ export function initiateSignOut(authInstance: Auth) {
 }
 
 export function initiateGoogleSignIn(authInstance: Auth) {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(authInstance, provider)
+    return signInWithPopup(authInstance, googleProvider)
         .catch(error => {
             console.error("Google sign-in failed:", error);
             throw error;
@@ -52,8 +57,7 @@ export function initiateGoogleSignIn(authInstance: Auth) {
 }
 
 export function initiateMicrosoftSignIn(authInstance: Auth) {
-    const provider = new OAuthProvider('microsoft.com');
-    return signInWithPopup(authInstance, provider)
+    return signInWithPopup(authInstance, microsoftProvider)
         .catch(error => {
             console.error("Microsoft sign-in failed:", error);
             throw error;
@@ -61,8 +65,7 @@ export function initiateMicrosoftSignIn(authInstance: Auth) {
 }
 
 export function initiateAppleSignIn(authInstance: Auth) {
-    const provider = new OAuthProvider('apple.com');
-    return signInWithPopup(authInstance, provider)
+    return signInWithPopup(authInstance, appleProvider)
         .catch(error => {
             console.error("Apple sign-in failed:", error);
             throw error;
