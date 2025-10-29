@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,9 +13,30 @@ import { UserNav } from "@/components/user-nav";
 import { SidebarNav } from "./sidebar-nav";
 import { Logo } from "./logo";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUser, useAuth } from "@/firebase";
+import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (!isUserLoading && !user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
+
+  if (isUserLoading) {
+    return (
+        <div className="flex h-screen w-screen items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
