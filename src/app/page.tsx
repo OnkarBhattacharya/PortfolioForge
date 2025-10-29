@@ -27,12 +27,31 @@ const recentProjects = [...githubProjects, ...firebaseProjects].slice(0, 3);
 
 export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
+  const [linkedInImported, setLinkedInImported] = useState(false);
 
   useEffect(() => {
     const cvData = localStorage.getItem('cvData');
     if (cvData) {
       setCvUploaded(true);
     }
+    const liData = localStorage.getItem('linkedInData');
+    if (liData) {
+      setLinkedInImported(true);
+    }
+
+    // Listen for storage changes from other tabs
+    const handleStorageChange = () => {
+        const cvData = localStorage.getItem('cvData');
+        if (cvData) {
+            setCvUploaded(true);
+        }
+        const liData = localStorage.getItem('linkedInData');
+        if (liData) {
+            setLinkedInImported(true);
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const getPlaceholderImage = (id: string) => {
@@ -96,8 +115,12 @@ export default function DashboardPage() {
                 )}
                 <span>CV Uploaded</span>
               </li>
-              <li className="flex items-center text-muted-foreground/80">
-                <Circle className="mr-3 h-5 w-5" />
+              <li className="flex items-center">
+                {linkedInImported ? (
+                  <CheckCircle className="mr-3 h-5 w-5 text-green-500" />
+                ) : (
+                  <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
+                )}
                 <span>LinkedIn Imported</span>
               </li>
               <li className="flex items-center text-muted-foreground/80">

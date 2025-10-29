@@ -12,26 +12,44 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Github, Linkedin, UploadCloud, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // Set worker source for pdfjs
 if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
-
 export default function ImportDataPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
+  const [linkedInSuccess, setLinkedInSuccess] = useState(false);
+  const [linkedInData, setLinkedInData] = useState('');
+  const [isSavingLinkedIn, setIsSavingLinkedIn] = useState(false);
+
   const { toast } = useToast();
+
+  useEffect(() => {
+    const cvData = localStorage.getItem("cvData");
+    if (cvData) {
+      setCvUploadSuccess(true);
+    }
+    const liData = localStorage.getItem("linkedInData");
+    if (liData) {
+      setLinkedInSuccess(true);
+      setLinkedInData(liData);
+    }
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
-      setUploadSuccess(false);
+      setCvUploadSuccess(false);
     }
   };
 
@@ -94,7 +112,7 @@ export default function ImportDataPage() {
   const saveCvData = (text: string) => {
      try {
         localStorage.setItem('cvData', text);
-        setUploadSuccess(true);
+        setCvUploadSuccess(true);
         toast({
           title: "Upload Successful",
           description: "Your CV has been parsed and saved.",
@@ -110,6 +128,26 @@ export default function ImportDataPage() {
         setSelectedFile(null);
       }
   }
+
+  const handleSaveLinkedIn = () => {
+    setIsSavingLinkedIn(true);
+    try {
+      localStorage.setItem('linkedInData', linkedInData);
+      setLinkedInSuccess(true);
+      toast({
+        title: "LinkedIn Data Saved",
+        description: "Your LinkedIn data has been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save LinkedIn data. Local storage might be full.",
+      });
+    } finally {
+      setIsSavingLinkedIn(false);
+    }
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -131,7 +169,7 @@ export default function ImportDataPage() {
                 Upload your CV (.txt, .pdf, .docx).
               </CardDescription>
             </div>
-             {uploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+             {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex w-full items-center space-x-2">
@@ -146,27 +184,59 @@ export default function ImportDataPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="space-y-1.5">
-              <CardTitle className="font-headline flex items-center gap-2">
-                <Linkedin className="h-6 w-6 text-blue-600" />
-                Import from LinkedIn
-              </CardTitle>
-              <CardDescription>
-                Connect your LinkedIn to import data.
-              </CardDescription>
+        <Dialog>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="space-y-1.5">
+                <CardTitle className="font-headline flex items-center gap-2">
+                  <Linkedin className="h-6 w-6 text-blue-600" />
+                  Import from LinkedIn
+                </CardTitle>
+                <CardDescription>
+                  Paste your LinkedIn profile data.
+                </CardDescription>
+              </div>
+              {linkedInSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <DialogTrigger asChild>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Add'} LinkedIn Data
+                </Button>
+              </DialogTrigger>
+              <p className="text-xs text-muted-foreground">
+                Manually paste your profile data to populate your portfolio.
+              </p>
+            </CardContent>
+          </Card>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Import LinkedIn Data</DialogTitle>
+              <DialogDescription>
+                Go to your LinkedIn profile, select "More" and then "Save to PDF". Open the PDF, copy the text, and paste it below. You can also paste your summary, experience, etc.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="linkedin-data">LinkedIn Profile Data</Label>
+                <Textarea
+                  id="linkedin-data"
+                  value={linkedInData}
+                  onChange={(e) => setLinkedInData(e.target.value)}
+                  placeholder="Paste your LinkedIn data here..."
+                  className="min-h-[200px]"
+                />
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              <Linkedin className="mr-2 h-4 w-4" /> Connect LinkedIn
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Populate your profile with your LinkedIn experience and skills.
-            </p>
-          </CardContent>
-        </Card>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={handleSaveLinkedIn} disabled={isSavingLinkedIn}>
+                  {isSavingLinkedIn ? 'Saving...' : 'Save Data'}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">

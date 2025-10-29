@@ -58,6 +58,10 @@ export default function AiAssistantPage() {
     if (cvData) {
       form.setValue("cvData", cvData);
     }
+    const linkedInData = localStorage.getItem("linkedInData");
+    if (linkedInData) {
+      form.setValue("linkedInData", linkedInData);
+    }
   }, [form]);
 
   async function onSubmit(values: FormValues) {
@@ -130,7 +134,7 @@ export default function AiAssistantPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Your summary, work experience, and endorsements.
+                        Your summary, work experience, and endorsements. You can import this on the Import Data page.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
