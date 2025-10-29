@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -13,11 +14,14 @@ import Image from 'next/image';
 import { useCollection, useFirebase, useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Github, Loader2, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { useMemo } from 'react';
 import AddProjectDialog from './add-project-dialog';
+import { githubProjects } from '@/lib/data';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const getPlaceholderImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id);
@@ -34,9 +38,20 @@ export default function ProjectsPage() {
     );
   }, [firestore, user]);
 
-  const { data: projects, isLoading: areProjectsLoading } = useCollection<any>(projectsQuery as any);
+  const { data: firestoreProjects, isLoading: areProjectsLoading } = useCollection<any>(projectsQuery as any);
 
   const isLoading = isUserLoading || areProjectsLoading;
+
+  const allProjects = useMemo(() => {
+    const combined = [...(firestoreProjects || [])];
+    // A simple check to avoid duplicates if we were to implement full sync
+    githubProjects.forEach(ghProject => {
+      if (!combined.some(p => p.githubUrl === ghProject.githubUrl)) {
+        combined.push(ghProject);
+      }
+    })
+    return combined;
+  }, [firestoreProjects]);
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -63,7 +78,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && projects && projects.length === 0 && (
+      {!isLoading && allProjects && allProjects.length === 0 && (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-12">
             <div className="flex flex-col items-center gap-1 text-center">
                 <h3 className="text-2xl font-bold tracking-tight">You have no projects</h3>
@@ -77,14 +92,13 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && projects && projects.length > 0 && (
+      {!isLoading && allProjects && allProjects.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => {
-            // A default placeholder is used if the imageId is not in placeholder-images.json.
+          {allProjects.map((project) => {
             const image = getPlaceholderImage(project.imageId) || getPlaceholderImage("project-1");
             return (
-              <Card key={project.id} className="overflow-hidden">
-                <Link href={project.liveDemoUrl || '#'} target="_blank" rel="noopener noreferrer">
+              <Card key={project.id} className="flex flex-col overflow-hidden">
+                <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" rel="noopener noreferrer">
                   {image && (
                       <Image
                         src={image.imageUrl}
@@ -98,7 +112,7 @@ export default function ProjectsPage() {
                 </Link>
                 <CardHeader>
                   <CardTitle className="font-headline text-lg">
-                    <Link href={project.liveDemoUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline">
                       {project.title}
                     </Link>
                   </CardTitle>
@@ -106,7 +120,7 @@ export default function ProjectsPage() {
                     {project.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                   <div className="flex flex-wrap gap-2">
                     {project.technologies?.map((tag: string) => (
                       <Badge key={tag} variant="secondary">
@@ -115,6 +129,13 @@ export default function ProjectsPage() {
                     ))}
                   </div>
                 </CardContent>
+                <CardFooter>
+                    {project.source === 'github' && project.githubUrl && (
+                        <Link href={project.githubUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
+                            <Github className="mr-2 h-4 w-4" /> View on GitHub
+                        </Link>
+                    )}
+                </CardFooter>
               </Card>
             );
           })}

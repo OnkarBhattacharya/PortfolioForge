@@ -23,7 +23,7 @@ import { githubProjects, firebaseProjects } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 
-const recentProjects = [...githubProjects, ...firebaseProjects].slice(0, 3);
+const recentProjects = [...(githubProjects || []), ...(firebaseProjects || [])].slice(0, 3);
 
 export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {project.tags.map((tag) => (
+                      {project.technologies.map((tag) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
