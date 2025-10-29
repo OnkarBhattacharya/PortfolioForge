@@ -34,7 +34,7 @@ type UserProfile = {
 
 type Project = {
   id: string;
-  title: string;
+  name: string;
   description: string;
   technologies: string[];
   liveDemoUrl?: string;
@@ -49,8 +49,7 @@ type Theme = {
     accent: string;
 }
 
-export default function PortfolioPage({ params }: { params: { userId: string } }) {
-  const { userId } = params;
+export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {
@@ -163,14 +162,14 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
                   {image && (
                     <Image
                       src={image.imageUrl}
-                      alt={project.title}
+                      alt={project.name}
                       width={600}
                       height={400}
                       className="aspect-video w-full object-cover"
                     />
                   )}
                   <CardHeader>
-                    <CardTitle className="font-headline">{project.title}</CardTitle>
+                    <CardTitle className="font-headline">{project.name}</CardTitle>
                     <CardDescription className="h-[60px] line-clamp-3">{project.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col">
