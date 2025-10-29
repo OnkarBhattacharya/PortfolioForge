@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile, containing personal and professional information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "linkedinUrl": {
+          "type": "string",
+          "description": "URL to the user's LinkedIn profile.",
+          "format": "uri"
+        },
+        "githubUrl": {
+          "type": "string",
+          "description": "URL to the user's GitHub profile.",
+          "format": "uri"
+        },
+        "cvUrl": {
+          "type": "string",
+          "description": "URL to the user's CV document.",
+          "format": "uri"
+        },
+        "customDomain": {
+          "type": "string",
+          "description": "The user's custom domain (if any)."
+        },
+        "themeId": {
+          "type": "string",
+          "description": "Reference to Theme. (Relationship: Theme 1:N UserProfile)"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "email"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a project showcased in the portfolio.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the project."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Project)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the project."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image representing the project.",
+          "format": "uri"
+        },
+        "liveDemoUrl": {
+          "type": "string",
+          "description": "URL to a live demo of the project.",
+          "format": "uri"
+        },
+        "githubUrl": {
+          "type": "string",
+          "description": "URL to the project's GitHub repository.",
+          "format": "uri"
+        },
+        "firebaseUrl": {
+          "type": "string",
+          "description": "URL to the project hosted on Firebase.",
+          "format": "uri"
+        },
+        "technologies": {
+          "type": "array",
+          "description": "An array of technologies used in the project.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userProfileId",
+        "title",
+        "description"
+      ]
+    },
+    "Theme": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Theme",
+      "type": "object",
+      "description": "Represents a portfolio theme.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the theme."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the theme."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the theme."
+        },
+        "previewImageUrl": {
+          "type": "string",
+          "description": "URL to a preview image of the theme.",
+          "format": "uri"
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary color of the theme (e.g., hex code)."
+        },
+        "secondaryColor": {
+          "type": "string",
+          "description": "Secondary color of the theme."
+        },
+        "headlineFont": {
+          "type": "string",
+          "description": "Font used for headlines in the theme."
+        },
+        "bodyFont": {
+          "type": "string",
+          "description": "Font used for the body text in the theme."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Only the authenticated user can access their own profile. Includes 'userId' as the document ID for ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores projects associated with a user profile. Only the authenticated user can access their own projects. Includes 'userId' in the path to scope the projects to the specific user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/themes/{themeId}",
+        "definition": {
+          "entityName": "Theme",
+          "schema": {
+            "$ref": "#/backend/entities/Theme"
+          },
+          "description": "Stores themes available for users to apply to their portfolios. Accessible to all users to view themes.",
+          "params": [
+            {
+              "name": "themeId",
+              "description": "The unique identifier of the theme."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to securely manage user profiles, projects, and themes for the PortfolioForge application. It prioritizes authorization independence and clear security rules by denormalizing data and using path-based ownership for user-specific data. User profiles and projects are organized under the `/users/{userId}` path to ensure that only the authenticated user can access their own data. Themes are stored in a separate collection to be globally available but not user specific, and are referenced in user profiles.\n\nAuthorization Independence (CRITICAL):\nUser specific data is stored under the user's document using the user's ID. This means that the security rules can use `request.auth.uid` and the resource's path to determine permissions without needing to read other documents. Project documents are located under their corresponding UserProfile document to make it easier to manage security rules around them.\n\nQAPs (Rules are not Filters):\nList operations are secured by the path-based ownership, which allows listing of user-owned data by authenticated users."
+  }
+}

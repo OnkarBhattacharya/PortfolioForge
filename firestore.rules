@@ -1,0 +1,111 @@
+/**
+ * @fileoverview Firestore Security Rules for PortfolioForge.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and projects.
+ * Only authenticated users can access their own profiles and projects. Themes are publicly readable.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information.
+ * - /users/{userId}/projects/{projectId}: Stores projects associated with a user.
+ * - /themes/{themeId}: Stores portfolio themes.
+ *
+ * Key Security Decisions:
+ * - User profiles and projects are scoped to the user's ID in the path, ensuring owner-only access.
+ * - Themes are publicly readable to allow all users to view available themes.
+ * - Denormalization is used by including the userId as part of the document path for users and projects to simplify security rules.
+ * - Listing all users is disallowed. Listing user's projects is allowed only for the user.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the resource.
+     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the resource and the resource exists.
+     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Security rules for user profiles.
+     * @path /users/{userId}
+     * @allow (create) - User 'user_abc' can create their own profile.
+     *    - request.auth.uid: 'user_abc'
+     *    - resource.data.id: 'user_abc'
+     * @allow (get, update, delete) - User 'user_abc' can access their own profile.
+     *    - request.auth.uid: 'user_abc'
+     * @deny (create) - User 'user_xyz' cannot create a profile for 'user_abc'.
+     *    - request.auth.uid: 'user_xyz'
+     *    - resource.data.id: 'user_abc'
+     * @deny (get, update, delete) - User 'user_xyz' cannot access 'user_abc' profile.
+     *    - request.auth.uid: 'user_xyz'
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Security rules for projects under a user profile.
+     * @path /users/{userId}/projects/{projectId}
+     * @allow (create) - User 'user_abc' can create a project under their profile.
+     *    - request.auth.uid: 'user_abc'
+     *    - path: /users/user_abc/projects/project_123
+     *    - resource.data.userProfileId: 'user_abc'
+     * @allow (get, update, delete) - User 'user_abc' can access their own project.
+     *    - request.auth.uid: 'user_abc'
+     *    - path: /users/user_abc/projects/project_123
+     * @deny (create) - User 'user_xyz' cannot create a project under 'user_abc' profile.
+     *    - request.auth.uid: 'user_xyz'
+     *    - path: /users/user_abc/projects/project_123
+     *    - resource.data.userProfileId: 'user_abc'
+     * @deny (get, update, delete) - User 'user_xyz' cannot access 'user_abc' project.
+     *    - request.auth.uid: 'user_xyz'
+     *    - path: /users/user_abc/projects/project_123
+     * @principle Enforces document ownership for projects.
+     */
+    match /users/{userId}/projects/{projectId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Security rules for themes.
+     * @path /themes/{themeId}
+     * @allow (get, list) - Any user can get or list themes.
+     * @deny (create, update, delete) - No user can create, update, or delete themes.
+     * @principle Themes are publicly readable but not writable.
+     */
+    match /themes/{themeId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+  }
+}
