@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -37,12 +38,14 @@
           "type": "string",
           "description": "The custom domain connected to the user's portfolio, if any.",
           "format": "uri"
+        },
+        "themeId": {
+          "type": "string",
+          "description": "The ID of the selected theme for the user's portfolio."
         }
       },
       "required": [
         "id",
-        "firstName",
-        "lastName",
         "email"
       ]
     },
@@ -68,10 +71,9 @@
           "type": "string",
           "description": "Description of the project."
         },
-        "imageUrl": {
+        "imageId": {
           "type": "string",
-          "description": "URL to the project's image.",
-          "format": "uri"
+          "description": "ID of the placeholder image for the project."
         },
         "projectUrl": {
           "type": "string",
@@ -114,18 +116,20 @@
           "description": "URL to a preview image of the theme.",
           "format": "uri"
         },
-        "cssUrl": {
-          "type": "string",
-          "description": "URL to the theme's CSS file.",
-          "format": "uri"
+        "price": {
+          "type": "number",
+          "description": "Price of the theme."
+        },
+        "isPremium": {
+          "type": "boolean",
+          "description": "Whether the theme is a premium theme."
         }
       },
       "required": [
         "id",
         "name",
         "description",
-        "previewImageUrl",
-        "cssUrl"
+        "previewImageUrl"
       ]
     },
     "Portfolio": {
@@ -161,25 +165,22 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com",
+      "apple.com",
+      "microsoft.com"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/profile",
+        "path": "/users/{userId}",
         "definition": {
           "entityName": "UserProfile",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/entities/UserProfile"
           },
-          "description": "Stores user profile data. Only the user can read/write their own profile.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (same as request.auth.uid)."
-            }
-          ]
+          "description": "Stores user profile data. Only the user can read/write their own profile."
         }
       },
       {
@@ -187,35 +188,9 @@
         "definition": {
           "entityName": "Project",
           "schema": {
-            "$ref": "#/backend/entities/Project"
+            "$ref": "#/entities/Project"
           },
-          "description": "Stores projects associated with a specific user. Only the user can read/write their own projects.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (same as request.auth.uid)."
-            },
-            {
-              "name": "projectId",
-              "description": "The unique ID of the project."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/portfolio",
-        "definition": {
-          "entityName": "Portfolio",
-          "schema": {
-            "$ref": "#/backend/entities/Portfolio"
-          },
-          "description": "Stores the portfolio of a user. Only the user can read/write their own portfolio.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (same as request.auth.uid)."
-            }
-          ]
+          "description": "Stores projects associated with a specific user. Only the user can read/write their own projects."
         }
       },
       {
@@ -223,18 +198,11 @@
         "definition": {
           "entityName": "Theme",
           "schema": {
-            "$ref": "#/backend/entities/Theme"
+            "$ref": "#/entities/Theme"
           },
-          "description": "Stores themes available for portfolios. Publicly readable.",
-          "params": [
-            {
-              "name": "themeId",
-              "description": "The unique ID of the theme."
-            }
-          ]
+          "description": "Stores themes available for portfolios. Publicly readable."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to address the 'auth/operation-not-allowed' error, which typically indicates that the necessary authentication methods (e.g., email/password sign-in) are not enabled in the Firebase console. While the data structure itself doesn't directly fix this, the design promotes secure data access once the authentication methods are enabled.\n\nThe structure is based on path-based ownership for user profiles, projects, and portfolios, promoting authorization independence. Specifically:\n\n*   **User Profiles:** Stored under `/users/{userId}/profile`. Access is restricted to the authenticated user (request.auth.uid == userId).\n*   **Projects:**  Each user's projects are stored under `/users/{userId}/projects/{projectId}`. This structure inherently provides ownership and simplifies security rules.\n*   **Portfolios:**  Each user's portfolio is stored under `/users/{userId}/portfolio`.  This structure provides ownership and simplifies security rules. Portfolio documents include the `themeId`.\n*   **Themes:** Themes are stored in a top-level `/themes/{themeId}` collection and are publicly readable.\n\nThis structure facilitates secure `list` operations (QAPs) because each collection is homogeneous in terms of security requirements.  For example, listing projects under `/users/{userId}/projects` only returns projects owned by that user. The structure avoids hierarchical authorization dependencies by directly associating data with the user's ID in the path, making security rules easier to write and debug.\n\nAuthorization Independence is achieved as no collection relies on parent data for security. Each document's access is determined solely by the `request.auth.uid` and the document's location in the path."
+    ]
   }
 }

@@ -85,55 +85,55 @@ export default function LoginPage() {
   const handleSocialSignIn = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
     try {
-        if (!auth || !firestore) {
-            throw new Error("Authentication service not available.");
-        }
+      if (!auth || !firestore) {
+        throw new Error("Authentication service not available.");
+      }
 
-        let signInFunction;
-        switch (provider) {
-            case 'google':
-                signInFunction = initiateGoogleSignIn;
-                break;
-            case 'microsoft':
-                signInFunction = initiateMicrosoftSignIn;
-                break;
-            case 'apple':
-                signInFunction = initiateAppleSignIn;
-                break;
-        }
+      let signInFunction;
+      switch (provider) {
+        case 'google':
+          signInFunction = initiateGoogleSignIn;
+          break;
+        case 'microsoft':
+          signInFunction = initiateMicrosoftSignIn;
+          break;
+        case 'apple':
+          signInFunction = initiateAppleSignIn;
+          break;
+      }
 
-        await signInFunction(auth, firestore);
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back!",
-        });
-        router.push('/');
+      await signInFunction(auth, firestore);
+      toast({
+        title: 'Login Successful',
+        description: "Welcome back!",
+      });
+      router.push('/');
     } catch (error: any) {
-        console.error('Social sign-in failed:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: error.code === 'auth/popup-closed-by-user' 
-                ? 'Sign-in was cancelled.' 
-                : error.message || 'An unknown error occurred.',
-        });
+      console.error('Social sign-in failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.code === 'auth/popup-closed-by-user' 
+            ? 'Sign-in was cancelled.' 
+            : error.message || 'An unknown error occurred.',
+      });
     } finally {
-        setProviderLoading(null);
+      setProviderLoading(null);
     }
   };
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-        if (!auth) {
-            throw new Error("Authentication service not available.");
-        }
-        await initiateEmailSignIn(auth, values.email, values.password);
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back!",
-        });
-        router.push('/');
+      if (!auth) {
+        throw new Error("Authentication service not available.");
+      }
+      await initiateEmailSignIn(auth, values.email, values.password);
+      toast({
+        title: 'Login Successful',
+        description: "Welcome back!",
+      });
+      router.push('/');
     } catch (error: any) {
       console.error('Login failed:', error);
       toast({

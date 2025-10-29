@@ -91,58 +91,59 @@ export default function SignUpPage() {
   const handleSocialSignUp = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
     try {
-        if (!auth || !firestore) {
-            throw new Error("Authentication services not available.");
-        }
+      if (!auth || !firestore) {
+        throw new Error("Authentication services not available.");
+      }
 
-        let signUpFunction;
-        switch (provider) {
-            case 'google':
-                signUpFunction = initiateGoogleSignUp;
-                break;
-            case 'microsoft':
-                signUpFunction = initiateMicrosoftSignUp;
-                break;
-            case 'apple':
-                signUpFunction = initiateAppleSignUp;
-                break;
-        }
+      let signUpFunction;
+      switch (provider) {
+        case 'google':
+          signUpFunction = initiateGoogleSignUp;
+          break;
+        case 'microsoft':
+          signUpFunction = initiateMicrosoftSignUp;
+          break;
+        case 'apple':
+          signUpFunction = initiateAppleSignUp;
+          break;
+      }
 
-        await signUpFunction(auth, firestore);
+      await signUpFunction(auth, firestore);
 
-        toast({
-            title: 'Sign Up Successful',
-            description: "Welcome!",
-        });
-        router.push('/');
+      toast({
+        title: 'Sign Up Successful',
+        description: "Welcome!",
+      });
+      router.push('/');
     } catch (error: any) {
-        console.error('Social sign-up failed:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Sign Up Failed',
-            description: error.code === 'auth/popup-closed-by-user' 
-                ? 'Sign-up was cancelled.' 
-                : error.message || 'An unknown error occurred.',
-        });
+      console.error('Social sign-up failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description: error.code === 'auth/popup-closed-by-user' 
+            ? 'Sign-up was cancelled.'
+            : error.code === 'auth/email-already-in-use'
+            ? 'This email is already associated with an account. Please log in.'
+            : error.message || 'An unknown error occurred.',
+      });
     } finally {
-        setProviderLoading(null);
+      setProviderLoading(null);
     }
   };
-
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-        if (!auth || !firestore) {
-            throw new Error("Authentication services not available.");
-        }
-        await initiateEmailSignUp(auth, firestore, values.email, values.password, values.fullName);
-        
-        toast({
-            title: 'Account Created',
-            description: "Welcome! You have been successfully signed up.",
-        });
-        router.push('/');
+      if (!auth || !firestore) {
+        throw new Error("Authentication services not available.");
+      }
+      await initiateEmailSignUp(auth, firestore, values.email, values.password, values.fullName);
+      
+      toast({
+        title: 'Account Created',
+        description: "Welcome! You have been successfully signed up.",
+      });
+      router.push('/');
     } catch (error: any) {
       console.error('Sign up failed:', error);
       toast({
