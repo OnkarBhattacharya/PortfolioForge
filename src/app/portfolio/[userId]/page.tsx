@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import {
   collection,
   doc,
@@ -49,7 +49,7 @@ type Theme = {
 }
 
 export default function PortfolioPage({ params }: { params: { userId: string } }) {
-  const { userId } = params;
+  const { userId } = use(params);
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {
