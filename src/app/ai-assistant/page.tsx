@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +26,7 @@ import {
   generatePortfolioContentSuggestions,
   PortfolioContentSuggestionsOutput,
 } from "@/ai/flows/ai-powered-content-suggestions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,13 @@ export default function AiAssistantPage() {
       githubProjectsData: "",
     },
   });
+
+  useEffect(() => {
+    const cvData = localStorage.getItem("cvData");
+    if (cvData) {
+      form.setValue("cvData", cvData);
+    }
+  }, [form]);
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -102,7 +110,7 @@ export default function AiAssistantPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Job titles, descriptions, skills, etc.
+                        Job titles, descriptions, skills, etc. You can also upload your CV on the Import Data page.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

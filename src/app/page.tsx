@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -18,10 +21,20 @@ import {
 import Image from 'next/image';
 import { githubProjects, firebaseProjects } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useEffect, useState } from 'react';
 
 const recentProjects = [...githubProjects, ...firebaseProjects].slice(0, 3);
 
 export default function DashboardPage() {
+  const [cvUploaded, setCvUploaded] = useState(false);
+
+  useEffect(() => {
+    const cvData = localStorage.getItem('cvData');
+    if (cvData) {
+      setCvUploaded(true);
+    }
+  }, []);
+
   const getPlaceholderImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id);
   };
@@ -76,7 +89,11 @@ export default function DashboardPage() {
                 <span>Account Created</span>
               </li>
               <li className="flex items-center">
-                <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
+                {cvUploaded ? (
+                  <CheckCircle className="mr-3 h-5 w-5 text-green-500" />
+                ) : (
+                  <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
+                )}
                 <span>CV Uploaded</span>
               </li>
               <li className="flex items-center text-muted-foreground/80">
@@ -108,7 +125,7 @@ export default function DashboardPage() {
             <Button variant="outline" asChild>
               <Link href="/settings">Settings</Link>
             </Button>
-            <Button variant="accent" asChild className="bg-accent text-accent-foreground">
+            <Button asChild className="bg-accent text-accent-foreground">
               <Link href="#">View Live Site</Link>
             </Button>
           </CardContent>
