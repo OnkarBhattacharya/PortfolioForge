@@ -21,14 +21,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useAuth, useFirebase, initiateEmailSignUp, initiateGoogleSignIn, initiateMicrosoftSignIn, initiateAppleSignIn } from '@/firebase';
+import { useFirebase, initiateEmailSignUp, initiateGoogleSignUp, initiateMicrosoftSignUp, initiateAppleSignUp } from '@/firebase';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { UserCredential } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   fullName: z.string().min(1, 'Full name is required.'),
@@ -90,39 +88,27 @@ export default function SignUpPage() {
     },
   });
 
-  const createUserProfile = async (user: UserCredential['user'], fullName?: string) => {
-    if (!firestore) throw new Error("Firestore not available");
-    const userRef = doc(firestore, 'users', user.uid);
-    await setDoc(userRef, {
-      id: user.uid,
-      email: user.email,
-      fullName: fullName || user.displayName || 'New User',
-      themeId: 'default',
-    });
-  };
-
-  const handleSocialSignIn = async (provider: 'google' | 'microsoft' | 'apple') => {
+  const handleSocialSignUp = async (provider: 'google' | 'microsoft' | 'apple') => {
     setProviderLoading(provider);
     try {
-        if (!auth) {
-            throw new Error("Authentication service not available.");
+        if (!auth || !firestore) {
+            throw new Error("Authentication services not available.");
         }
 
-        let signInFunction;
+        let signUpFunction;
         switch (provider) {
             case 'google':
-                signInFunction = initiateGoogleSignIn;
+                signUpFunction = initiateGoogleSignUp;
                 break;
             case 'microsoft':
-                signInFunction = initiateMicrosoftSignIn;
+                signUpFunction = initiateMicrosoftSignUp;
                 break;
             case 'apple':
-                signInFunction = initiateAppleSignIn;
+                signUpFunction = initiateAppleSignUp;
                 break;
         }
 
-        const userCredential = await signInFunction(auth);
-        await createUserProfile(userCredential.user);
+        await signUpFunction(auth, firestore);
 
         toast({
             title: 'Sign Up Successful',
@@ -147,11 +133,10 @@ export default function SignUpPage() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-        if (!auth) {
-            throw new Error("Authentication service not available.");
+        if (!auth || !firestore) {
+            throw new Error("Authentication services not available.");
         }
-        const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
-        await createUserProfile(userCredential.user, values.fullName);
+        await initiateEmailSignUp(auth, firestore, values.email, values.password, values.fullName);
         
         toast({
             title: 'Account Created',
@@ -260,13 +245,13 @@ export default function SignUpPage() {
           </div>
 
           <div className="space-y-2">
-             <ProviderButton provider="google" onClick={() => handleSocialSignIn('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />} disabled={!!providerLoading}>
+             <ProviderButton provider="google" onClick={() => handleSocialSignUp('google')} icon={ providerLoading === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <GoogleIcon />} disabled={!!providerLoading}>
                 Sign up with Google
             </ProviderButton>
-             <ProviderButton provider="microsoft" onClick={() => handleSocialSignIn('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />} disabled={!!providerLoading}>
+             <ProviderButton provider="microsoft" onClick={() => handleSocialSignUp('microsoft')} icon={ providerLoading === 'microsoft' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MicrosoftIcon />} disabled={!!providerLoading}>
                 Sign up with Microsoft
             </ProviderButton>
-             <ProviderButton provider="apple" onClick={() => handleSocialSignIn('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />} disabled={!!providerLoading}>
+             <ProviderButton provider="apple" onClick={() => handleSocialSignUp('apple')} icon={ providerLoading === 'apple' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <AppleIcon />} disabled={!!providerLoading}>
                 Sign up with Apple
             </ProviderButton>
           </div>
@@ -282,3 +267,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
