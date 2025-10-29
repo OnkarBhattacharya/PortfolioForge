@@ -13,6 +13,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Github, Linkedin, UploadCloud, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import * as pdfjs from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+// Set worker source for pdfjs
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
+
 
 export default function ImportDataPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -27,7 +35,7 @@ export default function ImportDataPage() {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       toast({
         variant: "destructive",
@@ -38,51 +46,70 @@ export default function ImportDataPage() {
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
 
-    reader.onload = (e) => {
-      const text = e.target?.result;
-      if (typeof text === 'string') {
-        try {
-          localStorage.setItem('cvData', text);
-          setUploadSuccess(true);
-          toast({
-            title: "Upload Successful",
-            description: "Your CV has been uploaded and saved.",
-          });
-        } catch (error) {
-           toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: "Could not save CV data. Local storage might be full.",
-          });
-        }
+    try {
+      let text = '';
+      if (selectedFile.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          if (!e.target?.result) return;
+          const typedArray = new Uint8Array(e.target.result as ArrayBuffer);
+          const pdf = await pdfjs.getDocument(typedArray).promise;
+          let content = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            content += textContent.items.map((item: any) => item.str).join(' ');
+          }
+          saveCvData(content);
+        };
+        reader.readAsArrayBuffer(selectedFile);
+        return; // Handled in onload
+      } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          if (!e.target?.result) return;
+          const result = await mammoth.extractRawText({ arrayBuffer: e.target.result as ArrayBuffer });
+          saveCvData(result.value);
+        };
+        reader.readAsArrayBuffer(selectedFile);
+        return; // Handled in onload
+      } else if (selectedFile.type === 'text/plain') {
+        text = await selectedFile.text();
+        saveCvData(text);
+      } else {
+        throw new Error("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
       }
-      setIsUploading(false);
-      setSelectedFile(null);
-    };
-
-    reader.onerror = () => {
-      setIsUploading(false);
+    } catch (error: any) {
+      console.error(error);
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: "There was an error reading the file.",
+        description: error.message || "An unexpected error occurred.",
       });
-    };
-
-    // For now, we only support .txt files. PDF/DOCX would require a library.
-    if (selectedFile.type === "text/plain") {
-       reader.readAsText(selectedFile);
-    } else {
-       setIsUploading(false);
-       toast({
-        variant: "destructive",
-        title: "Invalid File Type",
-        description: "For now, we only support .txt files.",
-      });
+      setIsUploading(false);
     }
   };
+
+  const saveCvData = (text: string) => {
+     try {
+        localStorage.setItem('cvData', text);
+        setUploadSuccess(true);
+        toast({
+          title: "Upload Successful",
+          description: "Your CV has been parsed and saved.",
+        });
+      } catch (error) {
+         toast({
+          variant: "destructive",
+          title: "Save Failed",
+          description: "Could not save CV data. Local storage might be full.",
+        });
+      } finally {
+        setIsUploading(false);
+        setSelectedFile(null);
+      }
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -101,14 +128,14 @@ export default function ImportDataPage() {
                 Upload CV
               </CardTitle>
               <CardDescription>
-                Upload your CV. We support .txt files for now.
+                Upload your CV (.txt, .pdf, .docx).
               </CardDescription>
             </div>
              {uploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex w-full items-center space-x-2">
-              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt" />
+              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" />
               <Button onClick={handleUpload} disabled={isUploading || !selectedFile} size="icon">
                 <UploadCloud className="h-4 w-4" />
               </Button>
