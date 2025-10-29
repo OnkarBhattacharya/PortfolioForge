@@ -5,22 +5,16 @@ import {
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  OAuthProvider,
   User,
-  UserCredential,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, Firestore } from 'firebase/firestore';
-
-// Create stable, singleton instances of the providers
-const googleProvider = new GoogleAuthProvider();
-const microsoftProvider = new OAuthProvider('microsoft.com');
-const appleProvider = new OAuthProvider('apple.com');
+import { doc, getDoc, Firestore, setDoc } from 'firebase/firestore';
+import { FirestorePermissionError } from './errors';
+import { errorEmitter } from './error-emitter';
 
 /**
  * Creates a user profile document in Firestore if it doesn't already exist.
  * This function is called after a new user is created.
+ * It uses a non-blocking write and emits a contextual error on permission failure.
  * @param firestore - The Firestore instance.
  * @param user - The user object from Firebase Authentication.
  * @param fullName - The user's full name (optional, for email sign-up).
@@ -39,7 +33,18 @@ const createUserProfile = async (firestore: Firestore, user: User, fullName?: st
       createdAt: new Date().toISOString(),
       themeId: 'default', // Set a default theme for new users
     };
-    await setDoc(userRef, profileData);
+    
+    // Non-blocking write with contextual error handling
+    setDoc(userRef, profileData)
+      .catch((error) => {
+        console.error("Non-blocking profile creation failed:", error);
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'create',
+          requestResourceData: profileData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 };
 
@@ -47,14 +52,15 @@ const createUserProfile = async (firestore: Firestore, user: User, fullName?: st
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth) {
   signInAnonymously(authInstance).catch((error) => {
-    console.error("Anonymous sign-in failed:", error);
     // This is a non-critical error, so we just log it.
+    console.error("Anonymous sign-in failed:", error);
   });
 }
 
 /** Initiate email/password sign-up (blocking to allow for profile creation). */
 export async function initiateEmailSignUp(authInstance: Auth, firestore: Firestore, email: string, password: string, fullName: string) {
     const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
+    // The profile creation is now a non-blocking fire-and-forget operation from the UI's perspective
     await createUserProfile(firestore, userCredential.user, fullName);
     return userCredential;
 }
