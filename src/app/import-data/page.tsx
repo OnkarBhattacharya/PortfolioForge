@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle } from "lucide-react";
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
@@ -156,6 +156,13 @@ export default function ImportDataPage() {
     });
   };
 
+  const handleAddLink = () => {
+    toast({
+      title: "Coming Soon!",
+      description: "Functionality to add other links is under development.",
+    });
+  };
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
       <div className="flex items-center">
@@ -269,6 +276,31 @@ export default function ImportDataPage() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+            <CardHeader>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <Link2 className="h-6 w-6 text-accent" />
+                Other Platforms
+              </CardTitle>
+              <CardDescription>
+                Link to your blog, Dribbble, or other profiles.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleAddLink}
+              >
+                <Link2 className="mr-2 h-4 w-4" /> Add Links
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Showcase your presence across the web.
+              </p>
+            </CardContent>
+          </Card>
+
       </div>
     </div>
   );
