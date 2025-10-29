@@ -16,7 +16,7 @@ import { collection, doc, updateDoc } from "firebase/firestore";
 import { Check, Loader2, KeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
 
@@ -64,6 +64,9 @@ export default function SettingsPage() {
       }
   }, [userProfile]);
 
+  const displayedThemes = useMemo(() => {
+    return themes && themes.length > 0 ? themes : staticThemes;
+  }, [themes]);
 
   const handleSelectTheme = (themeId: string) => {
     if (isReadOnly) {
@@ -100,8 +103,6 @@ export default function SettingsPage() {
   };
 
   const isLoading = areThemesLoading || isUserLoading;
-  const displayedThemes = themes && themes.length > 0 ? themes : staticThemes;
-
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">

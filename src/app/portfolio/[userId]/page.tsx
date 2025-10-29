@@ -87,9 +87,25 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
   const selectedTheme = useMemo(() => {
     if (theme) return theme;
     if (profile?.themeId) {
-      return staticThemes.find(t => t.id === profile.themeId) as Theme;
+      const foundTheme = staticThemes.find(t => t.id === profile.themeId);
+      if (foundTheme) {
+        return {
+            id: foundTheme.id,
+            primary: foundTheme.primary,
+            background: foundTheme.background,
+            foreground: foundTheme.foreground,
+            accent: foundTheme.accent,
+        };
+      }
     }
-    return staticThemes.find(t => t.id === 'default') as Theme;
+    const defaultTheme = staticThemes.find(t => t.id === 'default');
+    return {
+        id: defaultTheme!.id,
+        primary: defaultTheme!.primary,
+        background: defaultTheme!.background,
+        foreground: defaultTheme!.foreground,
+        accent: defaultTheme!.accent,
+    };
   }, [theme, profile?.themeId]);
 
 
