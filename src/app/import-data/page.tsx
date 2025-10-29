@@ -148,6 +148,13 @@ export default function ImportDataPage() {
       setIsSavingLinkedIn(false);
     }
   };
+  
+  const handleConnectGitHub = () => {
+    toast({
+      title: "Coming Soon!",
+      description: "Full GitHub integration is under development.",
+    });
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -251,7 +258,10 @@ export default function ImportDataPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Button className="w-full bg-foreground text-background hover:bg-foreground/90">
+            <Button
+              className="w-full bg-foreground text-background hover:bg-foreground/90"
+              onClick={handleConnectGitHub}
+            >
               <Github className="mr-2 h-4 w-4" /> Connect GitHub
             </Button>
             <p className="text-xs text-muted-foreground">
