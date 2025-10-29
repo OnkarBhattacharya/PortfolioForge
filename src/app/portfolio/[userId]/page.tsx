@@ -21,7 +21,6 @@ import { Github, Linkedin, Mail, ExternalLink, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
-import { notFound } from 'next/navigation';
 
 type UserProfile = {
   id: string;
@@ -49,6 +48,42 @@ type Theme = {
     accent: string;
 }
 
+const sampleProfile: UserProfile = {
+    id: 'sample-user',
+    fullName: 'Alex Doe',
+    email: 'alex.doe@example.com',
+    linkedinUrl: 'https://linkedin.com/in/example',
+    githubUrl: 'https://github.com/example',
+    themeId: 'default',
+};
+
+const sampleProjects: Project[] = [
+    {
+        id: 'sample-1',
+        name: 'E-commerce Platform',
+        description: 'A full-stack e-commerce solution with a modern UI, secure payment gateway, and a powerful admin dashboard for managing products and orders.',
+        technologies: ['React', 'Next.js', 'Firebase', 'Stripe'],
+        projectUrl: '#',
+        imageId: 'project-5',
+    },
+    {
+        id: 'sample-2',
+        name: 'Data Visualization Dashboard',
+        description: 'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
+        technologies: ['D3.js', 'TypeScript', 'Node.js'],
+        projectUrl: '#',
+        imageId: 'project-2',
+    },
+    {
+        id: 'sample-3',
+        name: 'AI Content Summarizer',
+        description: 'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
+        technologies: ['Python', 'FastAPI', 'Genkit', 'Docker'],
+        projectUrl: '#',
+        imageId: 'project-3',
+    }
+];
+
 export default function PortfolioPage({ params }: { params: { userId: string } }) {
   const { userId } = use(params);
   const { firestore } = useFirebase();
@@ -58,12 +93,12 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     return doc(firestore, 'users', userId);
   }, [firestore, userId]);
   
-  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
+  const { data: dbProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
 
   const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !profile?.themeId) return null;
-    return doc(firestore, 'themes', profile.themeId);
-  }, [firestore, profile?.themeId]);
+    if (!firestore || !dbProfile?.themeId) return null;
+    return doc(firestore, 'themes', dbProfile.themeId);
+  }, [firestore, dbProfile?.themeId]);
 
   const { data: theme, isLoading: isThemeLoading } = useDoc<Theme>(themeDocRef);
 
@@ -72,7 +107,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     return query(collection(firestore, 'users', userId, 'projects'));
   }, [firestore, userId]);
 
-  const { data: projects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: dbProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
   
   const [cvData, setCvData] = useState<string | null>(null);
   const [linkedInData, setLinkedInData] = useState<string | null>(null);
@@ -84,27 +119,21 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     }
   }, []);
 
+  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
+  
+  const profile = !isLoading && !dbProfile && !profileError ? sampleProfile : dbProfile;
+  const projects = !isLoading && (!dbProjects || dbProjects.length === 0) && !profileError ? sampleProjects : dbProjects;
+  
   const selectedTheme = useMemo(() => {
     if (theme) return theme;
-    if (profile?.themeId) {
-      const foundTheme = staticThemes.find(t => t.id === profile.themeId);
-      if (foundTheme) {
-        return {
-            id: foundTheme.id,
-            primary: foundTheme.primary,
-            background: foundTheme.background,
-            foreground: foundTheme.foreground,
-            accent: foundTheme.accent,
-        };
-      }
-    }
-    const defaultTheme = staticThemes.find(t => t.id === 'default');
+    const themeId = profile?.themeId || 'default';
+    const foundTheme = staticThemes.find(t => t.id === themeId) || staticThemes[0];
     return {
-        id: defaultTheme!.id,
-        primary: defaultTheme!.primary,
-        background: defaultTheme!.background,
-        foreground: defaultTheme!.foreground,
-        accent: defaultTheme!.accent,
+        id: foundTheme.id,
+        primary: foundTheme.primary,
+        background: foundTheme.background,
+        foreground: foundTheme.foreground,
+        accent: foundTheme.accent,
     };
   }, [theme, profile?.themeId]);
 
@@ -125,16 +154,22 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     };
   }, [selectedTheme]);
 
-  if (profileError) {
-      notFound();
-  }
-  
-  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
   
   if (isLoading) {
       return (
           <div className="flex h-screen w-full items-center justify-center bg-background">
               <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          </div>
+      )
+  }
+
+  if (profileError) {
+      return (
+          <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold">Portfolio Not Found</h1>
+                <p className="text-muted-foreground">This user profile could not be loaded. It may have been deleted or the link is incorrect.</p>
+              </div>
           </div>
       )
   }
@@ -151,7 +186,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
           <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <h1 className="mt-6 font-headline text-5xl font-bold">{profile.fullName || 'User Name'}</h1>
-        <p className="mt-2 text-xl text-muted-foreground">{linkedInData?.split('\n')[0] || 'Professional Title & Company'}</p>
+        <p className="mt-2 text-xl text-muted-foreground">{linkedInData?.split('\n')[0] || 'A passionate full-stack developer with a love for creating beautiful and functional web applications.'}</p>
         <div className="mt-6 flex justify-center gap-4">
           {profile.githubUrl && <Button variant="outline" asChild><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> GitHub</a></Button>}
           {profile.linkedinUrl && <Button variant="outline" asChild><a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="mr-2" /> LinkedIn</a></Button>}
@@ -165,7 +200,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
            <Card>
             <CardContent className="pt-6">
                 <p className="text-lg leading-relaxed">
-                    {linkedInData || cvData || "A summary of your professional background will appear here. You can import data from your CV or LinkedIn profile on the 'Import Data' page."}
+                    {linkedInData || cvData || "Welcome to my portfolio! I'm a dedicated software engineer specializing in building modern web applications with React, Next.js, and Firebase. My experience spans from creating beautiful user interfaces to designing robust backend systems. I thrive on solving complex problems and am always eager to learn new technologies. This portfolio showcases some of my favorite projects. Feel free to explore and get in touch!"}
                 </p>
             </CardContent>
            </Card>
@@ -203,6 +238,14 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
                 </Card>
               );
             })}
+             {!projects || projects.length === 0 && (
+                <Card className="md:col-span-2 lg:col-span-3">
+                    <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                        <h3 className="text-xl font-bold">No projects yet!</h3>
+                        <p className="text-muted-foreground">Add your first project from the 'Projects' page to see it here.</p>
+                    </CardContent>
+                </Card>
+             )}
           </div>
         </section>
       </main>
@@ -212,3 +255,5 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     </div>
   );
 }
+
+    
