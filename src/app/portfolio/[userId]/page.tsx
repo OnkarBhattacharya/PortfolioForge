@@ -49,7 +49,8 @@ type Theme = {
     accent: string;
 }
 
-export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
+export default function PortfolioPage({ params }: { params: { userId: string } }) {
+  const { userId } = params;
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {
