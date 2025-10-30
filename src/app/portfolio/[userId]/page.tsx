@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Twitter, Layers3 } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
@@ -330,15 +330,43 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           </div>
         </section>
       </main>
-      <footer className="mt-16 bg-muted py-8 text-center text-muted-foreground">
-        <div className="container mx-auto px-4">
-            <div className="flex justify-center gap-x-6 gap-y-4 flex-wrap mb-4">
-                <Link href="/terms-and-conditions" className="text-sm hover:underline">Terms & Conditions</Link>
-                <Link href="/privacy-policy" className="text-sm hover:underline">Privacy Policy</Link>
-                <Link href="/cookie-policy" className="text-sm hover:underline">Cookie Policy</Link>
+      <footer className="mt-16 bg-muted text-muted-foreground">
+        <div className="container mx-auto px-4 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="md:col-span-2">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Layers3 className="h-8 w-8 text-primary" />
+                        <span className="font-headline text-2xl font-bold text-foreground">PortfolioForge</span>
+                    </div>
+                    <p className="text-sm">The intelligent portfolio platform for every professional.</p>
+                </div>
+                <div>
+                    <h3 className="font-headline font-semibold text-foreground mb-4">Quick Links</h3>
+                    <ul className="space-y-2 text-sm">
+                        <li><Link href="#" className="hover:underline hover:text-primary">About Us</Link></li>
+                        <li><Link href="#" className="hover:underline hover:text-primary">Contact Us</Link></li>
+                        <li><Link href="#" className="hover:underline hover:text-primary">Features</Link></li>
+                        <li><Link href="/login" className="hover:underline hover:text-primary">Login</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 className="font-headline font-semibold text-foreground mb-4">Follow Us</h3>
+                    <div className="flex space-x-4">
+                        <Link href="#" className="hover:text-primary"><Twitter className="h-6 w-6" /></Link>
+                        <Link href="#" className="hover:text-primary"><Github className="h-6 w-6" /></Link>
+                        <Link href="#" className="hover:text-primary"><Linkedin className="h-6 w-6" /></Link>
+                    </div>
+                </div>
             </div>
-            <p>&copy; {new Date().getFullYear()} {portfolioCvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
-             <p className="text-xs mt-2">
+            <div className="mt-8 border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center text-sm">
+                <div className="flex gap-x-6 gap-y-2 flex-wrap justify-center md:justify-start mb-4 md:mb-0">
+                    <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
+                    <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
+                    <Link href="/cookie-policy" className="hover:underline">Cookie Policy</Link>
+                </div>
+                <p>&copy; {new Date().getFullYear()} PortfolioForge. All Rights Reserved.</p>
+            </div>
+             <p className="text-xs text-center mt-4">
                 Disclaimer: This site is a project and should be treated as such. The content is for demonstration purposes only.
             </p>
         </div>
@@ -346,3 +374,5 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
     </div>
   );
 }
+
+    

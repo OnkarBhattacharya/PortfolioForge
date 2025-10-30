@@ -41,7 +41,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen={!isMobile}>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
         <SidebarHeader>
-          <Logo />
+          <Logo textClassName="text-sidebar-foreground"/>
         </SidebarHeader>
         <SidebarContent>
           <SidebarNav />
@@ -59,3 +59,5 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
