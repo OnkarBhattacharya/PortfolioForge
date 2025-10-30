@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const repositories = await run(importGithubRepositories, { username });
+    const repositories = await importGithubRepositories({ username });
     
     if (repositories.length > 0) {
       await saveProjectsToFirestore(userId, repositories);

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsedData = await run(parseLinkedInProfile, linkedInData);
+    const parsedData = await parseLinkedInProfile(linkedInData);
     await saveLinkedInDataToFirestore(userId, parsedData);
     
     return NextResponse.json({ success: true, data: parsedData });

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const importData = await run(importFromUrl, { url });
+    const importData = await importFromUrl({ url });
     
     await saveWebImportToFirestore(userId, url, importData);
     
