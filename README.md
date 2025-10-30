@@ -22,12 +22,12 @@ This project is built with a modern, robust, and scalable tech stack:
 - **Dynamic Project Management**: Add and manage your software projects, which are stored securely in Firestore.
 - **User Authentication**: Secure sign-up and login with email/password, plus social sign-in options (Google, Apple, Microsoft). Read-only mode for guest users.
 - **Data Import**:
-  - **CV/Resume**: Upload your CV in `.pdf`, `.docx`, or `.txt` format to parse your professional data.
+  - **Multi-Modal CV Parser**: Upload your CV as a PDF or image. Our powerful multi-modal AI agent analyzes not just the text, but the document's layout and structure to accurately extract your professional data and even infer skills from your experience.
   - **LinkedIn**: Manually paste your profile data to quickly populate your portfolio.
   - **GitHub**: Sync your GitHub projects to showcase your work (placeholder for full integration).
-- **AI Content Assistant**: Use the AI assistant to generate compelling descriptions and summaries for your portfolio based on your imported data.
+- **AI Content Assistant**: Use the AI assistant to generate compelling descriptions and summaries for your portfolio based on the data intelligently extracted from your CV and other sources.
 - **Responsive Design**: A clean, modern UI that looks great on desktops, tablets, and smartphones.
-- **Customizable Themes**: (Coming Soon) Choose from a variety of themes to personalize the look and feel of your portfolio.
+- **Customizable Themes**: Choose from a variety of free and premium themes to personalize the look and feel of your portfolio.
 
 ## Project Structure
 
@@ -53,7 +53,7 @@ To get started with developing your portfolio:
 
 2.  **Create an Account**: Sign up using your email or a social provider to get full access.
 
-3.  **Import Your Data**: Navigate to the "Import Data" page to upload your CV or paste your LinkedIn data.
+3.  **Import Your Data**: Navigate to the "Import Data" page to upload your CV or paste your LinkedIn data. The AI will automatically parse and save your information.
 
 4.  **Add Projects**: Go to the "Projects" page to add your projects manually.
 
