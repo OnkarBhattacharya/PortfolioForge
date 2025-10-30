@@ -42,6 +42,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 - **Backend & Database**: **Firebase (Firestore & Authentication)** provides a secure, serverless backend that scales automatically, ensuring reliability and low operational overhead.
 - **Generative AI**: **Firebase Genkit** orchestrates our powerful AI features, allowing us to leverage state-of-the-art models from Google (Gemini 1.5 Pro) for multi-modal analysis and content generation.
 - **UI & Styling**: **ShadCN UI** and **Tailwind CSS** enable us to build beautiful, accessible, and consistent user interfaces with high velocity.
+- **Testing & Quality Assurance**: A comprehensive testing suite using **Jest**, **React Testing Library**, and **Playwright** ensures application reliability, from individual components to full end-to-end user flows.
 
 ### Architectural Overview
 
@@ -49,6 +50,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 - `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling. All data mutations are non-blocking for a fluid UI.
 - `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser and content assistant.
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
+- `tests/`: A comprehensive testing suite covering unit, integration, frontend, and end-to-end tests to ensure code quality and application stability.
 
 ## Get Started
 
