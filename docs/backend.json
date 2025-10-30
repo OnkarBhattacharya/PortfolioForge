@@ -37,7 +37,12 @@
         "customDomain": {
           "type": "string",
           "description": "The custom domain connected to the user's portfolio, if any.",
-          "format": "uri"
+          "format": "hostname"
+        },
+        "customDomainStatus": {
+            "type": "string",
+            "description": "The verification status of the custom domain.",
+            "enum": ["pending", "active", "error"]
         },
         "themeId": {
           "type": "string",

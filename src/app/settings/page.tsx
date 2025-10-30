@@ -13,12 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useFirebase, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, updateDoc } from "firebase/firestore";
-import { Check, Loader2, KeyRound } from "lucide-react";
+import { Check, Loader2, KeyRound, Copy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Theme = {
   id: string;
@@ -32,6 +33,8 @@ type Theme = {
 type UserProfile = {
     id: string;
     themeId?: string;
+    customDomain?: string;
+    customDomainStatus?: 'pending' | 'active' | 'error';
 };
 
 export default function SettingsPage() {
@@ -43,6 +46,8 @@ export default function SettingsPage() {
   
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [domainName, setDomainName] = useState('');
+  const [isConnectingDomain, setIsConnectingDomain] = useState(false);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -61,6 +66,9 @@ export default function SettingsPage() {
   useEffect(() => {
       if (userProfile?.themeId) {
           setSelectedThemeId(userProfile.themeId);
+      }
+      if (userProfile?.customDomain) {
+          setDomainName(userProfile.customDomain);
       }
   }, [userProfile]);
 
@@ -102,6 +110,43 @@ export default function SettingsPage() {
     }
   };
 
+  const handleConnectDomain = async () => {
+      if (!userProfileRef || !domainName) {
+           toast({
+                variant: "destructive",
+                title: "Invalid Domain",
+                description: "Please enter a valid domain name.",
+            });
+        return;
+      }
+
+      setIsConnectingDomain(true);
+      try {
+          await updateDoc(userProfileRef, {
+              customDomain: domainName,
+              customDomainStatus: 'pending',
+          });
+          toast({
+              title: "Domain Connection Initiated",
+              description: `Verification process started for ${domainName}.`,
+          });
+      } catch (error) {
+          console.error("Error connecting domain:", error);
+          toast({
+              variant: "destructive",
+              title: "Connection Failed",
+              description: "Could not initiate domain connection.",
+          });
+      } finally {
+          setIsConnectingDomain(false);
+      }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied to clipboard!" });
+  };
+
   const isLoading = areThemesLoading || isUserLoading;
 
   return (
@@ -132,14 +177,54 @@ export default function SettingsPage() {
             <CardTitle className="font-headline">Custom Domain</CardTitle>
             <CardDescription>
               Connect a custom domain to your portfolio for a professional
-              online presence.
+              online presence. This is a premium feature.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex w-full max-w-md items-center space-x-2">
-              <Input type="text" placeholder="your-domain.com" disabled={isReadOnly} />
-              <Button type="submit" disabled={isReadOnly}>Connect</Button>
+              <Input 
+                type="text" 
+                placeholder="your-domain.com" 
+                value={domainName}
+                onChange={(e) => setDomainName(e.target.value)}
+                disabled={isReadOnly || !!userProfile?.customDomain}
+              />
+              <Button onClick={handleConnectDomain} disabled={isReadOnly || isConnectingDomain || !!userProfile?.customDomain}>
+                {isConnectingDomain && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Connect
+              </Button>
             </div>
+            {userProfile?.customDomainStatus === 'pending' && (
+                <Alert className="mt-4">
+                    <AlertTitle className="font-headline">Verify Your Domain</AlertTitle>
+                    <AlertDescription>
+                        <p>To complete the connection, add the following TXT record to your domain's DNS settings.</p>
+                        <div className="mt-2 space-y-2 text-sm">
+                            <div><strong>Type:</strong> TXT</div>
+                            <div><strong>Host/Name:</strong> @ or your-domain.com</div>
+                            <div className="flex items-center gap-2">
+                                <strong>Value:</strong>
+                                <code className="bg-muted px-2 py-1 rounded-md text-xs truncate">
+                                    {`portfolioforge-verification=${user?.uid}`}
+                                </code>
+                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(`portfolioforge-verification=${user?.uid}`)}>
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">DNS changes can take up to 24 hours to propagate. We will check for the record automatically.</p>
+                    </AlertDescription>
+                </Alert>
+            )}
+             {userProfile?.customDomainStatus === 'active' && (
+                <Alert variant="default" className="mt-4 border-green-500 text-green-700">
+                    <Check className="h-4 w-4 !text-green-500" />
+                    <AlertTitle className="font-headline text-green-800">Domain Active</AlertTitle>
+                    <AlertDescription>
+                        Your domain <a href={`https://${userProfile.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-bold underline">{userProfile.customDomain}</a> is successfully connected and pointing to your portfolio.
+                    </AlertDescription>
+                </Alert>
+            )}
           </CardContent>
           <CardFooter>
             <p className="text-sm text-muted-foreground">
