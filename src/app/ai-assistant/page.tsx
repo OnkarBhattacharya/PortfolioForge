@@ -61,23 +61,29 @@ export default function AiAssistantPage() {
   });
 
   useEffect(() => {
-    try {
-      const cvDataString = localStorage.getItem("cvData");
-      if (cvDataString) {
-        const cvData = CvDataSchema.parse(JSON.parse(cvDataString));
-        form.setValue("cvData", JSON.stringify(cvData, null, 2));
-        if (cvData.profession) {
-          form.setValue("profession", cvData.profession);
+    const updateFormData = () => {
+        try {
+            const cvDataString = localStorage.getItem("cvData");
+            if (cvDataString) {
+                const cvData = CvDataSchema.parse(JSON.parse(cvDataString));
+                form.setValue("cvData", JSON.stringify(cvData, null, 2));
+                if (cvData.profession) {
+                    form.setValue("profession", cvData.profession);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to parse CV data from local storage", error);
         }
-      }
-    } catch (error) {
-      console.error("Failed to parse CV data from local storage", error);
-    }
+    };
     
-    const linkedInData = localStorage.getItem("linkedInData");
-    if (linkedInData) {
-      form.setValue("linkedInData", linkedInData);
-    }
+    updateFormData();
+    window.addEventListener('storage', updateFormData);
+    window.addEventListener('profileUpdate', updateFormData);
+    
+    return () => {
+        window.removeEventListener('storage', updateFormData);
+        window.removeEventListener('profileUpdate', updateFormData);
+    };
   }, [form]);
 
   async function onSubmit(values: FormValues) {
@@ -153,7 +159,7 @@ export default function AiAssistantPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Your profession helps the AI tailor its suggestions. This is automatically detected from your CV.
+                        Your profession helps the AI tailor its suggestions. This is automatically detected from your CV or LinkedIn data.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -164,36 +170,16 @@ export default function AiAssistantPage() {
                   name="cvData"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CV / Resume Data</FormLabel>
+                      <FormLabel>CV / LinkedIn Data</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Paste text from your CV here or upload it on the Import Data page."
-                          className="min-h-[100px]"
+                          placeholder="This data is automatically populated when you import from your CV or LinkedIn on the Import Data page."
+                          className="min-h-[200px]"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        This is automatically populated when you upload your CV on the Import Data page.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="linkedInData"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn Profile Data</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Paste your LinkedIn summary, experience, etc."
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        You can import this on the Import Data page.
+                        This is the structured data extracted by our AI from your uploaded documents.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

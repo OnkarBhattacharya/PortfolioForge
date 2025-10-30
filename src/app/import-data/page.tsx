@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/firebase";
 import Link from "next/link";
+import { CvDataSchema } from "@/lib/types";
 
 export default function ImportDataPage() {
   const { user } = useUser();
@@ -29,7 +30,7 @@ export default function ImportDataPage() {
   
   const [linkedInSuccess, setLinkedInSuccess] = useState(false);
   const [linkedInData, setLinkedInData] = useState('');
-  const [isSavingLinkedIn, setIsSavingLinkedIn] = useState(false);
+  const [isParsingLinkedIn, setIsParsingLinkedIn] = useState(false);
 
   const [githubUsername, setGithubUsername] = useState('');
   const [isImportingGithub, setIsImportingGithub] = useState(false);
@@ -39,14 +40,12 @@ export default function ImportDataPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const cvData = localStorage.getItem("cvData");
-    if (cvData) {
+    // Check for success markers in local storage to persist UI state
+    if (localStorage.getItem("cvUploadSuccess") === "true") {
       setCvUploadSuccess(true);
     }
-    const liData = localStorage.getItem("linkedInData");
-    if (liData) {
+    if (localStorage.getItem("linkedInSuccess") === "true") {
       setLinkedInSuccess(true);
-      setLinkedInData(liData);
     }
   }, []);
 
@@ -119,6 +118,7 @@ export default function ImportDataPage() {
 
       const result = await response.json();
       localStorage.setItem('cvData', JSON.stringify(result.data));
+      localStorage.setItem("cvUploadSuccess", "true");
       setCvUploadSuccess(true);
       toast({
         title: "AI-Powered CV Scan Successful",
@@ -136,31 +136,47 @@ export default function ImportDataPage() {
     }
   };
 
-  const handleSaveLinkedIn = () => {
-     if (isReadOnly) {
+  const handleParseLinkedIn = async () => {
+     if (isReadOnly || !user) {
        toast({
         variant: "destructive",
         title: "Authentication Required",
-        description: "Please log in or sign up to save your data.",
+        description: "Please log in or sign up to parse your data.",
       });
       return;
     }
-    setIsSavingLinkedIn(true);
+    setIsParsingLinkedIn(true);
     try {
-      localStorage.setItem('linkedInData', linkedInData);
+       const response = await fetch('/api/linkedin-parser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkedInData, userId: user.uid }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'LinkedIn parsing failed');
+      }
+      
+      const result = await response.json();
+      // We store the parsed data in the same 'cvData' key to unify the profile data source
+      localStorage.setItem('cvData', JSON.stringify(result.data)); 
+      localStorage.setItem('linkedInSuccess', 'true');
       setLinkedInSuccess(true);
       toast({
-        title: "LinkedIn Data Saved",
-        description: "Your LinkedIn data has been saved successfully.",
+        title: "AI-Powered LinkedIn Import Successful",
+        description: "Your LinkedIn data has been parsed and saved to your profile.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Save Failed",
-        description: "Could not save LinkedIn data. Local storage might be full.",
+        title: "Parsing Failed",
+        description: error.message || "Could not parse LinkedIn data.",
       });
     } finally {
-      setIsSavingLinkedIn(false);
+      setIsParsingLinkedIn(false);
     }
   };
   
@@ -284,7 +300,7 @@ export default function ImportDataPage() {
                   Import from LinkedIn
                 </CardTitle>
                 <CardDescription>
-                  Paste your LinkedIn profile data.
+                  AI-powered profile import.
                 </CardDescription>
               </div>
               {linkedInSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
@@ -292,19 +308,19 @@ export default function ImportDataPage() {
             <CardContent className="flex flex-col gap-4">
               <DialogTrigger asChild>
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isReadOnly}>
-                  <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Add'} LinkedIn Data
+                  <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Import'} LinkedIn Data
                 </Button>
               </DialogTrigger>
               <p className="text-xs text-muted-foreground">
-                Manually paste your profile data to populate your portfolio.
+                Paste your profile data to have our AI structure and import it.
               </p>
             </CardContent>
           </Card>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Import LinkedIn Data</DialogTitle>
+              <DialogTitle>AI-Powered LinkedIn Import</DialogTitle>
               <DialogDescription>
-                Go to your LinkedIn profile, select "More" and then "Save to PDF". Open the PDF, copy the text, and paste it below. You can also paste your summary, experience, etc.
+                Go to your LinkedIn profile, select "More" and then "Save to PDF". Open the PDF, copy all the text, and paste it below. Our AI will do the rest.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -314,15 +330,16 @@ export default function ImportDataPage() {
                   id="linkedin-data"
                   value={linkedInData}
                   onChange={(e) => setLinkedInData(e.target.value)}
-                  placeholder="Paste your LinkedIn data here..."
+                  placeholder="Paste your raw LinkedIn data here..."
                   className="min-h-[200px]"
                 />
               </div>
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" onClick={handleSaveLinkedIn} disabled={isSavingLinkedIn}>
-                  {isSavingLinkedIn ? 'Saving...' : 'Save Data'}
+                <Button type="button" onClick={handleParseLinkedIn} disabled={isParsingLinkedIn}>
+                  {isParsingLinkedIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isParsingLinkedIn ? 'Parsing...' : 'Parse with AI'}
                 </Button>
               </DialogClose>
             </DialogFooter>

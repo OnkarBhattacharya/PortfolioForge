@@ -75,27 +75,28 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (isReadOnly) return;
-    const cvData = localStorage.getItem('cvData');
-    if (cvData) {
-      setCvUploaded(true);
-    }
-    const liData = localStorage.getItem('linkedInData');
-    if (liData) {
-      setLinkedInImported(true);
-    }
-
-    const handleStorageChange = () => {
-        const cvData = localStorage.getItem('cvData');
-        if (cvData) {
-            setCvUploaded(true);
-        }
-        const liData = localStorage.getItem('linkedInData');
-        if (liData) {
-            setLinkedInImported(true);
-        }
+    
+    const checkLocalStorage = () => {
+      const cvStatus = localStorage.getItem('cvUploadSuccess');
+      if (cvStatus === 'true') {
+        setCvUploaded(true);
+      }
+      const liStatus = localStorage.getItem('linkedInSuccess');
+      if (liStatus === 'true') {
+        setLinkedInImported(true);
+      }
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    checkLocalStorage();
+
+    // Listen for custom events that might be dispatched from other pages on success
+    window.addEventListener('storage', checkLocalStorage);
+    window.addEventListener('profileUpdate', checkLocalStorage);
+
+    return () => {
+      window.removeEventListener('storage', checkLocalStorage);
+      window.removeEventListener('profileUpdate', checkLocalStorage);
+    };
   }, [isReadOnly]);
 
   const liveSiteUrl = user && !user.isAnonymous ? `/portfolio/${user.uid}` : `/login`;
