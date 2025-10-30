@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/firebase";
 import Link from "next/link";
-import { CvDataSchema } from "@/ai/flows/cv-parser";
+import { CvDataSchema } from "@/lib/types";
 
 const formSchema = z.object({
   profession: z.string().optional(),

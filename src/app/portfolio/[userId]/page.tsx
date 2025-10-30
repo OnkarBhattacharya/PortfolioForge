@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
-import { CvDataSchema } from '@/ai/flows/cv-parser';
+import { CvDataSchema } from '@/lib/types';
 import Link from 'next/link';
 
 type CvData = z.infer<typeof CvDataSchema>;
@@ -116,8 +116,7 @@ const sampleItems: PortfolioItem[] = [
     }
 ];
 
-export default function PortfolioPage({ params }: { params: { userId: string } }) {
-  const { userId } = params;
+export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {

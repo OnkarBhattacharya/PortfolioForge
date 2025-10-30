@@ -1,11 +1,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { run } from '@genkit-ai/core';
-import { parseCv, CvDataSchema } from '@/ai/flows/cv-parser';
+import { parseCv } from '@/ai/flows/cv-parser';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { z } from 'zod';
+import { CvDataSchema } from '@/lib/types';
 
 // Initialize Firebase Admin for server-side operations
 if (getApps().length === 0) {
