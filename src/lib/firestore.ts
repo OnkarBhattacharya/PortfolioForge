@@ -1,13 +1,16 @@
 
 import { doc, setDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
 import { getApps, initializeApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
+
 
 // This is a workaround to initialize Firebase in a server context
 // where the client-side initialization might not have run.
 if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        initializeApp(firebaseConfig);
+    }
 }
 const db = getFirestore();
 

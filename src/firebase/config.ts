@@ -1,21 +1,7 @@
 
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-
 export const firebaseConfig = {
-  "projectId": "studio-3849653404-e5627",
-  "appId": "1:978801814369:web:fe79a420d9bd15522cf320",
-  "apiKey": "AIzaSyCro9bdB4rd9oD64EYNamI3iIkKmWsOSbM",
-  "authDomain": "studio-3849653404-e5627.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "978801814369"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
-
-let app: FirebaseApp;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
-}
-
-export const firestore = getFirestore(app);
