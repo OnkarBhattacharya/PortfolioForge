@@ -48,6 +48,14 @@ const sampleProjects: Project[] = [
       "technologies": ["Node.js", "Express", "GraphQL", "Apollo"],
       "projectUrl": "https://github.com/example/graphql-api-server",
       "imageId": "project-2",
+    },
+    {
+      "id": "gh-3",
+      "name": "AI Content Summarizer",
+      "description": "A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.",
+      "technologies": ["Python", "FastAPI", "Genkit", "Docker"],
+      "projectUrl": "https://github.com/example/ai-content-summarizer",
+      "imageId": "project-3",
     }
   ];
 
@@ -57,11 +65,11 @@ export default function ProjectsPage() {
   const isReadOnly = !user || user.isAnonymous;
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore || user.isAnonymous) return null;
+    if (isReadOnly || !user || !firestore) return null;
     return query(
       collection(firestore, 'users', user.uid, 'projects')
     );
-  }, [firestore, user]);
+  }, [firestore, user, isReadOnly]);
 
   const { data: firestoreProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
@@ -102,7 +110,7 @@ export default function ProjectsPage() {
         </Card>
       )}
 
-      {isLoading && (
+      {isLoading && !isReadOnly && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(3)].map((_, i) => (
                 <Card key={i}>
@@ -128,7 +136,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && allProjects && allProjects.length > 0 && (
+      {(!isLoading || isReadOnly) && allProjects && allProjects.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {allProjects.map((project) => {
             const image = getPlaceholderImage(project.imageId);

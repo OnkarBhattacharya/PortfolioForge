@@ -51,7 +51,12 @@ const createUserProfile = (firestore: Firestore, user: User, fullName?: string) 
 
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth) {
-  signInAnonymously(authInstance).catch((error) => {
+  signInAnonymously(authInstance)
+    .then(userCredential => {
+      // You can optionally create a profile for anonymous users here if needed,
+      // but typically it's not required until they convert to a permanent account.
+    })
+    .catch((error) => {
     // This is a non-critical error, so we just log it.
     console.error("Anonymous sign-in failed:", error);
   });
