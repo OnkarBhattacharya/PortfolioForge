@@ -4,6 +4,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import AdminDashboardPage from '@/app/admin/page';
+import { Loader2 } from 'lucide-react';
 
 // Mock the Firebase hooks
 jest.mock('@/firebase', () => ({
@@ -12,6 +13,16 @@ jest.mock('@/firebase', () => ({
   useCollection: jest.fn(),
   useMemoFirebase: (cb: () => any) => cb(),
 }));
+
+// Mock lucide-react
+jest.mock('lucide-react', () => {
+    const original = jest.requireActual('lucide-react');
+    return {
+        ...original,
+        Loader2: (props: any) => <div data-testid="loader" {...props} />,
+    };
+});
+
 
 describe('AdminDashboardPage', () => {
   const { useCollection } = require('@/firebase');
@@ -64,9 +75,3 @@ describe('AdminDashboardPage', () => {
     expect(screen.queryByRole('cell')).not.toBeInTheDocument();
   });
 });
-
-// Add a data-testid to the loader for easier selection
-jest.mock('lucide-react', () => ({
-  ...jest.requireActual('lucide-react'),
-  Loader2: (props: any) => <div data-testid="loader" {...props} />,
-}));

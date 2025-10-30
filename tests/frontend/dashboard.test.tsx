@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import DashboardPage from '@/app/page';
 
 // Mock the Firebase hooks to simulate different user states
@@ -88,13 +88,20 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('link', { name: /View Live Site/i })).toBeInTheDocument();
   });
 
-  it('shows checkmark for uploaded CV if data is in localStorage', () => {
+  it('shows checkmark for uploaded CV if data is in localStorage', async () => {
     useUser.mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false });
-    window.localStorage.setItem('cvData', JSON.stringify({ profession: 'Test' }));
+    act(() => {
+      window.localStorage.setItem('cvUploadSuccess', 'true');
+    });
     
     render(<DashboardPage />);
-
-    const cvItem = screen.getByText('CV Uploaded').parentElement;
-    expect(cvItem?.querySelector('svg.text-green-500')).toBeInTheDocument();
+    
+    // Use findBy* to wait for the effect to run
+    const cvItem = await screen.findByText('CV Uploaded');
+    const parentElement = cvItem.parentElement;
+    
+    // Check for the CheckCircle SVG, which has the green color class
+    const checkIcon = parentElement?.querySelector('svg.text-green-500');
+    expect(checkIcon).toBeInTheDocument();
   });
 });
