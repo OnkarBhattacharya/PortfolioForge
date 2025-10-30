@@ -22,7 +22,7 @@ import Link from "next/link";
 import { Canvas } from "canvas";
 
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.legacy.min.js`;
 }
 
 // Polyfill for OffscreenCanvas
