@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { run } from '@genkit-ai/core';
 import { parseCv, CvDataSchema } from '@/ai/flows/cv-parser';
@@ -21,14 +22,14 @@ export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<type
 
 export async function POST(req: NextRequest) {
   // SECURITY: In a production environment, the userId should be derived from an authenticated session.
-  const { cvImage, userId } = await req.json();
+  const { cvFile, userId } = await req.json();
 
-  if (!cvImage || !userId) {
-    return NextResponse.json({ error: 'cvImage and userId are required' }, { status: 400 });
+  if (!cvFile || !userId) {
+    return NextResponse.json({ error: 'cvFile and userId are required' }, { status: 400 });
   }
 
   try {
-    const parsedData = await run(parseCv, cvImage);
+    const parsedData = await run(parseCv, cvFile);
     await saveCvDataToFirestore(userId, parsedData);
     
     // Store a marker in local storage to indicate success

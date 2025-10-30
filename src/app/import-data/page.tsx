@@ -13,31 +13,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
-import * as pdfjs from 'pdfjs-dist';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/firebase";
 import Link from "next/link";
-import { Canvas } from "canvas";
-
-if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.legacy.min.js`;
-}
-
-// Polyfill for OffscreenCanvas
-if (typeof window !== 'undefined' && typeof OffscreenCanvas === 'undefined') {
-  // @ts-ignore
-  global.OffscreenCanvas = class OffscreenCanvas {
-    constructor(width: number, height: number) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      return canvas;
-    }
-  };
-}
-
 
 export default function ImportDataPage() {
   const { user } = useUser();
@@ -80,27 +60,6 @@ export default function ImportDataPage() {
     });
   };
 
-  const pdfToImageDataURI = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2 });
-    
-    // Create a canvas element to render the PDF page
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-
-    if (!context) {
-        throw new Error('Could not get canvas context');
-    }
-
-    await page.render({ canvasContext: context, viewport: viewport }).promise;
-    return canvas.toDataURL('image/png');
-  };
-  
-
   const handleUpload = async () => {
     if (isReadOnly) {
        toast({
@@ -122,17 +81,8 @@ export default function ImportDataPage() {
     setIsUploading(true);
 
     try {
-      let imageDataUri = '';
-      if (selectedFile.type === 'application/pdf') {
-        imageDataUri = await pdfToImageDataURI(selectedFile);
-      } else if (selectedFile.type.startsWith('image/')) {
-        imageDataUri = await fileToDataURI(selectedFile);
-      } else {
-        throw new Error("Unsupported file type. Please upload a PDF or image file.");
-      }
-
-      await parseAndSaveCv(imageDataUri);
-
+      const fileDataUri = await fileToDataURI(selectedFile);
+      await parseAndSaveCv(fileDataUri);
     } catch (error: any) {
       console.error(error);
       toast({
@@ -144,7 +94,7 @@ export default function ImportDataPage() {
     }
   };
 
-  const parseAndSaveCv = async (cvImage: string) => {
+  const parseAndSaveCv = async (fileDataUri: string) => {
     if (!user) return;
 
     try {
@@ -153,7 +103,7 @@ export default function ImportDataPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cvImage, userId: user.uid }),
+        body: JSON.stringify({ cvFile: fileDataUri, userId: user.uid }),
       });
 
       if (!response.ok) {
