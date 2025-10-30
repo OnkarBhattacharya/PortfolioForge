@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
   Settings,
   Sparkles,
   UploadCloud,
+  CreditCard,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +22,7 @@ const navItems = [
   { href: "/import-data", label: "Import Data", icon: UploadCloud },
   { href: "/projects", label: "Portfolio Items", icon: CodeXml },
   { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -47,6 +47,21 @@
         "themeId": {
           "type": "string",
           "description": "The ID of the selected theme for the user's portfolio."
+        },
+        "subscriptionTier": {
+          "type": "string",
+          "description": "The user's current subscription tier.",
+          "enum": ["free", "pro"]
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "description": "The status of the user's subscription.",
+          "enum": ["active", "canceled", "past_due"]
+        },
+        "subscriptionPeriodEndDate": {
+          "type": "string",
+          "description": "The end date of the current subscription period.",
+          "format": "date-time"
         }
       },
       "required": [

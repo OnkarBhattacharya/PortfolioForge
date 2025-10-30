@@ -122,14 +122,20 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Flexible Firestore Schema:** The `docs/backend.json` defines a generic `PortfolioItem` schema that can accommodate a variety of content types.
   - **CRUD Operations:** The "Portfolio Items" page (`src/app/projects/page.tsx`) provides a user-friendly interface for managing portfolio items. Add operations are handled through a dialog (`add-project-dialog.tsx`) that performs non-blocking writes to Firestore for a fast and responsive user experience.
 
-### 6. Comprehensive Testing Suite
+### 6. Billing & Subscriptions
+- **Description:** A professional billing page that allows users to view and manage their subscription plans. It includes a clear comparison of different tiers (Free vs. Pro) and provides a foundation for integrating a payment provider like Stripe or PayPal.
+- **Implementation:**
+  - **Billing Page UI:** A new page at `/app/billing` provides a complete interface for managing subscriptions, viewing plan features, and accessing billing history.
+  - **Subscription Schema:** The `UserProfile` entity in `docs/backend.json` has been updated with `subscriptionTier` and `subscriptionStatus` fields to track user plans.
+
+### 7. Comprehensive Testing Suite
 - **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
 - **Implementation:**
   - **Jest & React Testing Library:** Used for unit and component testing. Configuration is in `jest.config.js`, and tests are located in the `tests/` directory.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
 
-### 7. Legal & Compliance Features
+### 8. Legal & Compliance Features
 - **Description:** A set of essential legal and compliance features to build user trust and meet regulatory requirements. This includes standard legal pages and a cookie consent banner.
 - **Implementation:**
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
