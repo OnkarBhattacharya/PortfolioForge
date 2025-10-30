@@ -17,6 +17,7 @@ import { useUser, useAuth } from "@/firebase";
 import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { Footer } from "./footer";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
@@ -47,7 +48,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <SidebarNav />
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="ml-auto">
@@ -55,9 +56,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="flex-1">{children}</main>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-    
