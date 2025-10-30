@@ -17,13 +17,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Twitter, Layers3 } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Layers3 } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 import Link from 'next/link';
+import { Footer } from '@/components/footer';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -34,8 +35,7 @@ type UserProfile = {
   linkedinUrl?: string;
   githubUrl?: string;
   themeId?: string;
-  cv?: CvData;
-};
+} & Partial<CvData>;
 
 type PortfolioItem = {
   id: string;
@@ -63,7 +63,6 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   }, [firestore, userId]);
   
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
-  const cvData = profile?.cv;
 
   const themeDocRef = useMemoFirebase(() => {
     if (!firestore || !profile?.themeId) return null;
@@ -131,7 +130,6 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
       )
   }
   
-  const portfolioCvData = cvData;
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
@@ -140,8 +138,8 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
           <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
-        <h1 className="mt-6 font-headline text-5xl font-bold">{portfolioCvData?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
-        <p className="mt-2 text-xl text-muted-foreground">{portfolioCvData?.profession || 'A passionate professional with a love for creating beautiful and functional web applications.'}</p>
+        <h1 className="mt-6 font-headline text-5xl font-bold">{profile?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
+        <p className="mt-2 text-xl text-muted-foreground">{profile?.profession || 'A passionate professional with a love for creating beautiful and functional web applications.'}</p>
         <div className="mt-6 flex justify-center gap-4">
           {profile.githubUrl && <Button variant="outline" asChild><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> GitHub</a></Button>}
           {profile.linkedinUrl && <Button variant="outline" asChild><a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="mr-2" /> LinkedIn</a></Button>}
@@ -155,17 +153,17 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
            <Card>
             <CardContent className="pt-6">
                 <p className="text-lg leading-relaxed">
-                    {portfolioCvData?.summary || "Welcome to my portfolio! I'm a dedicated professional specializing in building modern solutions. My experience spans from creating beautiful user interfaces to designing robust systems. I thrive on solving complex problems and am always eager to learn new things. This portfolio showcases some of my favorite work. Feel free to explore and get in touch!"}
+                    {profile?.summary || "Welcome to my portfolio! I'm a dedicated professional specializing in building modern solutions. My experience spans from creating beautiful user interfaces to designing robust systems. I thrive on solving complex problems and am always eager to learn new things. This portfolio showcases some of my favorite work. Feel free to explore and get in touch!"}
                 </p>
             </CardContent>
            </Card>
         </section>
 
-        {portfolioCvData?.experience && portfolioCvData.experience.length > 0 && (
+        {profile?.experience && profile.experience.length > 0 && (
           <section id="experience" className="mb-16">
             <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Work Experience</h2>
             <div className="space-y-8">
-              {portfolioCvData.experience.map((job, index) => (
+              {profile.experience.map((job, index) => (
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-start gap-4">
                     <Briefcase className="h-8 w-8 text-accent" />
@@ -186,11 +184,11 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           </section>
         )}
 
-        {portfolioCvData?.education && portfolioCvData.education.length > 0 && (
+        {profile?.education && profile.education.length > 0 && (
             <section id="education" className="mb-16">
                 <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Education</h2>
                 <div className="space-y-8">
-                    {portfolioCvData.education.map((edu, index) => (
+                    {profile.education.map((edu, index) => (
                         <Card key={index}>
                              <CardHeader className="flex flex-row items-start gap-4">
                                 <GraduationCap className="h-8 w-8 text-accent" />
@@ -206,12 +204,12 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
             </section>
         )}
 
-        {portfolioCvData?.skills && portfolioCvData.skills.length > 0 && (
+        {profile?.skills && profile.skills.length > 0 && (
             <section id="skills" className="mb-16">
                  <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Skills</h2>
                 <Card>
                     <CardContent className="flex flex-wrap gap-4 pt-6">
-                        {portfolioCvData.skills.map((skill, index) => (
+                        {profile.skills.map((skill, index) => (
                             <Badge key={index} variant="secondary" className="text-lg px-4 py-2">{skill}</Badge>
                         ))}
                     </CardContent>
@@ -261,6 +259,7 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

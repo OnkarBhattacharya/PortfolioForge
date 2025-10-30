@@ -16,9 +16,9 @@ const db = getFirestore();
 
 export const saveLinkedInDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   if (!userId) throw new Error("User ID is required to save CV data.");
-  // Save parsed data to the same `cv` field to unify profile data
+  // Save parsed data by merging it into the user's document
   const userDocRef = doc(db, 'users', userId);
-  await setDoc(userDocRef, { cv: cvData }, { merge: true });
+  await setDoc(userDocRef, { ...cvData }, { merge: true });
 };
 
 export async function POST(req: NextRequest) {

@@ -16,9 +16,10 @@ const db = getFirestore();
 
 export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   if (!userId) throw new Error("User ID is required to save CV data.");
-  // Save CV data to a `cv` field within the user's document
+  // Save CV data to the user's document by merging the new fields
   const userDocRef = doc(db, 'users', userId);
-  await setDoc(userDocRef, { cv: cvData }, { merge: true });
+  // We spread the cvData to merge its fields directly into the user document
+  await setDoc(userDocRef, { ...cvData }, { merge: true });
 };
 
 export async function POST(req: NextRequest) {
@@ -33,7 +34,6 @@ export async function POST(req: NextRequest) {
     const parsedData = await run(parseCv, cvFile);
     await saveCvDataToFirestore(userId, parsedData);
     
-    // Store a marker in local storage to indicate success
     const response = NextResponse.json({ success: true, data: parsedData });
     return response;
     
