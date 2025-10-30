@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound } from "lucide-react";
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,9 +26,15 @@ export default function ImportDataPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
+  
   const [linkedInSuccess, setLinkedInSuccess] = useState(false);
   const [linkedInData, setLinkedInData] = useState('');
   const [isSavingLinkedIn, setIsSavingLinkedIn] = useState(false);
+
+  const [githubUsername, setGithubUsername] = useState('');
+  const [isImportingGithub, setIsImportingGithub] = useState(false);
+  const [githubSuccess, setGithubSuccess] = useState(false);
+
 
   const { toast } = useToast();
 
@@ -158,11 +164,54 @@ export default function ImportDataPage() {
     }
   };
   
-  const handleConnectGitHub = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Full GitHub integration is under development.",
-    });
+  const handleConnectGitHub = async () => {
+    if (isReadOnly || !user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to import from GitHub.",
+      });
+      return;
+    }
+    if (!githubUsername) {
+      toast({
+        variant: "destructive",
+        title: "Username Required",
+        description: "Please enter a GitHub username.",
+      });
+      return;
+    }
+
+    setIsImportingGithub(true);
+    try {
+      const response = await fetch('/api/github-importer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: githubUsername, userId: user.uid }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'GitHub import failed');
+      }
+
+      const result = await response.json();
+      setGithubSuccess(true);
+      toast({
+        title: "GitHub Import Successful",
+        description: `${result.importedCount} repositories have been added to your portfolio.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "GitHub Import Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsImportingGithub(false);
+    }
   };
 
   const handleAddLink = () => {
@@ -212,8 +261,12 @@ export default function ImportDataPage() {
             <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
               <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
               <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
-                <UploadCloud className="mr-2 h-4 w-4" />
-                {isUploading ? 'Parsing with AI...' : 'Upload'}
+                {isUploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <UploadCloud className="mr-2 h-4 w-4" />
+                )}
+                {isUploading ? 'Parsing...' : 'Upload'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -276,31 +329,62 @@ export default function ImportDataPage() {
           </DialogContent>
         </Dialog>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="space-y-1.5">
-              <CardTitle className="font-headline flex items-center gap-2">
-                <Github className="h-6 w-6 text-foreground" />
-                Sync GitHub Projects
-              </CardTitle>
-              <CardDescription>
-                Showcase your work from GitHub.
-              </CardDescription>
+         <Dialog>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="space-y-1.5">
+                <CardTitle className="font-headline flex items-center gap-2">
+                  <Github className="h-6 w-6 text-foreground" />
+                  Sync GitHub Projects
+                </CardTitle>
+                <CardDescription>
+                  Import your top GitHub repos.
+                </CardDescription>
+              </div>
+              {githubSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <DialogTrigger asChild>
+                <Button
+                  className="w-full bg-foreground text-background hover:bg-foreground/90"
+                  disabled={isReadOnly}
+                >
+                  <Github className="mr-2 h-4 w-4" /> Import from GitHub
+                </Button>
+              </DialogTrigger>
+              <p className="text-xs text-muted-foreground">
+                Automatically fetch and display your public repositories.
+              </p>
+            </CardContent>
+          </Card>
+          <DialogContent>
+             <DialogHeader>
+              <DialogTitle>Import from GitHub</DialogTitle>
+              <DialogDescription>
+                Enter your GitHub username to import your top 10 public repositories.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="github-username">GitHub Username</Label>
+                <Input
+                  id="github-username"
+                  value={githubUsername}
+                  onChange={(e) => setGithubUsername(e.target.value)}
+                  placeholder="e.g., 'torvalds'"
+                />
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Button
-              className="w-full bg-foreground text-background hover:bg-foreground/90"
-              onClick={handleConnectGitHub}
-              disabled={isReadOnly}
-            >
-              <Github className="mr-2 h-4 w-4" /> Connect GitHub
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Automatically fetch and display your public repositories (for software engineers).
-            </p>
-          </CardContent>
-        </Card>
+            <DialogFooter>
+               <DialogClose asChild>
+                <Button type="button" onClick={handleConnectGitHub} disabled={isImportingGithub}>
+                  {isImportingGithub ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isImportingGithub ? 'Importing...' : 'Import Projects'}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Card>
             <CardHeader>
