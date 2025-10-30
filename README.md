@@ -100,7 +100,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 - **Description:** This is the core intelligent feature of the platform. Users can upload their CV in PDF or image format. An advanced AI agent analyzes both the document's text and its visual layout to accurately extract structured data, including contact information, work experience, education, skills, and even infers the user's profession (e.g., "Software Engineer," "Graphic Designer").
 - **Implementation:**
   - **Genkit & Gemini 1.5 Pro:** A powerful Genkit flow in `src/ai/flows/cv-parser.ts` leverages the multi-modal capabilities of the Google Gemini 1.5 Pro model.
-  - **Client-Side Pre-processing:** The frontend (`src/app/import-data/page.tsx`) converts the uploaded PDF into an image data URI before sending it to the backend. This allows the AI to "see" the CV as a human would.
+  - **Client-Side Pre-processing:** The frontend (`src/app/import-data/page.tsx`) converts the uploaded file into a data URI before sending it to the backend.
   - **API Route:** The `/api/cv-parser` endpoint handles the request, invokes the Genkit flow, and saves the structured data to the user's profile in Firestore.
 
 ### 3. AI Content Co-pilot
@@ -128,3 +128,10 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Jest & React Testing Library:** Used for unit and component testing. Configuration is in `jest.config.js`, and tests are located in the `tests/` directory.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
+
+### 7. Legal & Compliance Features
+- **Description:** A set of essential legal and compliance features to build user trust and meet regulatory requirements. This includes standard legal pages and a cookie consent banner.
+- **Implementation:**
+  - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
+  - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
+  - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
