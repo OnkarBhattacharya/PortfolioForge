@@ -52,6 +52,29 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
 - `tests/`: A comprehensive testing suite covering unit, integration, frontend, and end-to-end tests to ensure code quality and application stability.
 
+## Commitment to Security & EU Compliance
+
+PortfolioForge is engineered with a security-first mindset, fully aligning with stringent European cybersecurity and AI regulations, including the General Data Protection Regulation (GDPR) and the principles of the EU AI Act.
+
+### **1. Data Protection & Privacy by Design (GDPR)**
+- **Encryption**: All user data is encrypted both in transit (using HTTPS/TLS) and at rest, leveraging the default server-side encryption provided by Google Cloud and Firestore.
+- **Data Minimization**: We only collect data that is essential for the functionality of the portfolio. The AI CV parser is designed to extract relevant professional information and discard extraneous personal data.
+- **User Consent & Control**: All AI-driven features require explicit user action (e.g., clicking "Parse CV"). Users will have clear options to manage and delete their data, in line with the "right to be forgotten."
+
+### **2. Secure & Resilient Infrastructure**
+- **Principle of Least Privilege**: Our Firestore Security Rules are designed to be restrictive by default, ensuring users can only access and modify their own data. The rules prevent unauthorized data access between accounts.
+- **Secure Authentication**: We use Firebase Authentication, which provides a managed, secure, and scalable identity solution. Our current implementation includes email/password and anonymous modes, with a clear path to adding Multi-Factor Authentication (MFA) for enhanced security.
+- **Network Security**: By building on Firebase, we inherit Google's robust network security, which includes protection against DDoS attacks, traffic sniffing, and other common network-level threats.
+
+### **3. AI Governance & Transparency (EU AI Act Alignment)**
+- **Human-in-the-Loop**: Our AI features act as co-pilots, not autopilots. The user is always in control. The AI *suggests* content based on the user's data, but the user must approve and save it.
+- **Transparency**: The application will always make it clear when a user is interacting with an AI-powered feature (e.g., "Parse with AI," "Generate with AI").
+- **Data Provenance**: Data used for AI content generation is sourced directly from the user's own provided information (CV, LinkedIn data), ensuring traceability and relevance. We do not use user data to train our models.
+
+### **4. Continuous Security & Compliance Monitoring**
+- **Regular Audits**: We have a plan for periodic reviews of our Firebase Security Rules, application dependencies (to mitigate supply-chain risks), and data handling practices.
+- **Secure Development Lifecycle**: Our testing framework, including unit, integration, and E2E tests, forms a critical part of our development process, helping to catch potential security regressions before they reach production.
+
 ## Get Started
 
 1. **Run the development server**:
@@ -98,3 +121,10 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 - **Implementation:**
   - **Flexible Firestore Schema:** The `docs/backend.json` defines a generic `PortfolioItem` schema that can accommodate a variety of content types.
   - **CRUD Operations:** The "Portfolio Items" page (`src/app/projects/page.tsx`) provides a user-friendly interface for managing portfolio items. Add operations are handled through a dialog (`add-project-dialog.tsx`) that performs non-blocking writes to Firestore for a fast and responsive user experience.
+
+### 6. Comprehensive Testing Suite
+- **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
+- **Implementation:**
+  - **Jest & React Testing Library:** Used for unit and component testing. Configuration is in `jest.config.js`, and tests are located in the `tests/` directory.
+  - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
+  - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
