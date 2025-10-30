@@ -8,7 +8,7 @@ import { firebaseConfig } from '@/firebase/config';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 
-// Initialize Firebase Admin for server-side operations
+// Initialize Firebase for server-side operations
 if (getApps().length === 0) {
   initializeApp(firebaseConfig);
 }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsedData = await run(parseCv, cvFile);
+    const parsedData = await parseCv({ cvFile });
     await saveCvDataToFirestore(userId, parsedData);
     
     const response = NextResponse.json({ success: true, data: parsedData });

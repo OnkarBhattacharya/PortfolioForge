@@ -5,7 +5,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { CvDataSchema } from '@/lib/types';
 
-const CvParserInputSchema = z.string().describe('A data URI of a CV or resume, which can be an image or a PDF document.');
+const CvParserInputSchema = z.object({
+  cvFile: z.string().describe('A data URI of a CV or resume, which can be an image or a PDF document.'),
+});
+
 export type CvParserInput = z.infer<typeof CvParserInputSchema>;
 export type CvParserOutput = z.infer<typeof CvDataSchema>;
 
@@ -25,7 +28,7 @@ const prompt = ai.definePrompt({
     2.  **Extract Standard Fields**: Accurately extract personal information, summary, work experience, and education.
     3.  **List Relevant Skills**: Identify and list the top 10-15 most relevant skills. These can be technical skills (like programming languages), software (like Adobe Photoshop), or methodologies (like Agile).
 
-    CV Document: {{media url=prompt}}`,
+    CV Document: {{media url=cvFile}}`,
     config: {
       model: 'googleai/gemini-1.5-pro',
     }
@@ -38,8 +41,8 @@ const cvParserFlow = ai.defineFlow(
     inputSchema: CvParserInputSchema,
     outputSchema: CvDataSchema,
   },
-  async (cvFile) => {
-    const {output} = await prompt(cvFile);
+  async (input) => {
+    const {output} = await prompt(input);
     if (!output) {
       throw new Error('Failed to parse CV. The model did not return valid data.');
     }
