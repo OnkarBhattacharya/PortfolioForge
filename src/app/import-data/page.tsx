@@ -89,48 +89,33 @@ export default function ImportDataPage() {
 
     try {
       const fileDataUri = await fileToDataURI(selectedFile);
-      await parseAndSaveCv(fileDataUri);
-    } catch (error: any) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Upload Failed",
-        description: error.message || "An unexpected error occurred.",
-      });
-      setIsUploading(false);
-    }
-  };
-
-  const parseAndSaveCv = async (fileDataUri: string) => {
-    if (!user) return;
-
-    try {
-      const response = await fetch('/api/cv-parser', {
+      
+      const response = await fetch('/api/cvParserFlow', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cvFile: fileDataUri, userId: user.uid }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ cvFile: fileDataUri }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'CV parsing failed');
+        throw new Error(errorData.error?.message || 'CV parsing failed');
       }
 
       const result = await response.json();
-      localStorage.setItem('cvData', JSON.stringify(result.data));
+      localStorage.setItem('cvData', JSON.stringify(result));
       localStorage.setItem("cvUploadSuccess", "true");
       setCvUploadSuccess(true);
       toast({
         title: "AI-Powered CV Scan Successful",
         description: "Your CV has been parsed and the data is now available in your portfolio and the AI Assistant.",
       });
+
     } catch (error: any) {
+      console.error(error);
       toast({
         variant: "destructive",
-        title: "CV Processing Failed",
-        description: error.message,
+        title: "Upload Failed",
+        description: error.message || "An unexpected error occurred.",
       });
     } finally {
       setIsUploading(false);
