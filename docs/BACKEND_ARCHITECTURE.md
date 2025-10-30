@@ -25,7 +25,7 @@ The `entities` section defines the shape and validation rules for all data objec
 - **Description**: Represents a user's core profile information, settings, and subscription status.
 - **Key Properties**:
     - `id` (string): The user's unique ID (matches Firebase Auth UID).
-    - `firstName`, `lastName` (string): The user's name.
+    - `fullName` (string): The user's full name.
     - `email` (string): The user's email address.
     - `role` (string, enum): The user's role in the system. Can be `user` or `admin`.
     - `themeId` (string): The ID of the visual theme selected for the user's portfolio.
@@ -80,5 +80,3 @@ The `auth` section defines the sign-in methods enabled for the application.
 - **Providers**:
     - `"password"`: Standard email and password authentication.
     - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
-
-    

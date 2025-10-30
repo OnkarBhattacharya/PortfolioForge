@@ -17,13 +17,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Layers3 } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
-import Link from 'next/link';
 import { Footer } from '@/components/footer';
 
 type CvData = z.infer<typeof CvDataSchema>;

@@ -63,5 +63,3 @@ npm run test:e2e
 - **`tests/e2e/auth.spec.ts`**: Uses Playwright to automate browser actions for the entire authentication lifecycle and validates navigation to legal pages.
 - **`tests/contract/placeholder.test.ts`**: A placeholder file explaining how contract tests will be used to verify the data schema between the frontend and the AI APIs (e.g., `/api/cv-parser`).
 - **`tests/performance/placeholder.test.ts`**: A placeholder file describing how performance tests (e.g., using k6 or Lighthouse) will be implemented to measure API response times and page load speeds.
-
-    

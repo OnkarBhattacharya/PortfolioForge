@@ -67,7 +67,8 @@
       },
       "required": [
         "id",
-        "email"
+        "email",
+        "fullName"
       ]
     },
     "PortfolioItem": {
