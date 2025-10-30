@@ -1,6 +1,7 @@
 
 import Link from 'next/link';
 import { Layers3, Twitter, Github, Linkedin } from 'lucide-react';
+import { Logo } from './logo';
 
 export function Footer() {
   return (
@@ -8,11 +9,8 @@ export function Footer() {
         <div className="container mx-auto px-4 py-12">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="md:col-span-2">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Layers3 className="h-8 w-8 text-primary" />
-                        <span className="font-headline text-2xl font-bold text-foreground">PortfolioForge</span>
-                    </div>
-                    <p className="text-sm">The intelligent portfolio platform for every professional.</p>
+                    <Logo />
+                    <p className="text-sm mt-4">The intelligent portfolio platform for every professional.</p>
                 </div>
                 <div>
                     <h3 className="font-headline font-semibold text-foreground mb-4">Quick Links</h3>
@@ -38,7 +36,7 @@ export function Footer() {
                     <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
                     <Link href="/cookie-policy" className="hover:underline">Cookie Policy</Link>
                 </div>
-                <p>&copy; {new Date().getFullYear()} PortfolioForge. All Rights Reserved.</p>
+                <p className="text-center md:text-right">&copy; {new Date().getFullYear()} PortfolioForge. All Rights Reserved.</p>
             </div>
              <p className="text-xs text-center mt-4">
                 Disclaimer: This site is a project and should be treated as such. The content is for demonstration purposes only.

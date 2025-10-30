@@ -24,7 +24,6 @@ import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 import Link from 'next/link';
-import { Footer } from '@/components/footer';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -262,7 +261,6 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 }
