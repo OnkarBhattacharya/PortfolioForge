@@ -16,14 +16,12 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useFirebase, useUser } from "@/firebase";
+import { useUser } from "@/firebase";
 import Link from "next/link";
-import { parseCv } from "@/ai/flows/cv-parser";
-import { updateUserProfileData } from "@/firebase/user-profile";
+import { CvData } from "@/lib/types";
 
 export default function ImportDataPage() {
   const { user } = useUser();
-  const { firestore } = useFirebase();
   const isReadOnly = !user || user.isAnonymous;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -70,7 +68,7 @@ export default function ImportDataPage() {
   };
 
   const handleUpload = async () => {
-    if (isReadOnly || !user || !firestore) {
+    if (isReadOnly || !user) {
        toast({
         variant: "destructive",
         title: "Authentication Required",
@@ -91,11 +89,23 @@ export default function ImportDataPage() {
 
     try {
       const cvFile = await fileToDataURI(selectedFile);
-      const parsedData = await parseCv({ cvFile });
       
-      await updateUserProfileData(firestore, user.uid, parsedData);
+      const response = await fetch('/api/cv-parser', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cvFile, userId: user.uid }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'CV parsing failed');
+      }
 
-      localStorage.setItem('cvData', JSON.stringify(parsedData));
+      const result = await response.json();
+      
+      localStorage.setItem('cvData', JSON.stringify(result.data));
       localStorage.setItem("cvUploadSuccess", "true");
       setCvUploadSuccess(true);
       
@@ -488,3 +498,5 @@ export default function ImportDataPage() {
     </div>
   );
 }
+
+    

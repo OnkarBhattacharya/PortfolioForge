@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { run } from '@genkit-ai/core';
 import { parseLinkedInProfile } from '@/ai/flows/linkedin-parser';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
@@ -39,3 +38,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }
 }
+
+    

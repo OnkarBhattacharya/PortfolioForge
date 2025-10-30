@@ -42,3 +42,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred during CV processing' }, { status: 500 });
   }
 }
+
+    
