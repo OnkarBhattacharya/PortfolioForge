@@ -27,7 +27,7 @@ test.describe('Authentication and Core Flows', () => {
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-    await page.getByRole('button', { name: /user/i }).click();
+    await page.getByRole('button', { name: /Test User/i }).click();
     await expect(page.getByText(uniqueEmail)).toBeVisible();
 
     await page.getByRole('menuitem', { name: 'Log out' }).click();
@@ -46,7 +46,7 @@ test.describe('Authentication and Core Flows', () => {
     await page.getByRole('button', { name: 'Sign Up' }).click();
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
-    await page.getByRole('button', { name: /user/i }).click();
+    await page.getByRole('button', { name: /Login User/i }).click();
     await page.getByRole('menuitem', { name: 'Log out' }).click();
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
     
@@ -57,9 +57,31 @@ test.describe('Authentication and Core Flows', () => {
     await page.getByRole('button', { name: 'Login' }).click();
 
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
-    await page.getByRole('button', { name: /user/i }).click();
+    await page.getByRole('button', { name: /Login User/i }).click();
     await expect(page.getByText(uniqueEmail)).toBeVisible();
   });
+
+  test('should deny access to the admin panel for a non-admin user', async ({ page }) => {
+    const uniqueEmail = `non_admin_user_${Date.now()}@example.com`;
+    
+    // Sign up as a regular user
+    await page.goto('/signup');
+    await acceptCookies(page);
+    await page.getByLabel('Full Name').fill('Normal User');
+    await page.getByLabel('Email').fill(uniqueEmail);
+    await page.getByLabel('Password').fill('password123');
+    await page.getByLabel('Confirm Password').fill('password123');
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await expect(page).toHaveURL('/');
+
+    // Attempt to navigate to the admin page
+    await page.goto('/admin');
+    
+    // Assert that access is denied
+    await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
+    await expect(page.getByText('You do not have permission to view this page.')).toBeVisible();
+  });
+
 
   test('should display legal links in the portfolio footer and navigate correctly', async ({ page }) => {
     // We can test this on a sample portfolio page of a non-existent user,
@@ -85,3 +107,4 @@ test.describe('Authentication and Core Flows', () => {
     await expect(page.getByRole('heading', { name: 'Cookie Policy' })).toBeVisible();
   });
 });
+
