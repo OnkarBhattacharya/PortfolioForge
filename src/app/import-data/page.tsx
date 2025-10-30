@@ -36,11 +36,13 @@ export default function ImportDataPage() {
   const [isImportingGithub, setIsImportingGithub] = useState(false);
   const [githubSuccess, setGithubSuccess] = useState(false);
 
+  const [importUrl, setImportUrl] = useState('');
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
+
 
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for success markers in local storage to persist UI state
     if (localStorage.getItem("cvUploadSuccess") === "true") {
       setCvUploadSuccess(true);
     }
@@ -161,7 +163,6 @@ export default function ImportDataPage() {
       }
       
       const result = await response.json();
-      // We store the parsed data in the same 'cvData' key to unify the profile data source
       localStorage.setItem('cvData', JSON.stringify(result.data)); 
       localStorage.setItem('linkedInSuccess', 'true');
       setLinkedInSuccess(true);
@@ -230,11 +231,53 @@ export default function ImportDataPage() {
     }
   };
 
-  const handleAddLink = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Functionality to add other links is under development.",
-    });
+  const handleAddLink = async () => {
+    if (isReadOnly || !user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in or sign up to import from a URL.",
+      });
+      return;
+    }
+    if (!importUrl) {
+      toast({
+        variant: "destructive",
+        title: "URL Required",
+        description: "Please enter a URL to import.",
+      });
+      return;
+    }
+
+    setIsImportingUrl(true);
+    try {
+      const response = await fetch('/api/web-importer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: importUrl, userId: user.uid }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'URL import failed');
+      }
+
+      const result = await response.json();
+      toast({
+        title: "AI-Powered Import Successful",
+        description: `"${result.name}" has been added to your portfolio.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Import Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsImportingUrl(false);
+    }
   };
 
   return (
@@ -403,30 +446,60 @@ export default function ImportDataPage() {
           </DialogContent>
         </Dialog>
 
-        <Card>
+        <Dialog>
+          <Card>
             <CardHeader>
               <CardTitle className="font-headline flex items-center gap-2">
                 <Link2 className="h-6 w-6 text-accent" />
-                Other Platforms
+                Import from URL
               </CardTitle>
               <CardDescription>
-                Link to your blog, Dribbble, or other profiles.
+                AI-crawl a blog post or project link.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleAddLink}
-                disabled={isReadOnly}
-              >
-                <Link2 className="mr-2 h-4 w-4" /> Add Links
-              </Button>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={isReadOnly}
+                >
+                  <Link2 className="mr-2 h-4 w-4" /> Add via URL
+                </Button>
+              </DialogTrigger>
               <p className="text-xs text-muted-foreground">
-                Showcase your presence across the web.
+                Our AI will create a portfolio item from any link.
               </p>
             </CardContent>
           </Card>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>AI-Powered URL Import</DialogTitle>
+              <DialogDescription>
+                Enter the URL of a blog post, article, or project you want to add to your portfolio.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="import-url">URL to Import</Label>
+                <Input
+                  id="import-url"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  placeholder="https://your-blog.com/your-awesome-article"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" onClick={handleAddLink} disabled={isImportingUrl}>
+                  {isImportingUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isImportingUrl ? 'AI is working...' : 'Import with AI'}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </div>
