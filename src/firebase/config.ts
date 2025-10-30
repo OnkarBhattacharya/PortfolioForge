@@ -1,7 +1,7 @@
 
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCro9bdB4rd9oD64EYNamI3iIkKmWsOSbM",
+  authDomain: "studio-3849653404-e5627.firebaseapp.com",
+  projectId: "studio-3849653404-e5627",
+  appId: "1:978801814369:web:fe79a420d9bd15522cf320",
 };
