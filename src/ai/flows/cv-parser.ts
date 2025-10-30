@@ -33,7 +33,9 @@ const prompt = ai.definePrompt({
     2.  **Extract Standard Fields**: Accurately extract personal information, summary, work experience, and education.
     3.  **List Relevant Skills**: Identify and list the top 10-15 most relevant skills. These can be technical skills (like programming languages), software (like Adobe Photoshop), or methodologies (like Agile).
 
-    CV Document: {{media url=cvFile}}`,
+    CV Document: {{media url=cvFile}}
+    
+    Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`,
   config: {
     model: 'googleai/gemini-1.5-pro',
   },
