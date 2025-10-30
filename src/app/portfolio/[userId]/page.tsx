@@ -54,68 +54,6 @@ type Theme = {
     accent: string;
 }
 
-const sampleProfile: UserProfile = {
-    id: 'sample-user',
-    fullName: 'Alex Doe',
-    email: 'alex.doe@example.com',
-    linkedinUrl: 'https://linkedin.com/in/example',
-    githubUrl: 'https://github.com/example',
-    themeId: 'default',
-    cv: {
-      personalInfo: {
-        name: 'Alex Doe',
-        email: 'alex.doe@example.com',
-      },
-      profession: 'Multi-disciplinary Professional',
-      summary: 'A passionate professional with a love for creating beautiful and functional work, experienced in multiple domains.',
-      experience: [
-        {
-          jobTitle: 'Senior Product Designer',
-          company: 'Innovate Inc.',
-          location: 'San Francisco, CA',
-          startDate: 'Jan 2020',
-          endDate: 'Present',
-          responsibilities: ['Led the design of a new mobile application.', 'Conducted user research and usability testing.'],
-        },
-      ],
-      education: [
-        {
-          degree: 'Bachelor of Arts in Design',
-          institution: 'Creative University',
-          graduationDate: 'May 2019',
-        },
-      ],
-      skills: ['UI/UX Design', 'Product Strategy', 'User Research', 'Figma'],
-    }
-};
-
-const sampleItems: PortfolioItem[] = [
-    {
-        id: 'sample-1',
-        name: 'Corporate Rebranding Campaign',
-        description: 'Led a full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.',
-        tags: ['Branding', 'Marketing', 'Design'],
-        itemUrl: '#',
-        imageId: 'project-5',
-    },
-    {
-        id: 'sample-2',
-        name: 'Data-driven SEO Strategy',
-        description: 'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
-        tags: ['SEO', 'Analytics', 'Content Strategy'],
-        itemUrl: '#',
-        imageId: 'project-2',
-    },
-    {
-        id: 'sample-3',
-        name: 'Mobile App UI/UX',
-        description: 'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
-        tags: ['UI/UX', 'Figma', 'Mobile Design'],
-        itemUrl: '#',
-        imageId: 'project-3',
-    }
-];
-
 export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
   const { firestore } = useFirebase();
 
@@ -124,13 +62,13 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
     return doc(firestore, 'users', userId);
   }, [firestore, userId]);
   
-  const { data: dbProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
-  const cvData = dbProfile?.cv;
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
+  const cvData = profile?.cv;
 
   const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !dbProfile?.themeId) return null;
-    return doc(firestore, 'themes', dbProfile.themeId);
-  }, [firestore, dbProfile?.themeId]);
+    if (!firestore || !profile?.themeId) return null;
+    return doc(firestore, 'themes', profile.themeId);
+  }, [firestore, profile?.themeId]);
 
   const { data: theme, isLoading: isThemeLoading } = useDoc<Theme>(themeDocRef);
 
@@ -139,12 +77,9 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
     return query(collection(firestore, 'users', userId, 'portfolioItems'));
   }, [firestore, userId]);
 
-  const { data: dbItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
+  const { data: items, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
   
   const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
-  
-  const profile = !isLoading && !dbProfile && !profileError ? sampleProfile : dbProfile;
-  const items = !isLoading && (!dbItems || dbItems.length === 0) && !profileError ? sampleItems : dbItems;
   
   const selectedTheme = useMemo(() => {
     if (theme) return theme;
@@ -185,7 +120,7 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
       )
   }
 
-  if (profileError) {
+  if (profileError || !profile) {
       return (
           <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
               <div className="text-center">
@@ -195,12 +130,8 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           </div>
       )
   }
-
-  if (!profile) {
-    return null; 
-  }
   
-  const portfolioCvData = cvData || sampleProfile.cv;
+  const portfolioCvData = cvData;
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">

@@ -16,7 +16,7 @@ import { useAuth, useUser, useDoc, useFirebase, useMemoFirebase } from '@/fireba
 import { CreditCard, LogOut, User, LogIn, UserPlus, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signOut, type User as FirebaseUser } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 
 type UserProfile = {

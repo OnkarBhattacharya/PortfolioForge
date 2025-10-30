@@ -11,13 +11,9 @@
           "type": "string",
           "description": "Unique identifier for the UserProfile entity."
         },
-        "firstName": {
+        "fullName": {
           "type": "string",
-          "description": "User's first name."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "User's last name."
+          "description": "User's full name."
         },
         "email": {
           "type": "string",
