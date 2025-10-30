@@ -1,40 +1,17 @@
-
 'use server';
 
-/**
- * @fileOverview A CV parsing AI agent that uses multi-modal capabilities
- * to understand the document layout and intelligently extract and enrich user data.
- *
- * - cvParserFlow - A function that handles the CV parsing process.
- * - CvDataSchema - The Zod schema for the output data.
- */
-
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import {z} from 'genkit';
 
-const CvParserInputSchema = z.object({
-  cvImage: z
-    .string()
-    .describe(
-      "An image of the CV, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:image/png;base64,<encoded_data>'."
-    ),
-});
-
-const CvDataSchema = z.object({
+export const CvDataSchema = z.object({
   personalInfo: z
     .object({
       name: z.string().describe("The candidate's full name."),
-      email: z
-        .string()
-        .describe("The candidate's email address.")
-        .optional(),
-      phone: z
-        .string()
-        .describe("The candidate's phone number.")
-        .optional(),
+      email: z.string().describe("The candidate's email address.").optional(),
+      phone: z.string().describe("The candidate's phone number.").optional(),
       location: z
         .string()
-        .describe("The candidate's city and state, e.g., 'San Francisco, CA'.")
+        .describe("The candidate's city and state, e.g., 'San Francisco, CA.'")
         .optional(),
       linkedin: z
         .string()
@@ -54,93 +31,83 @@ const CvDataSchema = z.object({
   experience: z
     .array(
       z.object({
-        jobTitle: z.string().describe('The job title or role.'),
+        jobTitle: z.string().describe('The job title, e.g., "Software Engineer".'),
         company: z.string().describe('The name of the company.'),
         location: z
           .string()
-          .describe("The location of the company (e.g., 'Remote', 'New York, NY').")
+          .describe('The location of the company, e.g., "San Francisco, CA".')
           .optional(),
         startDate: z
           .string()
-          .describe("The start date of the employment, e.g., 'May 2020'."),
+          .describe('The start date of employment, e.g., "October 2020".'),
         endDate: z
           .string()
-          .describe(
-            "The end date of the employment, e.g., 'Present' or 'Aug 2022'."
-          ),
+          .describe('The end date of employment, e.g., "Present" or "January 2022".'),
         responsibilities: z
           .array(z.string())
-          .describe(
-            'A list of 3-5 key responsibilities or accomplishments for this role.'
-          ),
+          .describe('A list of 2-4 key responsibilities or accomplishments.'),
       })
     )
-    .describe('A list of the candidate\'s professional work experiences.'),
+    .describe("A list of the candidate's work experiences."),
   education: z
     .array(
       z.object({
         degree: z
           .string()
           .describe(
-            "The degree obtained, e.g., 'B.S. in Computer Science'."
+            'The degree obtained, e.g., "Bachelor of Science in Computer Science".'
           ),
-        institution: z
-          .string()
-          .describe('The name of the university or institution.'),
+        institution: z.string().describe('The name of the university or school.'),
         location: z
           .string()
-          .describe("The location of the institution (e.g., 'Berkeley, CA').")
+          .describe('The location of the institution.')
           .optional(),
         graduationDate: z
           .string()
-          .describe("The date of graduation, e.g., 'June 2018'."),
+          .describe('The graduation date, e.g., "May 2020".'),
       })
     )
-    .describe('A list of the candidate\'s educational qualifications.'),
+    .describe("A list of the candidate's educational qualifications."),
   skills: z
     .array(z.string())
     .describe(
-      'A list of skills explicitly mentioned in the "Skills" section of the CV.'
-    )
-    .optional(),
-  inferredSkills: z
-    .array(z.string())
-    .describe(
-      'A list of key technologies and programming languages inferred from the job descriptions in the work experience section.'
-    )
-    .optional(),
+      'A list of 10-15 of the most important technical skills, programming languages, and tools mentioned in the CV.'
+    ),
 });
 
-export type CvData = z.infer<typeof CvDataSchema>;
+const CvParserInputSchema = z.string().describe('A data URI of a CV or resume image.');
+export type CvParserInput = z.infer<typeof CvParserInputSchema>;
+export type CvParserOutput = z.infer<typeof CvDataSchema>;
+
+export async function parseCv(input: CvParserInput): Promise<CvParserOutput> {
+    return cvParserFlow(input);
+}
+
 
 const prompt = ai.definePrompt({
-  name: 'cvParserPrompt',
-  input: {schema: CvParserInputSchema},
-  output: {schema: CvDataSchema},
-  prompt: `
-    You are an expert CV parsing agent. Your task is to analyze the provided CV image and extract the information into a structured JSON format that strictly adheres to the provided schema.
-
-    CV Image Analysis:
-    - Pay close attention to the layout and structure of the document to correctly identify sections.
-    - Extract Personal Information, Summary, Work Experience, Education, and any explicitly listed Skills.
-    - Data Enrichment: From the 'Work Experience' section, infer the key technologies and programming languages the candidate has used (e.g., 'React', 'Next.js', 'Python', 'Go', 'Terraform', 'Google Cloud') and populate them into the 'inferredSkills' array.
-
-    CV Image:
-    {{media url=cvImage}}
-  `,
-  config: {
-    temperature: 0.1,
-  },
+    name: 'cvParserPrompt',
+    input: { schema: CvParserInputSchema },
+    output: { schema: CvDataSchema },
+    prompt: `Parse the following CV and extract structured data. For responsibilities, provide a list of 2-4 key achievements for each role. For skills, list the top 10-15 most relevant technical skills.
+    
+    CV Image: {{media url=prompt}}`,
+    config: {
+      model: 'googleai/gemini-1.5-pro',
+    }
 });
 
-export const cvParserFlow = ai.defineFlow(
+
+const cvParserFlow = ai.defineFlow(
   {
     name: 'cvParserFlow',
     inputSchema: CvParserInputSchema,
     outputSchema: CvDataSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (cvImage) => {
+    const {output} = await prompt(cvImage);
+    if (!output) {
+      throw new Error('Failed to parse CV. The model did not return valid data.');
+    }
+    return output;
   }
 );

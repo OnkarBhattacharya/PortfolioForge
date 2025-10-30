@@ -6,56 +6,73 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   User,
+  updateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, Firestore, setDoc } from 'firebase/firestore';
+import { doc, getDoc, Firestore, setDoc, serverTimestamp } from 'firebase/firestore';
 import { FirestorePermissionError } from './errors';
 import { errorEmitter } from './error-emitter';
 
 /**
- * Creates a user profile document in Firestore if it doesn't already exist.
- * This function is called after a new user is created.
+ * Creates or updates a user profile document in Firestore.
+ * This function is called after a new user signs up or an existing user signs in.
  * It uses a non-blocking write and emits a contextual error on permission failure.
  * @param firestore - The Firestore instance.
  * @param user - The user object from Firebase Authentication.
  * @param fullName - The user's full name (optional, for email sign-up).
  */
-const createUserProfile = (firestore: Firestore, user: User, fullName?: string) => {
+const createOrUpdateUserProfile = (firestore: Firestore, user: User, fullName?: string) => {
   const userRef = doc(firestore, 'users', user.uid);
+  
+  const displayName = fullName || user.displayName || 'New User';
 
-  getDoc(userRef).then(userDoc => {
-    // Only create a profile if one doesn't already exist
-    if (!userDoc.exists()) {
-      const profileData = {
-        id: user.uid,
-        email: user.email,
-        fullName: fullName || user.displayName || 'New User',
-        photoURL: user.photoURL,
-        createdAt: new Date().toISOString(),
-        themeId: 'default', // Set a default theme for new users
-      };
-      
-      // Non-blocking write with contextual error handling
-      setDoc(userRef, profileData)
-        .catch(() => {
-          const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'create',
-            requestResourceData: profileData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
+  const profileData = {
+    id: user.uid,
+    email: user.email,
+    fullName: displayName,
+    photoURL: user.photoURL,
+    lastLoginAt: serverTimestamp(),
+  };
+  
+  const newProfileData = {
+      ...profileData,
+      createdAt: serverTimestamp(),
+      themeId: 'default',
+  }
+
+  // Non-blocking write with contextual error handling
+  setDoc(userRef, profileData, {merge: true})
+    .catch((error) => {
+        // First check if it's a new user creation error
+        getDoc(userRef).then(docSnap => {
+            if (!docSnap.exists()) {
+                 setDoc(userRef, newProfileData).catch(createError => {
+                    const permissionError = new FirestorePermissionError({
+                        path: userRef.path,
+                        operation: 'create',
+                        requestResourceData: newProfileData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                 });
+            } else {
+                 const permissionError = new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'update',
+                    requestResourceData: profileData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            }
         });
+    });
+    
+    if (user.displayName !== displayName) {
+        updateProfile(user, { displayName }).catch(e => console.error("Failed to update display name", e));
     }
-  });
 };
 
 
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth) {
   signInAnonymously(authInstance)
-    .then(userCredential => {
-      // You can optionally create a profile for anonymous users here if needed,
-      // but typically it's not required until they convert to a permanent account.
-    })
     .catch((error) => {
     // This is a non-critical error, so we just log it.
     console.error("Anonymous sign-in failed:", error);
@@ -66,11 +83,13 @@ export function initiateAnonymousSignIn(authInstance: Auth) {
 export async function initiateEmailSignUp(authInstance: Auth, firestore: Firestore, email: string, password: string, fullName: string) {
     const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
     // The profile creation is now a non-blocking fire-and-forget operation from the UI's perspective
-    createUserProfile(firestore, userCredential.user, fullName);
+    createOrUpdateUserProfile(firestore, userCredential.user, fullName);
     return userCredential;
 }
 
 /** Initiate email/password sign-in (blocking). */
-export async function initiateEmailSignIn(authInstance: Auth, email: string, password: string) {
-    return await signInWithEmailAndPassword(authInstance, email, password);
+export async function initiateEmailSignIn(authInstance: Auth, firestore: Firestore, email: string, password: string) {
+    const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
+    createOrUpdateUserProfile(firestore, userCredential.user);
+    return userCredential;
 }

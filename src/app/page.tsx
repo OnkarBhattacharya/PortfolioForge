@@ -130,7 +130,7 @@ export default function DashboardPage() {
               Welcome to PortfolioForge
             </CardTitle>
             <CardDescription>
-              Let&apos;s build your standout developer portfolio. Follow the steps
+              Let&apos;s build your standout professional portfolio. Follow the steps
               below to get started.
             </CardDescription>
           </CardHeader>

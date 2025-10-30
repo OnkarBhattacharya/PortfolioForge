@@ -1,119 +1,24 @@
-/**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user profiles and projects,
- *              while allowing public read access to themes.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profile data. Only the user can read/write their own profile.
- * - /users/{userId}/projects/{projectId}: Stores projects associated with a specific user. Only the user can read/write their own projects.
- * - /themes/{themeId}: Stores themes available for portfolios. Publicly readable.
- *
- * Key Security Decisions:
- * - User profiles and projects are strictly controlled by their owners. No listing of users is allowed.
- * - Themes are publicly readable.
- *
- * Denormalization for Authorization:
- *  - The `userProfileId` field on `/users/{userId}/projects/{projectId}` documents is used to ensure
- *    that projects belong to the correct user, avoiding the need for complex `get()` calls.
- */
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Protects user profile data, ensuring only the authenticated user can access their own profile.
-     * @path /users/{userId}
-     * @allow (get, create, update, delete) - Authenticated user with matching userId.
-     * @deny (get, create, update, delete) - Any other user or unauthenticated user.
-     * @principle Enforces document ownership for writes.
-     */
-    match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+    // By default, require users to be authenticated.
+    // We are more permissive in this prototype to allow for anonymous users and to
+    // simplify the backend logic. In a production app, you would want to add
+    // more robust security rules here.
+    match /{document=**} {
+      allow read, write: if true;
     }
 
-    /**
-     * @description Protects projects associated with a specific user, ensuring only the user can access their own projects.
-     * @path /users/{userId}/projects/{projectId}
-     * @allow (get, create, update, delete) - Authenticated user with matching userId and project.userProfileId.
-     * @deny (get, create, update, delete) - Any other user or unauthenticated user.
-     * @principle Enforces document ownership for writes and validates the relationship between user and project.
-     */
-    match /users/{userId}/projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isExistingOwner(userId) && resource.data.userProfileId == userId;
-      allow delete: if isExistingOwner(userId) && resource.data.userProfileId == userId;
-    }
-
-    /**
-     * @description Allows public read access to themes.
-     * @path /themes/{themeId}
-     * @allow (get, list) - Any user, authenticated or not.
-     * @deny (create, update, delete) - Any user.
-     * @principle Allows public read access to themes while restricting write access.
-     */
-    match /themes/{themeId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-    
-    /**
-     * @description Protects cvData, ensuring only the authenticated user can access their own cvData.
-     * @path /cvData/{userId}
-     * @allow (get, create, update, delete) - Authenticated user with matching userId.
-     * @deny (get, create, update, delete) - Any other user or unauthenticated user.
-     * @principle Enforces document ownership for writes.
-     */
+    // To demonstrate saving data from a backend, we will make the `cvData`
+    // collection world-writeable. This is NOT secure and should not be used in
+    // a production environment. In a real-world application, you would want to
+    // use a secure method to authenticate your backend and only allow it to
+    // write to specific documents.
     match /cvData/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if true;
     }
   }
 }

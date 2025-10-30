@@ -38,7 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const router = useRouter();
 
   const form = useForm<FormValues>({
@@ -52,10 +52,10 @@ export default function LoginPage() {
   async function onSubmit(values: FormValues) {
     setLoading(true);
     try {
-      if (!auth) {
+      if (!auth || !firestore) {
         throw new Error("Authentication service not available.");
       }
-      await initiateEmailSignIn(auth, values.email, values.password);
+      await initiateEmailSignIn(auth, firestore, values.email, values.password);
       toast({
         title: 'Login Successful',
         description: "Welcome back!",

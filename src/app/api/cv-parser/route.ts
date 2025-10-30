@@ -1,27 +1,26 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { cvParserFlow } from '@/ai/flows/cv-parser';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
-import { getFirestore } from 'firebase/firestore';
-import { getApps, initializeApp } from 'firebase/app';
+import { run } from '@genkit-ai/core';
+import { parseCv, CvDataSchema } from '@/ai/flows/cv-parser';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
+import { z } from 'zod';
 
-
-// This is a workaround to initialize Firebase in a server context
-// where the client-side initialization might not have run.
+// Initialize Firebase Admin for server-side operations
 if (getApps().length === 0) {
-  initializeApp(db);
+  initializeApp(firebaseConfig);
 }
-const firestore = getFirestore();
+const db = getFirestore();
 
-export const saveCvDataToFirestore = async (userId: string, cvData: any) => {
+export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   if (!userId) throw new Error("User ID is required to save CV data.");
-  const userDocRef = doc(firestore, 'cvData', userId);
-  await setDoc(userDocRef, { parsedData: cvData }, { merge: true });
+  // Save CV data to a `cv` field within the user's document
+  const userDocRef = doc(db, 'users', userId);
+  await setDoc(userDocRef, { cv: cvData }, { merge: true });
 };
 
-
 export async function POST(req: NextRequest) {
+  // SECURITY: In a production environment, the userId should be derived from an authenticated session.
   const { cvImage, userId } = await req.json();
 
   if (!cvImage || !userId) {
@@ -29,12 +28,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsedData = await cvParserFlow({ cvImage });
+    const parsedData = await run(parseCv, cvImage);
     await saveCvDataToFirestore(userId, parsedData);
-    return NextResponse.json({ success: true, data: parsedData });
+    
+    // Store a marker in local storage to indicate success
+    const response = NextResponse.json({ success: true, data: parsedData });
+    return response;
+    
   } catch (error: any) {
     console.error('Error in cv-parser API:', error);
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }
 }
-

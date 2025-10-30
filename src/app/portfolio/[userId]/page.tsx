@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useMemo, use, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   collection,
   doc,
@@ -22,33 +22,7 @@ import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
-
-const CvDataSchema = z.object({
-  personalInfo: z.object({
-    name: z.string().optional(),
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    location: z.string().optional(),
-    linkedin: z.string().optional(),
-    github: z.string().optional(),
-  }).optional(),
-  summary: z.string().optional(),
-  experience: z.array(z.object({
-    jobTitle: z.string().optional(),
-    company: z.string().optional(),
-    location: z.string().optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    responsibilities: z.array(z.string()).optional(),
-  })).optional(),
-  education: z.array(z.object({
-    degree: z.string().optional(),
-    institution: z.string().optional(),
-    location: z.string().optional(),
-    graduationDate: z.string().optional(),
-  })).optional(),
-  skills: z.array(z.string()).optional(),
-});
+import { CvDataSchema } from '@/ai/flows/cv-parser';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -59,6 +33,7 @@ type UserProfile = {
   linkedinUrl?: string;
   githubUrl?: string;
   themeId?: string;
+  cv?: CvData;
 };
 
 type Project = {
@@ -115,7 +90,7 @@ const sampleProjects: Project[] = [
 ];
 
 export default function PortfolioPage({ params }: { params: { userId: string } }) {
-  const { userId } = use(params);
+  const { userId } = params;
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {
@@ -124,14 +99,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
   }, [firestore, userId]);
   
   const { data: dbProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
-
-  const cvDataDocRef = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return doc(firestore, 'cvData', userId);
-  }, [firestore, userId]);
-
-  const { data: cvDataDocument, isLoading: isCvDataLoading } = useDoc<{ parsedData: CvData }>(cvDataDocRef);
-  const cvData = cvDataDocument?.parsedData;
+  const cvData = dbProfile?.cv;
 
   const themeDocRef = useMemoFirebase(() => {
     if (!firestore || !dbProfile?.themeId) return null;
@@ -147,7 +115,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
 
   const { data: dbProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
   
-  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading || isCvDataLoading;
+  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
   
   const profile = !isLoading && !dbProfile && !profileError ? sampleProfile : dbProfile;
   const projects = !isLoading && (!dbProjects || dbProjects.length === 0) && !profileError ? sampleProjects : dbProjects;
@@ -341,5 +309,3 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
     </div>
   );
 }
-
-    
