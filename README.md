@@ -1,6 +1,6 @@
 # PortfolioForge
 
-Welcome to **PortfolioForge**! This is a Next.js application designed to help you create a professional software engineering portfolio with ease. Leverage AI-powered content suggestions, import data from various sources like LinkedIn and GitHub, and showcase your projects in a beautifully designed template.
+Welcome to **PortfolioForge**! This is a Next.js application designed to help you create a professional portfolio with ease, no matter your profession. Leverage AI-powered content suggestions, import data from various sources like your CV, and showcase your work in a beautifully designed template.
 
 ## Tech Stack
 
@@ -19,13 +19,13 @@ This project is built with a modern, robust, and scalable tech stack:
 
 ## Key Features
 
-- **Dynamic Project Management**: Add and manage your software projects, which are stored securely in Firestore.
+- **Dynamic Portfolio Management**: Add and manage your work—projects, case studies, articles, or artwork—which are stored securely in Firestore as flexible `PortfolioItems`.
 - **User Authentication**: Secure sign-up and login with email/password, plus social sign-in options (Google, Apple, Microsoft). Read-only mode for guest users.
 - **Data Import**:
-  - **Multi-Modal CV Parser**: Upload your CV as a PDF or image. Our powerful multi-modal AI agent analyzes not just the text, but the document's layout and structure to accurately extract your professional data and even infer skills from your experience.
+  - **Multi-Modal CV Parser**: Upload your CV as a PDF or image. Our powerful multi-modal AI agent analyzes not just the text, but the document's layout and structure to accurately extract your professional data, identify your profession, and even infer key skills from your experience.
   - **LinkedIn**: Manually paste your profile data to quickly populate your portfolio.
   - **GitHub**: Sync your GitHub projects to showcase your work (placeholder for full integration).
-- **AI Content Assistant**: Use the AI assistant to generate compelling descriptions and summaries for your portfolio based on the data intelligently extracted from your CV and other sources.
+- **AI Content Assistant**: Use the AI assistant to generate compelling descriptions and summaries for your portfolio, tailored to your specific profession and based on the data intelligently extracted from your CV and other sources.
 - **Responsive Design**: A clean, modern UI that looks great on desktops, tablets, and smartphones.
 - **Customizable Themes**: Choose from a variety of free and premium themes to personalize the look and feel of your portfolio.
 
@@ -55,7 +55,7 @@ To get started with developing your portfolio:
 
 3.  **Import Your Data**: Navigate to the "Import Data" page to upload your CV or paste your LinkedIn data. The AI will automatically parse and save your information.
 
-4.  **Add Projects**: Go to the "Projects" page to add your projects manually.
+4.  **Add Portfolio Items**: Go to the "Portfolio Items" page to add your work manually.
 
 5.  **Use the AI Assistant**: Go to the "AI Assistant" page to generate compelling descriptions and summaries based on the data you provided.
 
