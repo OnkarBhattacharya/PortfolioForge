@@ -1,31 +1,30 @@
-/**
- * @jest-environment jsdom
- */
+
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import DashboardPage from '@/app/page';
+import { vi } from 'vitest';
+import { useUser } from '@/firebase';
 
-// Mock the Firebase hooks to simulate different user states
-jest.mock('@/firebase', () => ({
-  ...jest.requireActual('@/firebase'),
-  useUser: jest.fn(),
-  useFirebase: jest.fn(() => ({ firestore: null })), // Mock firestore instance
-  useCollection: jest.fn(() => ({ data: [], isLoading: false })),
+// Mock the Firebase hooks synchronously
+vi.mock('@/firebase', () => ({
+  useFirebase: vi.fn(() => ({ firestore: null })),
+  useCollection: vi.fn(() => ({ data: [], isLoading: false, error: null })),
   useMemoFirebase: (cb: () => any) => cb(),
+  useUser: vi.fn(),
 }));
 
-// Mock the placeholder image function
-jest.mock('@/lib/placeholder-images', () => ({
+// Mock the placeholder image function synchronously
+vi.mock('@/lib/placeholder-images', () => ({
   getPlaceholderImage: () => ({
     imageUrl: 'https://picsum.photos/seed/1/600/400',
     imageHint: 'sample hint',
   }),
 }));
 
-// Mock Next.js router
-jest.mock('next/navigation', () => ({
+// Mock Next.js router synchronously
+vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: vi.fn(),
   }),
   usePathname: () => '/',
 }));
@@ -48,19 +47,16 @@ const localStorageMock = (() => {
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
-
 describe('DashboardPage', () => {
-  const { useUser } = require('@/firebase');
 
   beforeEach(() => {
-    // Reset mocks before each test
-    (useUser as jest.Mock).mockClear();
+    vi.mocked(useUser).mockClear();
     window.localStorage.clear();
   });
 
   it('renders the dashboard heading', () => {
     // Simulate a logged-in user
-    useUser.mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false });
+    vi.mocked(useUser).mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false, userError: null });
     render(<DashboardPage />);
     
     // Check if the main heading is present
@@ -70,7 +66,7 @@ describe('DashboardPage', () => {
 
   it('shows read-only mode for anonymous users', () => {
     // Simulate a guest/anonymous user
-    useUser.mockReturnValue({ user: { uid: 'anon123', isAnonymous: true }, isUserLoading: false });
+    vi.mocked(useUser).mockReturnValue({ user: { uid: 'anon123', isAnonymous: true }, isUserLoading: false, userError: null });
     render(<DashboardPage />);
 
     // Check for the "Read-Only Mode" card
@@ -79,7 +75,7 @@ describe('DashboardPage', () => {
   });
 
   it('shows welcome card and quick links', () => {
-    useUser.mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false });
+    vi.mocked(useUser).mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false, userError: null });
     render(<DashboardPage />);
 
     // Check for key components on the dashboard
@@ -89,19 +85,21 @@ describe('DashboardPage', () => {
   });
 
   it('shows checkmark for uploaded CV if data is in localStorage', async () => {
-    useUser.mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false });
+    vi.mocked(useUser).mockReturnValue({ user: { uid: '123', isAnonymous: false }, isUserLoading: false, userError: null });
+    
     act(() => {
       window.localStorage.setItem('cvUploadSuccess', 'true');
     });
     
     render(<DashboardPage />);
     
-    // Use findBy* to wait for the effect to run
-    const cvItem = await screen.findByText('CV Uploaded');
+    const cvItem = screen.getByText('CV Uploaded');
     const parentElement = cvItem.parentElement;
     
-    // Check for the CheckCircle SVG, which has the green color class
-    const checkIcon = parentElement?.querySelector('svg.text-green-500');
+    // Check for the CheckCircle SVG, which is now a mock icon
+    const checkIcon = parentElement?.querySelector('svg');
     expect(checkIcon).toBeInTheDocument();
+    // Verify it's the green check by checking the class on a real element
+    expect(parentElement?.querySelector('.text-green-500')).toBeInTheDocument();
   });
 });
