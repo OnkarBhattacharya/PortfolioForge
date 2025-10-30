@@ -20,10 +20,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/firebase";
 import Link from "next/link";
+import { Canvas } from "canvas";
 
 if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
+
+// Polyfill for OffscreenCanvas
+if (typeof window !== 'undefined' && typeof OffscreenCanvas === 'undefined') {
+  // @ts-ignore
+  global.OffscreenCanvas = class OffscreenCanvas {
+    constructor(width: number, height: number) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      return canvas;
+    }
+  };
+}
+
 
 export default function ImportDataPage() {
   const { user } = useUser();
@@ -57,6 +72,36 @@ export default function ImportDataPage() {
     }
   };
 
+  const fileToDataURI = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const pdfToImageDataURI = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 2 });
+    
+    // Create a canvas element to render the PDF page
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    if (!context) {
+        throw new Error('Could not get canvas context');
+    }
+
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+    return canvas.toDataURL('image/png');
+  };
+  
+
   const handleUpload = async () => {
     if (isReadOnly) {
        toast({
@@ -78,38 +123,25 @@ export default function ImportDataPage() {
     setIsUploading(true);
 
     try {
-      let text = '';
+      let imageDataUri = '';
       if (selectedFile.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          if (!e.target?.result) return;
-          const typedArray = new Uint8Array(e.target.result as ArrayBuffer);
-          const pdf = await pdfjs.getDocument(typedArray).promise;
-          let content = '';
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            content += textContent.items.map((item: any) => item.str).join(' ');
-          }
-          parseAndSaveCv(content);
-        };
-        reader.readAsArrayBuffer(selectedFile);
-        return;
+        imageDataUri = await pdfToImageDataURI(selectedFile);
       } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          if (!e.target?.result) return;
-          const result = await mammoth.extractRawText({ arrayBuffer: e.target.result as ArrayBuffer });
-          parseAndSaveCv(result.value);
-        };
-        reader.readAsArrayBuffer(selectedFile);
+        toast({
+          variant: "destructive",
+          title: "Unsupported File Type",
+          description: "DOCX parsing is coming soon! Please upload a PDF for now.",
+        });
+         setIsUploading(false);
         return;
-      } else if (selectedFile.type === 'text/plain') {
-        text = await selectedFile.text();
-        parseAndSaveCv(text);
+      } else if (selectedFile.type.startsWith('image/')) {
+        imageDataUri = await fileToDataURI(selectedFile);
       } else {
-        throw new Error("Unsupported file type. Please upload a .txt, .pdf, or .docx file.");
+        throw new Error("Unsupported file type. Please upload a PDF or image file.");
       }
+
+      await parseAndSaveCv(imageDataUri);
+
     } catch (error: any) {
       console.error(error);
       toast({
@@ -121,7 +153,7 @@ export default function ImportDataPage() {
     }
   };
 
-  const parseAndSaveCv = async (cvText: string) => {
+  const parseAndSaveCv = async (cvImage: string) => {
     if (!user) return;
 
     try {
@@ -130,7 +162,7 @@ export default function ImportDataPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cvText, userId: user.uid }),
+        body: JSON.stringify({ cvImage, userId: user.uid }),
       });
 
       if (!response.ok) {
@@ -229,21 +261,21 @@ export default function ImportDataPage() {
                 Upload CV
               </CardTitle>
               <CardDescription>
-                Upload your CV (.txt, .pdf, .docx).
+                Upload your CV (PDF recommended).
               </CardDescription>
             </div>
              {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
-              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".txt,.pdf,.docx" disabled={isReadOnly} className="flex-1" />
+              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
               <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
                 <UploadCloud className="mr-2 h-4 w-4" />
                 {isUploading ? 'Parsing CV...' : 'Upload'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-             We&apos;ll use AI to parse your CV and pre-fill your portfolio sections.
+             Our new multi-modal AI will analyze your CV's layout and content to pre-fill your portfolio.
             </p>
           </CardContent>
         </Card>
