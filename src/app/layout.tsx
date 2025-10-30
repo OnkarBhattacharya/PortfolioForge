@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { MainLayout } from '@/components/main-layout';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import CookieBanner from '@/components/cookie-banner';
 
 export const metadata: Metadata = {
   title: 'PortfolioForge',
@@ -28,6 +29,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <MainLayout>{children}</MainLayout>
           <Toaster />
+          <CookieBanner />
         </FirebaseClientProvider>
       </body>
     </html>

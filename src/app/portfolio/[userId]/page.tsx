@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   collection,
   doc,
@@ -17,12 +17,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap, Star } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/ai/flows/cv-parser';
+import Link from 'next/link';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -115,7 +116,8 @@ const sampleItems: PortfolioItem[] = [
     }
 ];
 
-export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
+export default function PortfolioPage({ params }: { params: { userId: string } }) {
+  const { userId } = params;
   const { firestore } = useFirebase();
 
   const userDocRef = useMemoFirebase(() => {
@@ -330,7 +332,17 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
         </section>
       </main>
       <footer className="mt-16 bg-muted py-8 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} {portfolioCvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
+        <div className="container mx-auto px-4">
+            <div className="flex justify-center gap-x-6 gap-y-4 flex-wrap mb-4">
+                <Link href="/terms-and-conditions" className="text-sm hover:underline">Terms & Conditions</Link>
+                <Link href="/privacy-policy" className="text-sm hover:underline">Privacy Policy</Link>
+                <Link href="/cookie-policy" className="text-sm hover:underline">Cookie Policy</Link>
+            </div>
+            <p>&copy; {new Date().getFullYear()} {portfolioCvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
+             <p className="text-xs mt-2">
+                Disclaimer: This site is a project and should be treated as such. The content is for demonstration purposes only.
+            </p>
+        </div>
       </footer>
     </div>
   );
