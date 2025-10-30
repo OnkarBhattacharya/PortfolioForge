@@ -16,12 +16,14 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useUser } from "@/firebase";
+import { useFirebase, useUser } from "@/firebase";
 import Link from "next/link";
-import { CvDataSchema } from "@/lib/types";
+import { parseCv } from "@/ai/flows/cv-parser";
+import { updateUserProfileData } from "@/firebase/user-profile";
 
 export default function ImportDataPage() {
   const { user } = useUser();
+  const { firestore } = useFirebase();
   const isReadOnly = !user || user.isAnonymous;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -68,7 +70,7 @@ export default function ImportDataPage() {
   };
 
   const handleUpload = async () => {
-    if (isReadOnly || !user) {
+    if (isReadOnly || !user || !firestore) {
        toast({
         variant: "destructive",
         title: "Authentication Required",
@@ -88,21 +90,12 @@ export default function ImportDataPage() {
     setIsUploading(true);
 
     try {
-      const fileDataUri = await fileToDataURI(selectedFile);
+      const cvFile = await fileToDataURI(selectedFile);
+      const parsedData = await parseCv({ cvFile });
       
-      const response = await fetch('/api/cv-parser', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ cvFile: fileDataUri, userId: user.uid }),
-      });
+      await updateUserProfileData(firestore, user.uid, parsedData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'CV parsing failed');
-      }
-
-      const result = await response.json();
-      localStorage.setItem('cvData', JSON.stringify(result.data));
+      localStorage.setItem('cvData', JSON.stringify(parsedData));
       localStorage.setItem("cvUploadSuccess", "true");
       setCvUploadSuccess(true);
       

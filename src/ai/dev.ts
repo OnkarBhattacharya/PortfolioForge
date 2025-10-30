@@ -9,4 +9,4 @@ import './flows/github-importer.ts';
 import './flows/linkedin-parser.ts';
 import './flows/web-importer.ts';
 
-export {cvParserFlow} from './flows/cv-parser';
+export {cvParserFlow, parseCv} from './flows/cv-parser';
