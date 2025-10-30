@@ -1,24 +1,95 @@
-
+/**
+ * @fileoverview Firestore Security Rules for PortfolioForge.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and their associated portfolio items.
+ * Themes are publicly readable, but write access is restricted.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile data.
+ * - /users/{userId}/portfolioItems/{itemId}: Stores portfolio items for each user.
+ * - /themes/{themeId}: Stores publicly available themes.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own profile data and portfolio items.
+ * - Themes are publicly readable to allow browsing.
+ * - User listing is disallowed.
+ *
+ * Denormalization for Authorization:
+ *  - UserProfile documents use their document ID as the user ID.
+ *  - PortfolioItems store the userProfileId.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // By default, require users to be authenticated.
-    // We are more permissive in this prototype to allow for anonymous users and to
-    // simplify the backend logic. In a production app, you would want to add
-    // more robust security rules here.
-    match /{document=**} {
-      allow read, write: if true;
+    /**
+     * @description Manages user profiles, ensuring only the user can access their data.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user123' creates their profile at /users/user123.
+     * @deny (create) User with UID 'user456' attempts to create a profile at /users/user123.
+     * @allow (get) User with UID 'user123' reads their profile at /users/user123.
+     * @deny (get) User with UID 'user456' attempts to read profile at /users/user123.
+     * @allow (update) User with UID 'user123' updates their profile at /users/user123.
+     * @deny (update) User with UID 'user456' attempts to update profile at /users/user123.
+     * @allow (delete) User with UID 'user123' deletes their profile at /users/user123.
+     * @deny (delete) User with UID 'user456' attempts to delete profile at /users/user123.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
-    // To demonstrate saving data from a backend, we will make the `cvData`
-    // collection world-writeable. This is NOT secure and should not be used in
-    // a production environment. In a real-world application, you would want to
-    // use a secure method to authenticate your backend and only allow it to
-    // write to specific documents.
-    match /cvData/{userId} {
-      allow read, write: if true;
+    /**
+     * @description Manages portfolio items for a user, ensuring only the user can access their items.
+     * @path /users/{userId}/portfolioItems/{itemId}
+     * @allow (create) User with UID 'user123' creates an item in /users/user123/portfolioItems/item1.
+     * @deny (create) User with UID 'user456' attempts to create an item in /users/user123/portfolioItems/item1.
+     * @allow (get) User with UID 'user123' reads an item in /users/user123/portfolioItems/item1.
+     * @deny (get) User with UID 'user456' attempts to read item in /users/user123/portfolioItems/item1.
+     * @allow (update) User with UID 'user123' updates an item in /users/user123/portfolioItems/item1.
+     * @deny (update) User with UID 'user456' attempts to update item in /users/user123/portfolioItems/item1.
+     * @allow (delete) User with UID 'user123' deletes an item in /users/user123/portfolioItems/item1.
+     * @deny (delete) User with UID 'user456' attempts to delete item in /users/user123/portfolioItems/item1.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/portfolioItems/{itemId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+       function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages themes, allowing public read access but restricting write access.
+     * @path /themes/{themeId}
+     * @allow (get) Any user can read a theme at /themes/theme1.
+     * @allow (list) Any user can list themes.
+     * @deny (create) Any user attempts to create a theme.
+     * @deny (update) Any user attempts to update a theme.
+     * @deny (delete) Any user attempts to delete a theme.
+     * @principle Allows public read access and restricts write access.
+     */
+    match /themes/{themeId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
     }
   }
 }

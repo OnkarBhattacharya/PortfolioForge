@@ -29,6 +29,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -78,8 +79,10 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
       values.tags?.split(',').map((t) => t.trim()).filter(Boolean) || [];
     
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
+    const newItemId = uuidv4();
 
     addDocumentNonBlocking(itemsCol, {
+        id: newItemId,
         name: values.name,
         description: values.description,
         itemUrl: values.itemUrl,

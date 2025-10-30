@@ -9,8 +9,8 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, Firestore, setDoc, serverTimestamp } from 'firebase/firestore';
-import { FirestorePermissionError } from './errors';
-import { errorEmitter } from './error-emitter';
+import { setDocumentNonBlocking } from './non-blocking-updates';
+
 
 /**
  * Creates or updates a user profile document in Firestore.
@@ -25,44 +25,31 @@ const createOrUpdateUserProfile = (firestore: Firestore, user: User, fullName?: 
   
   const displayName = fullName || user.displayName || 'New User';
 
-  const profileData = {
-    id: user.uid,
-    email: user.email,
-    fullName: displayName,
-    photoURL: user.photoURL,
-    lastLoginAt: serverTimestamp(),
-  };
-  
-  const newProfileData = {
-      ...profileData,
-      createdAt: serverTimestamp(),
-      themeId: 'default',
-  }
-
-  // Non-blocking write with contextual error handling
-  setDoc(userRef, profileData, {merge: true})
-    .catch((error) => {
-        // First check if it's a new user creation error
-        getDoc(userRef).then(docSnap => {
-            if (!docSnap.exists()) {
-                 setDoc(userRef, newProfileData).catch(createError => {
-                    const permissionError = new FirestorePermissionError({
-                        path: userRef.path,
-                        operation: 'create',
-                        requestResourceData: newProfileData,
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                 });
-            } else {
-                 const permissionError = new FirestorePermissionError({
-                    path: userRef.path,
-                    operation: 'update',
-                    requestResourceData: profileData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            }
-        });
-    });
+  // This check is important. We only want to set the initial creation data
+  // if the document does not exist. Otherwise, we only update the login time.
+  getDoc(userRef).then(docSnap => {
+      if (!docSnap.exists()) {
+          // Document doesn't exist, so it's a new user sign-up.
+          // Create the full profile with 'createdAt' and default theme.
+          const newProfileData = {
+              id: user.uid,
+              email: user.email,
+              fullName: displayName,
+              photoURL: user.photoURL,
+              lastLoginAt: serverTimestamp(),
+              createdAt: serverTimestamp(),
+              themeId: 'default',
+          };
+          setDocumentNonBlocking(userRef, newProfileData, {});
+      } else {
+          // Document exists, so it's a returning user.
+          // Only update the 'lastLoginAt' field.
+          const updateData = {
+              lastLoginAt: serverTimestamp(),
+          };
+          setDocumentNonBlocking(userRef, updateData, { merge: true });
+      }
+  });
     
     if (user.displayName !== displayName) {
         updateProfile(user, { displayName }).catch(e => console.error("Failed to update display name", e));
