@@ -12,16 +12,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser } from '@/firebase';
-import { CreditCard, LogOut, User, LogIn, UserPlus, Settings } from 'lucide-react';
+import { useAuth, useUser, useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { CreditCard, LogOut, User, LogIn, UserPlus, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
+import { signOut, type User as FirebaseUser } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
+
+type UserProfile = {
+  role?: 'user' | 'admin';
+};
 
 export function UserNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const { firestore } = useFirebase();
   const router = useRouter();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || user.isAnonymous || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleLogout = async () => {
     if (auth) {
@@ -97,6 +110,14 @@ export function UserNav() {
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
+            {userProfile?.role === 'admin' && (
+             <DropdownMenuItem asChild>
+                <Link href="/admin">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+                </Link>
+            </DropdownMenuItem>
+            )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

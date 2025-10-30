@@ -24,6 +24,11 @@
           "description": "User's email address.",
           "format": "email"
         },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the system.",
+          "enum": ["user", "admin"]
+        },
         "linkedInUrl": {
           "type": "string",
           "description": "URL to the user's LinkedIn profile.",
