@@ -42,7 +42,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 - **Backend & Database**: **Firebase (Firestore & Authentication)** provides a secure, serverless backend that scales automatically, ensuring reliability and low operational overhead.
 - **Generative AI**: **Firebase Genkit** orchestrates our powerful AI features, allowing us to leverage state-of-the-art models from Google (Gemini 1.5 Pro) for multi-modal analysis and content generation.
 - **UI & Styling**: **ShadCN UI** and **Tailwind CSS** enable us to build beautiful, accessible, and consistent user interfaces with high velocity.
-- **Testing & Quality Assurance**: A comprehensive testing suite using **Jest**, **React Testing Library**, and **Playwright** ensures application reliability, from individual components to full end-to-end user flows.
+- **Testing & Quality Assurance**: A comprehensive testing suite using **Vitest**, **React Testing Library**, and **Playwright** ensures application reliability, from individual components to full end-to-end user flows.
 
 ### Architectural Overview
 
@@ -145,7 +145,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 ### 9. Comprehensive Testing Suite
 - **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
 - **Implementation:**
-  - **Jest & React Testing Library:** Used for unit and component testing. Configuration is in `jest.config.js`, and tests are located in the `tests/` directory.
+  - **Vitest & React Testing Library:** Used for unit and component testing. Configuration is in `vite.config.ts`, and tests are located in the `tests/` directory.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
 
@@ -155,5 +155,3 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
-
-    

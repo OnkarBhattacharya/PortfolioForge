@@ -18,6 +18,14 @@ This report identifies several areas for improvement, ranging from critical conf
 
 ### 2.1. Build & Configuration
 
+- **Finding (Critical)**: The project's `package.json` file included a `dev` script with hardcoded `--port` and `--hostname` flags. This conflicted with the values provided by the deployment environment, causing startup failures.
+- **Recommendation**: Remove the hardcoded `--port` and `--hostname` flags from the `dev` script in `package.json` to allow the server environment to control these settings.
+- **Status**: **Resolved**.
+
+- **Finding (Critical)**: The `next.config.ts` file was missing the `allowedDevOrigins` configuration. This caused the Next.js development server to block cross-origin requests from the development environment, preventing the application from loading.
+- **Recommendation**: Add the correct origin for the development environment to the `allowedDevOrigins` array in `next.config.ts`.
+- **Status**: **Resolved**.
+
 - **Finding (Critical)**: The project contained both a `next.config.js` and a `next.config.ts` file. Next.js will prioritize and use the `.js` version, effectively ignoring the TypeScript configuration file. This can lead to unpredictable build behavior and makes it unclear which configuration is active.
 - **Recommendation**: Immediately delete the `next.config.js` file to resolve the conflict and ensure the `next.config.ts` file is the single source of truth for the build configuration.
 - **Status**: **Resolved**.
@@ -41,10 +49,17 @@ This report identifies several areas for improvement, ranging from critical conf
 - **Finding (Informational)**: Client-side state related to data import success (e.g., `cvUploadSuccess`) is currently managed via `localStorage`. While functional, this approach can become difficult to manage as the application grows.
 - **Recommendation**: For future development, consider centralizing client-side state using a dedicated state management library (like Zustand or Jotai) or React's built-in Context API. This is not an immediate issue but a consideration for future scalability.
 
-### 2.4. AI & Genkit Flows
+### 2.4. Testing Suite
 
-- **Finding (Informational)**: The Genkit prompts across the various flows (`cv-parser`, `linkedin-parser`, etc.) are well-structured. However, as the application scales, these prompts could be further optimized with more examples (few-shot prompting) to improve the consistency and accuracy of the model's output, especially for edge cases.
-- **Recommendation**: No immediate action is required. As user feedback is gathered, consider refining the prompts with specific examples of desired inputs and outputs to fine-tune the AI's performance.
+- **Finding (Medium)**: The frontend component tests in `tests/frontend/` were failing due to incomplete and incorrect mocking of dependencies, particularly Firebase hooks and `lucide-react` icons.
+- **Recommendation**: Overhaul the test files (`admin.test.tsx`, `dashboard.test.tsx`) to use robust mocking strategies. Isolate tests using `beforeEach` and `afterEach` hooks and provide complete, stable mocks for all external dependencies.
+- **Status**: **Resolved**.
+
+### 2.5. AI & Genkit Flows
+
+- **Finding (High)**: The data import engine had multiple, inconsistent patterns for invoking AI flows and saving data to Firestore. The initial `cv-parser` implementation was particularly unstable due to incorrect server-side Firebase initialization.
+- **Recommendation**: Refactor the entire data import engine to use a standardized, server-centric architecture. Each importer (`cv`, `linkedin`, `github`, `web`) should have a dedicated API route that orchestrates the AI flow and subsequent Firestore write. This isolates concerns and uses a reliable pattern for server-side operations.
+- **Status**: **Resolved**.
 
 ## 3. Security Analysis
 
@@ -54,6 +69,6 @@ This report identifies several areas for improvement, ranging from critical conf
 
 ## 4. Overall Conclusion
 
-PortfolioForge is a well-architected application with a strong foundation. The issues identified in this audit are common in rapidly developed projects and are all addressable.
+PortfolioForge is a well-architected application with a strong foundation. The issues identified in this audit are common in rapidly developed projects and have now been addressed.
 
-By implementing the recommended changes, the project will be more stable, maintainable, and secure, positioning it well for future growth and feature development.
+By implementing these changes, the project is more stable, maintainable, and secure, positioning it well for future growth and feature development.

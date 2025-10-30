@@ -16,7 +16,7 @@ The tests are organized into the following categories within the `tests/` direct
 
 ## Tools We Use
 
-- **Jest**: The primary test runner for unit and component tests.
+- **Vitest**: The primary test runner for unit and component tests.
 - **React Testing Library**: For rendering and interacting with React components in a user-centric way.
 - **Playwright**: For powerful and reliable end-to-end tests that run in real browsers (Chrome, Firefox, etc.).
 - **TypeScript**: For static type checking, which catches many errors before runtime.
@@ -29,7 +29,7 @@ The tests are organized into the following categories within the `tests/` direct
 
 These tests verify that individual functions and React components work correctly. They are fast and run in a simulated browser environment (jsdom). They are located in `tests/unit/` and `tests/frontend/`.
 
-To run all Jest tests once:
+To run all Vitest tests once:
 ```bash
 npm run test
 ```

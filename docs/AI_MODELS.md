@@ -23,7 +23,7 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 1.  **Frontend Request**: The client (`src/app/import-data/page.tsx`) sends a request to a specific API route (e.g., `/api/cv-parser`) with the necessary data (file data URI, username, URL, etc.).
 2.  **API Route Orchestration**: The Next.js API route receives the request, calls the appropriate Genkit flow to perform the AI task, and then saves the structured data to Firestore.
 3.  **Genkit Flow Execution**: The Genkit flow (e.g., `cvParserFlow`) is responsible for a single task: interacting with the AI model to process the input and return a structured JSON object.
-4.  **Firestore Update**: The API route takes the JSON output from the flow and saves it to the user's Firestore document.
+4.  **Firestore Update**: The API route takes the JSON output from the flow and saves it to the user's document in Firestore.
 
 ### 1. Multi-Modal AI CV Parser
 
