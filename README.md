@@ -23,7 +23,7 @@ PortfolioForge is not just another template-based website builder. It's an intel
 
 - **Multi-Modal AI CV Parser**: Our core innovation. Users upload a CV (PDF, DOCX, or image), and our multi-modal AI agent analyzes both the textual content and the document's visual layout. It intelligently extracts professional history, identifies the user's profession, and even infers key skills—providing a rich data foundation in seconds.
 - **AI Content Co-pilot**: Powered by Genkit, our AI assistant acts as a professional copywriter. It uses the imported data to generate compelling headlines, professional summaries, and project descriptions tailored to the user's specific industry and role.
-- **Effortless Data Aggregation**: Users can import data not just from their CV, but also by pasting their LinkedIn profile and connecting their GitHub account (for technical roles), creating a comprehensive professional profile with minimal effort.
+- **Effortless Data Aggregation**: Users can import data not just from their CV, but also by pasting their LinkedIn profile, connecting their GitHub account, or even providing a URL to a blog post or project. Our AI handles the rest, creating a comprehensive professional profile with minimal effort.
 - **Premium, Customizable Themes**: We offer a range of beautifully designed, fully responsive themes. Users can start with a stunning free theme or upgrade to a premium design that fits their personal brand.
 
 ## Market & Monetization Strategy
@@ -48,7 +48,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 
 - `src/app/`: Next.js App Router for all application routes, leveraging server-side rendering for performance.
 - `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling. All data mutations are non-blocking for a fluid UI.
-- `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser and content assistant.
+- `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser, data importers, and content assistant.
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
 - `tests/`: A comprehensive testing suite covering unit, integration, frontend, and end-to-end tests to ensure code quality and application stability.
 
@@ -96,12 +96,14 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Custom Hooks:** The `useUser()` and `useAuth()` hooks provide easy, reactive access to the current user's state throughout the application.
   - **Authentication Flows:** The `initiateEmailSignUp`, `initiateEmailSignIn`, and `initiateAnonymousSignIn` functions in `src/firebase/non-blocking-login.tsx` manage all authentication logic, including creating user profiles in Firestore upon sign-up.
 
-### 2. Multi-Modal AI CV Parser
-- **Description:** This is the core intelligent feature of the platform. Users can upload their CV in PDF or image format. An advanced AI agent analyzes both the document's text and its visual layout to accurately extract structured data, including contact information, work experience, education, skills, and even infers the user's profession (e.g., "Software Engineer," "Graphic Designer").
+### 2. Multi-Source AI Data Import Engine
+- **Description:** This is the core intelligent data aggregation suite of the platform. It allows users to import professional data from a variety of sources with a single click, using AI to structure and save the information automatically.
 - **Implementation:**
-  - **Genkit & Gemini 1.5 Pro:** A powerful Genkit flow in `src/ai/flows/cv-parser.ts` leverages the multi-modal capabilities of the Google Gemini 1.5 Pro model.
-  - **Client-Side Pre-processing:** The frontend (`src/app/import-data/page.tsx`) converts the uploaded file into a data URI before sending it to the backend.
-  - **API Route:** The `/api/cv-parser` endpoint handles the request, invokes the Genkit flow, and saves the structured data to the user's profile in Firestore.
+  - **AI CV Parser:** A powerful Genkit flow in `src/ai/flows/cv-parser.ts` leverages the multi-modal capabilities of **Gemini 1.5 Pro** to analyze the text and visual layout of an uploaded CV (PDF or image).
+  - **AI LinkedIn Parser:** A Genkit flow in `src/ai/flows/linkedin-parser.ts` takes raw text copied from a user's LinkedIn profile and intelligently structures it into the standard `CvData` format.
+  - **GitHub Importer:** A Genkit flow in `src/ai/flows/github-importer.ts` fetches a user's public repositories via the GitHub API, automatically creating portfolio items for their top projects.
+  - **AI Web Importer:** An advanced flow in `src/ai/flows/web-importer.ts` can crawl any public URL (like a blog post or project page), use AI to generate a title, summary, and tags, and add it to the user's portfolio.
+  - **API Routes:** Each importer is powered by a dedicated Next.js API route (`/api/cv-parser`, `/api/linkedin-parser`, `/api/github-importer`, `/api/web-importer`) that orchestrates the flow and saves the data to Firestore.
 
 ### 3. AI Content Co-pilot
 - **Description:** An intelligent writing assistant that helps users craft compelling professional narratives. It uses the data parsed from the user's CV and their identified profession to generate tailored suggestions for portfolio headlines and summaries, overcoming writer's block.
@@ -122,22 +124,36 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Flexible Firestore Schema:** The `docs/backend.json` defines a generic `PortfolioItem` schema that can accommodate a variety of content types.
   - **CRUD Operations:** The "Portfolio Items" page (`src/app/projects/page.tsx`) provides a user-friendly interface for managing portfolio items. Add operations are handled through a dialog (`add-project-dialog.tsx`) that performs non-blocking writes to Firestore for a fast and responsive user experience.
 
-### 6. Billing & Subscriptions
+### 6. Admin Panel with Role-Based Access
+- **Description:** A secure, role-gated admin panel for platform management. It is protected by a layout that checks for an `admin` role on the user's profile, denying access to unauthorized users.
+- **Implementation:**
+  - **Role-Based Access Control (RBAC):** The `UserProfile` entity contains a `role` field ('user' or 'admin'). The layout at `src/app/admin/layout.tsx` enforces this, acting as a security checkpoint.
+  - **User Management Dashboard:** The page at `src/app/admin/page.tsx` provides administrators with a table view of all users in the system, including their subscription status and role.
+
+### 7. Billing & Subscriptions UI
 - **Description:** A professional billing page that allows users to view and manage their subscription plans. It includes a clear comparison of different tiers (Free vs. Pro) and provides a foundation for integrating a payment provider like Stripe or PayPal.
 - **Implementation:**
-  - **Billing Page UI:** A new page at `/app/billing` provides a complete interface for managing subscriptions, viewing plan features, and accessing billing history.
+  - **Billing Page UI:** A new page at `src/app/billing` provides a complete interface for managing subscriptions, viewing plan features, and accessing billing history.
   - **Subscription Schema:** The `UserProfile` entity in `docs/backend.json` has been updated with `subscriptionTier` and `subscriptionStatus` fields to track user plans.
 
-### 7. Comprehensive Testing Suite
+### 8. Custom Domain Connection UI
+- **Description:** A user-facing feature in the settings page that allows users to connect a custom domain to their portfolio. The UI guides the user through initiating the connection and displays the necessary DNS records required for verification.
+- **Implementation:**
+  - **Settings UI:** The page at `src/app/settings/page.tsx` contains the input for the domain name and the logic to save it to the user's profile.
+  - **Status Tracking:** The `UserProfile` schema includes `customDomain` and `customDomainStatus` fields to manage and display the connection state.
+
+### 9. Comprehensive Testing Suite
 - **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
 - **Implementation:**
   - **Jest & React Testing Library:** Used for unit and component testing. Configuration is in `jest.config.js`, and tests are located in the `tests/` directory.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
 
-### 8. Legal & Compliance Features
+### 10. Legal & Compliance Features
 - **Description:** A set of essential legal and compliance features to build user trust and meet regulatory requirements. This includes standard legal pages and a cookie consent banner.
 - **Implementation:**
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
+
+    

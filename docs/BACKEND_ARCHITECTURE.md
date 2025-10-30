@@ -1,3 +1,4 @@
+
 # PortfolioForge Backend Architecture
 
 This document provides a technical overview of the backend infrastructure for the PortfolioForge application. It is intended for developers to understand the data models, database structure, and authentication mechanisms.
@@ -21,13 +22,18 @@ The `backend.json` file has three main sections:
 The `entities` section defines the shape and validation rules for all data objects in the application.
 
 ### `UserProfile`
-- **Description**: Represents a user's core profile information.
+- **Description**: Represents a user's core profile information, settings, and subscription status.
 - **Key Properties**:
     - `id` (string): The user's unique ID (matches Firebase Auth UID).
     - `firstName`, `lastName` (string): The user's name.
     - `email` (string): The user's email address.
+    - `role` (string, enum): The user's role in the system. Can be `user` or `admin`.
     - `themeId` (string): The ID of the visual theme selected for the user's portfolio.
-    - `customDomain` (string, uri): The custom domain linked to their portfolio (future feature).
+    - `customDomain` (string, hostname): The custom domain connected to their portfolio.
+    - `customDomainStatus` (string, enum): The verification status of the custom domain (`pending`, `active`, `error`).
+    - `subscriptionTier` (string, enum): The user's current subscription plan (`free`, `pro`).
+    - `subscriptionStatus` (string, enum): The status of the subscription (`active`, `canceled`, `past_due`).
+    - `subscriptionPeriodEndDate` (string, date-time): The date when the current subscription period ends.
 
 ### `PortfolioItem`
 - **Description**: A generic item within a user's portfolio. This can represent a software project, a design case study, a marketing campaign, etc.
@@ -55,7 +61,7 @@ The `firestore.structure` section in `backend.json` maps our entities to specifi
 
 ### `/users/{userId}`
 - **Schema**: `UserProfile`
-- **Description**: This is the root collection for all user data. The document ID (`userId`) is the same as the user's Firebase Authentication UID. This document stores the user's profile information.
+- **Description**: This is the root collection for all user data. The document ID (`userId`) is the same as the user's Firebase Authentication UID. This document stores the user's profile information, settings, and subscription details.
 
 ### `/users/{userId}/portfolioItems/{itemId}`
 - **Schema**: `PortfolioItem`
@@ -74,3 +80,5 @@ The `auth` section defines the sign-in methods enabled for the application.
 - **Providers**:
     - `"password"`: Standard email and password authentication.
     - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
+
+    

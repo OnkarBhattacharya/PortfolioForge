@@ -10,70 +10,75 @@ PortfolioForge's AI capabilities are built using **Firebase Genkit**, an open-so
 We primarily leverage two models from the **Gemini family**:
 
 1.  **Gemini 1.5 Pro**: A powerful, multi-modal model capable of processing large contexts, including text, images, and entire documents (like PDFs). This is the engine behind our CV parsing feature.
-2.  **Gemini 2.5 Flash**: A fast and efficient model optimized for text generation tasks where low latency is critical. This powers our real-time content suggestions.
+2.  **Gemini 2.5 Flash**: A fast and efficient model optimized for text generation tasks where low latency is critical. This powers our real-time content suggestions and other data import features.
 
 All AI logic is encapsulated in server-side "flows" located in the `src/ai/flows/` directory.
 
 ---
 
-## Feature 1: Multi-Modal AI CV Parser
+## The AI Data Import Engine
 
-This is the cornerstone intelligent feature of PortfolioForge, designed to eliminate the tedious task of manual data entry.
+This is the core data aggregation suite of the platform, designed to eliminate the tedious task of manual data entry by leveraging AI to parse data from multiple sources.
 
-### 1.1. Purpose & User Benefit
+### 1. Multi-Modal AI CV Parser
 
-The CV Parser allows a user to upload their curriculum vitae (CV) in either **PDF or image format**. The AI analyzes the document and automatically extracts structured professional data, populating the user's profile in seconds.
+- **Purpose**: Allows a user to upload their curriculum vitae (CV) in **PDF or image format**. The AI analyzes the document and automatically extracts structured professional data.
+- **Model Used**: `googleai/gemini-1.5-pro` for its advanced multi-modal reasoning capabilities, allowing it to understand both text and visual layout.
+- **Flow File**: `src/ai/flows/cv-parser.ts`
+- **Technical Flow**:
+    1.  The frontend (`src/app/import-data/page.tsx`) converts the uploaded file into a **data URI**.
+    2.  The data URI is sent to the backend API route at `/api/cv-parser`.
+    3.  The API route invokes the `cvParserFlow`, which passes the data URI to the Gemini 1.5 Pro model.
+    4.  The model returns a structured JSON object conforming to the `CvDataSchema` (defined in `src/lib/types.ts`).
+    5.  The API route saves the structured data to the user's document in Firestore.
 
-### 1.2. Model Used: `googleai/gemini-1.5-pro`
+### 2. AI LinkedIn Profile Parser
 
-We use the Gemini 1.5 Pro model for this task due to its advanced **multi-modal reasoning capabilities**. It can natively understand both the textual content and the **visual layout** of a document. This is crucial because CVs are often visually structured with columns, sections, and different font sizes, which provide important context that a simple text extraction would miss.
+- **Purpose**: Allows users to paste the raw text from their LinkedIn profile and have the AI intelligently structure it.
+- **Model Used**: `googleai/gemini-2.5-flash` for its speed in text analysis.
+- **Flow File**: `src/ai/flows/linkedin-parser.ts`
+- **Technical Flow**:
+    1.  The user pastes raw text into a dialog on the "Import Data" page.
+    2.  The text is sent to the `/api/linkedin-parser` endpoint.
+    3.  The `linkedInParserFlow` is invoked, which instructs the model to parse the text based on common LinkedIn section headers (Experience, Education, etc.).
+    4.  The output is structured into the same shared `CvDataSchema`.
+    5.  The structured data is saved to the user's profile in Firestore, unifying it with any existing CV data.
 
-### 1.3. Technical Flow
+### 3. GitHub Repository Importer
 
-The process works as follows:
+- **Purpose**: To automatically import a user's public GitHub repositories as portfolio items.
+- **Technology Used**: This flow uses the standard GitHub REST API and does not require a generative model.
+- **Flow File**: `src/ai/flows/github-importer.ts`
+- **Technical Flow**:
+    1.  The user provides their GitHub username in a dialog on the "Import Data" page.
+    2.  The username is sent to the `/api/github-importer` endpoint.
+    3.  The `githubImporterFlow` fetches the user's public repositories, sorted by stars.
+    4.  The flow extracts the name, description, URL, and primary language for the top repositories.
+    5.  The API route then creates new `PortfolioItem` documents in Firestore for each imported repository.
 
-1.  **Frontend Upload**: In `src/app/import-data/page.tsx`, the user selects a file (e.g., `my_cv.pdf`).
-2.  **Data URI Conversion**: The frontend converts the file into a **data URI** (a Base64-encoded string with a MIME type, e.g., `data:application/pdf;base64,...`). This is a standard way to represent file data as a string.
-3.  **API Request**: The data URI is sent to our backend API route at `/api/cv-parser`.
-4.  **Genkit Flow Invocation**: The API route invokes the `cvParserFlow` located in `src/ai/flows/cv-parser.ts`.
-5.  **Model Execution**: The flow passes the data URI to the Gemini 1.5 Pro model. The prompt instructs the model to act as an expert document analyst and return a structured JSON object.
-6.  **Structured Output**: The model processes the document and returns the data in a JSON format that matches our predefined `CvDataSchema`.
-7.  **Save to Firestore**: The API route receives the structured data and saves it to the user's document in the Firestore database.
+### 4. AI Web Content Importer
 
-### 1.4. Schema & Prompt Engineering
-
-The reliability of this feature hinges on strong "structured output" prompting.
-
--   **Schema (`CvDataSchema`)**: In `src/ai/flows/cv-parser.ts`, we define a strict Zod schema (`CvDataSchema`) that outlines the exact JSON structure we expect back from the model. This includes nested objects for personal info, experience, education, and arrays for skills.
--   **Prompt**: The prompt explicitly tells the model to use this schema for its response. This ensures we always get back clean, predictable data that our application can use, rather than unstructured text.
+- **Purpose**: To create a portfolio item from any public URL (e.g., a blog post, an article, or a project website).
+- **Model Used**: `googleai/gemini-2.5-flash`.
+- **Flow File**: `src/ai/flows/web-importer.ts`
+- **Technical Flow**:
+    1.  The user provides a URL in a dialog on the "Import Data" page.
+    2.  The URL is sent to the `/api/web-importer` endpoint.
+    3.  The `webImporterFlow` first fetches the raw HTML content of the page.
+    4.  This content is then passed to the Gemini model with a prompt instructing it to act as a content analyst: extract the title, generate a professional summary, and suggest 3-5 relevant tags.
+    5.  The structured output is used by the API route to create a new `PortfolioItem` in Firestore.
 
 ---
 
-## Feature 2: AI Content Co-pilot
+## AI Content Co-pilot
 
-Once a user's data has been imported, the AI Content Co-pilot helps them overcome writer's block and craft a compelling professional narrative.
+- **Purpose**: To help users overcome writer's block by generating professional headlines and summaries for their portfolio.
+- **Model Used**: `googleai/gemini-2.5-flash` for its low latency, which is ideal for an interactive feature.
+- **Flow File**: `src/ai/flows/ai-powered-content-suggestions.ts`
+- **Technical Flow**:
+    1.  On the "AI Assistant" page (`src/app/ai-assistant/page.tsx`), the user clicks "Generate Suggestions."
+    2.  The user's professional data (from their parsed CV/LinkedIn) is passed to the `generatePortfolioContentSuggestions` flow.
+    3.  The flow constructs a prompt that assigns the model the persona of an expert career coach and provides it with the user's data for context.
+    4.  The model generates a `suggestedDescription` and `suggestedSummary`, which are displayed to the user.
 
-### 2.1. Purpose & User Benefit
-
-This feature generates professional, tailored suggestions for a user's portfolio headline and summary based on their imported CV data and identified profession.
-
-### 2.2. Model Used: `googleai/gemini-2.5-flash`
-
-We use the Gemini 2.5 Flash model for this feature. Since this is an interactive feature where the user clicks a button and expects a quick response, the low latency and high efficiency of Gemini 2.5 Flash are ideal.
-
-### 2.3. Technical Flow
-
-1.  **Frontend Request**: On the "AI Assistant" page (`src/app/ai-assistant/page.tsx`), the user clicks "Generate Suggestions."
-2.  **Data Payload**: The frontend gathers the user's professional data (parsed CV data, profession, etc.) from local storage or state.
-3.  **Flow Invocation**: The data is passed to the `generatePortfolioContentSuggestions` function in `src/ai/flows/ai-powered-content-suggestions.ts`.
-4.  **Model Execution**: The Genkit flow constructs a prompt that includes the user's data and instructs the model to act as an expert career coach and copywriter.
-5.  **Content Generation**: The Gemini model generates a `suggestedDescription` and `suggestedSummary`.
-6.  **Display to User**: The suggestions are returned to the frontend and displayed for the user to review, copy, or edit.
-
-### 2.4. Prompt Engineering
-
-The prompt for this flow is engineered to produce high-quality, relevant content by:
-
--   **Assigning a Persona**: The prompt begins with, "You are an expert career coach and copywriter..." This puts the model in the correct mindset.
--   **Providing Context**: It injects the user's profession and data directly into the prompt, ensuring the suggestions are tailored to their specific field and experience.
--   **Requesting Structured Output**: Like the CV parser, it uses a Zod schema (`PortfolioContentSuggestionsOutputSchema`) to ensure the response is a clean JSON object with the expected fields.
+    

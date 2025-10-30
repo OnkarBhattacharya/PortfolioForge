@@ -1,3 +1,4 @@
+
 # PortfolioForge Testing Guide
 
 This document provides an overview of the testing strategy and instructions on how to run the various test suites for the PortfolioForge application. A robust testing suite is crucial for ensuring code quality, preventing regressions, and maintaining a stable, reliable application.
@@ -8,16 +9,16 @@ Our testing strategy is based on a balanced approach, emphasizing tests that pro
 
 The tests are organized into the following categories within the `tests/` directory:
 - **Unit Tests (`tests/unit/`)**: For small, isolated utility functions.
-- **Frontend Tests (`tests/frontend/`)**: For React components and hooks.
-- **End-to-End Tests (`tests/e2e/`)**: For critical user journeys in a real browser environment.
-- **Contract Tests (`tests/contract/`)**: To ensure frontend and backend services communicate correctly.
-- **Performance Tests (`tests/performance/`)**: To measure and track application speed and responsiveness.
+- **Frontend Tests (`tests/frontend/`)**: For React components and hooks, verifying their behavior in isolation.
+- **End-to-End Tests (`tests/e2e/`)**: For critical user journeys in a real browser environment, ensuring all parts of the system work together.
+- **Contract Tests (`tests/contract/`)**: To ensure frontend and backend services communicate correctly (currently a placeholder).
+- **Performance Tests (`tests/performance/`)**: To measure and track application speed and responsiveness (currently a placeholder).
 
 ## Tools We Use
 
 - **Jest**: The primary test runner for unit and component tests.
 - **React Testing Library**: For rendering and interacting with React components in a user-centric way.
-- **Playwright**: For powerful and reliable end-to-end tests that run in real browsers.
+- **Playwright**: For powerful and reliable end-to-end tests that run in real browsers (Chrome, Firefox, etc.).
 - **TypeScript**: For static type checking, which catches many errors before runtime.
 
 ---
@@ -26,9 +27,9 @@ The tests are organized into the following categories within the `tests/` direct
 
 ### 1. Unit and Frontend Component Tests
 
-These tests verify that individual functions and React components work correctly. They are fast and run in a simulated browser environment (jsdom).
+These tests verify that individual functions and React components work correctly. They are fast and run in a simulated browser environment (jsdom). They are located in `tests/unit/` and `tests/frontend/`.
 
-To run all unit and component tests once:
+To run all Jest tests once:
 ```bash
 npm run test
 ```
@@ -40,31 +41,27 @@ npm run test:watch
 
 ### 2. End-to-End (E2E) Tests
 
-These are the most important tests for verifying user-facing functionality. They simulate a real user interacting with the application in a browser (Chrome, by default).
+These are the most important tests for verifying user-facing functionality. They simulate a real user interacting with the application in a browser. E2E tests are located in `tests/e2e/`.
 
 The E2E tests cover critical user flows such as:
-- User sign-up and login.
-- Navigating through the application.
-- Verifying that core UI elements are visible and interactive.
+- User sign-up, login, and logout.
+- Handling of the cookie consent banner.
+- Navigation to legal pages (Terms, Privacy, Cookies) from the public portfolio footer.
 
 To run the entire E2E test suite:
 ```bash
 npm run test:e2e
 ```
-**Note:** The development server must be running (`npm run dev`) before you can execute the E2E tests. The Playwright configuration will automatically start it if it's not already running.
+**Note:** The Playwright configuration will automatically start the development server (`npm run dev`) if it's not already running.
 
 ---
 
 ## Test Structure & Location
 
-- **Unit Tests**: Found in `tests/unit/`. These test pure functions, like the `cn` utility.
-- **Frontend Tests**: Found in `tests/frontend/`. These use React Testing Library to render components and assert their behavior. For example, `dashboard.test.tsx` checks that the main dashboard page renders correctly for different user states.
-- **E2E Tests**: Found in `tests/e2e/`. These use Playwright to automate browser actions. `auth.spec.ts` contains tests for signing up, logging in, and verifying legal page navigation.
+- **`tests/unit/utils.test.ts`**: Contains tests for pure utility functions, like the `cn` class name utility.
+- **`tests/frontend/dashboard.test.tsx`**: Uses React Testing Library to render the main dashboard page and assert its behavior under different user states (e.g., guest vs. logged-in user). It mocks Firebase hooks and `localStorage` to isolate the component.
+- **`tests/e2e/auth.spec.ts`**: Uses Playwright to automate browser actions for the entire authentication lifecycle and validates navigation to legal pages.
+- **`tests/contract/placeholder.test.ts`**: A placeholder file explaining how contract tests will be used to verify the data schema between the frontend and the AI APIs (e.g., `/api/cv-parser`).
+- **`tests/performance/placeholder.test.ts`**: A placeholder file describing how performance tests (e.g., using k6 or Lighthouse) will be implemented to measure API response times and page load speeds.
 
-## Future Testing (Placeholders)
-
-You will find placeholder files in `tests/contract/` and `tests/performance/`. These are reminders of future testing areas that are critical as the application grows:
-
-- **Contract Tests**: These will verify the "contract" between the frontend and our Genkit AI flows (e.g., the `/api/cv-parser` API). We will use schema validation to ensure the data structure exchanged between the client and server never breaks.
-
-- **Performance Tests**: These will be implemented using tools like k6 or Playwright's performance metrics to track page load times and API response speeds, ensuring the application remains fast and responsive under load.
+    
