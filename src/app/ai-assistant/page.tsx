@@ -32,8 +32,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/firebase";
 import Link from "next/link";
+import { CvDataSchema } from "@/ai/flows/cv-parser";
 
 const formSchema = z.object({
+  profession: z.string().optional(),
   cvData: z.string().optional(),
   linkedInData: z.string().optional(),
   githubProjectsData: z.string().optional(),
@@ -51,6 +53,7 @@ export default function AiAssistantPage() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      profession: "",
       cvData: "",
       linkedInData: "",
       githubProjectsData: "",
@@ -58,10 +61,19 @@ export default function AiAssistantPage() {
   });
 
   useEffect(() => {
-    const cvData = localStorage.getItem("cvData");
-    if (cvData) {
-      form.setValue("cvData", cvData);
+    try {
+      const cvDataString = localStorage.getItem("cvData");
+      if (cvDataString) {
+        const cvData = CvDataSchema.parse(JSON.parse(cvDataString));
+        form.setValue("cvData", JSON.stringify(cvData, null, 2));
+        if (cvData.profession) {
+          form.setValue("profession", cvData.profession);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse CV data from local storage", error);
     }
+    
     const linkedInData = localStorage.getItem("linkedInData");
     if (linkedInData) {
       form.setValue("linkedInData", linkedInData);
@@ -121,7 +133,7 @@ export default function AiAssistantPage() {
           <CardHeader>
             <CardTitle className="font-headline">Your Professional Data</CardTitle>
             <CardDescription>
-              Paste your data below. The more context you provide, the better the suggestions.
+              Provide data from your CV, LinkedIn, or other sources. The more context you provide, the better the AI suggestions.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,19 +141,39 @@ export default function AiAssistantPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                   control={form.control}
+                  name="profession"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Profession</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="e.g., Software Engineer, Graphic Designer, Marketing Manager"
+                          className="min-h-[30px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Your profession helps the AI tailor its suggestions. This is automatically detected from your CV.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
                   name="cvData"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>CV / Resume Data</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Paste text from your CV here..."
+                          placeholder="Paste text from your CV here or upload it on the Import Data page."
                           className="min-h-[100px]"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        Job titles, descriptions, skills, etc. You can also upload your CV on the Import Data page.
+                        This is automatically populated when you upload your CV on the Import Data page.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -161,27 +193,7 @@ export default function AiAssistantPage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Your summary, work experience, and endorsements. You can import this on the Import Data page.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="githubProjectsData"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GitHub Project Descriptions</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Paste descriptions of your key GitHub projects."
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Briefly describe 1-3 of your most important projects.
+                        You can import this on the Import Data page.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

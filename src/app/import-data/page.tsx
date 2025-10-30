@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -126,14 +125,6 @@ export default function ImportDataPage() {
       let imageDataUri = '';
       if (selectedFile.type === 'application/pdf') {
         imageDataUri = await pdfToImageDataURI(selectedFile);
-      } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        toast({
-          variant: "destructive",
-          title: "Unsupported File Type",
-          description: "DOCX parsing is coming soon! Please upload a PDF for now.",
-        });
-         setIsUploading(false);
-        return;
       } else if (selectedFile.type.startsWith('image/')) {
         imageDataUri = await fileToDataURI(selectedFile);
       } else {
@@ -170,11 +161,12 @@ export default function ImportDataPage() {
         throw new Error(errorData.error || 'CV parsing failed');
       }
 
-      localStorage.setItem('cvData', 'true'); // Indicate that CV data has been processed
+      const result = await response.json();
+      localStorage.setItem('cvData', JSON.stringify(result.data));
       setCvUploadSuccess(true);
       toast({
         title: "AI-Powered CV Scan Successful",
-        description: "Your CV has been parsed and the data is now available in your portfolio.",
+        description: "Your CV has been parsed and the data is now available in your portfolio and the AI Assistant.",
       });
     } catch (error: any) {
       toast({
@@ -261,7 +253,7 @@ export default function ImportDataPage() {
                 Upload CV
               </CardTitle>
               <CardDescription>
-                Upload your CV (PDF recommended).
+                Upload your CV (PDF or image).
               </CardDescription>
             </div>
              {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
@@ -271,11 +263,11 @@ export default function ImportDataPage() {
               <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
               <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
                 <UploadCloud className="mr-2 h-4 w-4" />
-                {isUploading ? 'Parsing CV...' : 'Upload'}
+                {isUploading ? 'Parsing with AI...' : 'Upload'}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-             Our new multi-modal AI will analyze your CV's layout and content to pre-fill your portfolio.
+             Our multi-modal AI analyzes your CV's layout and content to pre-fill your portfolio and assist with content generation.
             </p>
           </CardContent>
         </Card>
@@ -342,7 +334,7 @@ export default function ImportDataPage() {
                 Sync GitHub Projects
               </CardTitle>
               <CardDescription>
-                Showcase your projects from GitHub.
+                Showcase your work from GitHub.
               </CardDescription>
             </div>
           </CardHeader>
@@ -355,7 +347,7 @@ export default function ImportDataPage() {
               <Github className="mr-2 h-4 w-4" /> Connect GitHub
             </Button>
             <p className="text-xs text-muted-foreground">
-              Automatically fetch and display your public repositories.
+              Automatically fetch and display your public repositories (for software engineers).
             </p>
           </CardContent>
         </Card>

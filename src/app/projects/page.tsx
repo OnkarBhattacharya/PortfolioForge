@@ -14,86 +14,86 @@ import Image from 'next/image';
 import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Github, Loader2, PlusCircle, KeyRound, ExternalLink } from 'lucide-react';
+import { Loader2, PlusCircle, KeyRound, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { collection, query } from 'firebase/firestore';
-import AddProjectDialog from './add-project-dialog';
+import AddPortfolioItemDialog from './add-project-dialog';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { useMemo } from 'react';
 
 
-type Project = {
+type PortfolioItem = {
   id: string;
   name: string;
   description: string;
-  technologies: string[];
-  projectUrl?: string;
+  tags: string[];
+  itemUrl?: string;
   imageId: string;
 };
 
-const sampleProjects: Project[] = [
+const sampleItems: PortfolioItem[] = [
     {
       "id": "gh-1",
-      "name": "React Component Library",
-      "description": "A collection of reusable UI components built with React and Storybook. Focused on accessibility and ease of use.",
-      "technologies": ["React", "Storybook", "TypeScript"],
-      "projectUrl": "https://github.com/example/react-component-library",
+      "name": "Corporate Rebranding Campaign",
+      "description": "Led a full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.",
+      "tags": ["Branding", "Marketing Strategy", "Graphic Design"],
+      "itemUrl": "#",
       "imageId": "project-1",
     },
     {
       "id": "gh-2",
-      "name": "GraphQL API Server",
-      "description": "A backend server providing a GraphQL API for a mobile application. Built with Node.js, Express, and Apollo Server.",
-      "technologies": ["Node.js", "Express", "GraphQL", "Apollo"],
-      "projectUrl": "https://github.com/example/graphql-api-server",
+      "name": "E-commerce SEO Optimization",
+      "description": "Developed and executed an SEO strategy that resulted in a 200% increase in organic traffic and a 50% increase in online sales.",
+      "tags": ["SEO", "Content Marketing", "Google Analytics"],
+      "itemUrl": "#",
       "imageId": "project-2",
     },
     {
       "id": "gh-3",
-      "name": "AI Content Summarizer",
-      "description": "A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.",
-      "technologies": ["Python", "FastAPI", "Genkit", "Docker"],
-      "projectUrl": "https://github.com/example/ai-content-summarizer",
+      "name": "Mobile App UI/UX Design",
+      "description": "Designed the complete user interface and user experience for a new mobile banking app, focusing on simplicity and accessibility.",
+      "tags": ["UI/UX", "Figma", "Mobile Design", "User Research"],
+      "itemUrl": "#",
       "imageId": "project-3",
     }
   ];
 
-export default function ProjectsPage() {
+export default function PortfolioItemsPage() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
 
-  const projectsQuery = useMemoFirebase(() => {
+  const itemsQuery = useMemoFirebase(() => {
     if (isReadOnly || !user || !firestore) return null;
     return query(
-      collection(firestore, 'users', user.uid, 'projects')
+      collection(firestore, 'users', user.uid, 'portfolioItems')
     );
   }, [firestore, user, isReadOnly]);
 
-  const { data: firestoreProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: firestoreItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
 
-  const isLoading = isUserLoading || areProjectsLoading;
+  const isLoading = isUserLoading || areItemsLoading;
 
-  const allProjects = useMemo(() => {
+  const allItems = useMemo(() => {
     if (isReadOnly) {
-        return sampleProjects;
+        return sampleItems;
     }
-    return firestoreProjects || [];
-  }, [firestoreProjects, isReadOnly]);
+    return firestoreItems || [];
+  }, [firestoreItems, isReadOnly]);
 
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold tracking-tighter">
-          My Projects
+          My Portfolio
         </h1>
-        <AddProjectDialog>
+        <AddPortfolioItemDialog>
           <Button disabled={isReadOnly}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Project
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
           </Button>
-        </AddProjectDialog>
+        </AddPortfolioItemDialog>
       </div>
 
        {isReadOnly && (
@@ -103,7 +103,7 @@ export default function ProjectsPage() {
                 <div>
                     <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
                     <CardDescription className="text-yellow-700 dark:text-yellow-400">
-                        You are viewing sample projects. <Link href="/login" className="font-bold underline">Log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to add and manage your own.
+                        You are viewing sample portfolio items. <Link href="/login" className="font-bold underline">Log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to add and manage your own.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -122,33 +122,33 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {!isLoading && allProjects && allProjects.length === 0 && !isReadOnly && (
+      {!isLoading && allItems && allItems.length === 0 && !isReadOnly && (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-12">
             <div className="flex flex-col items-center gap-1 text-center">
-                <h3 className="text-2xl font-bold tracking-tight">You have no projects</h3>
-                <p className="text-sm text-muted-foreground">Get started by adding your first project.</p>
-                <AddProjectDialog>
+                <h3 className="text-2xl font-bold tracking-tight">You have no portfolio items</h3>
+                <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
+                <AddPortfolioItemDialog>
                     <Button className="mt-4">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Project
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                     </Button>
-                </AddProjectDialog>
+                </AddPortfolioItemDialog>
             </div>
         </div>
       )}
 
-      {(!isLoading || isReadOnly) && allProjects && allProjects.length > 0 && (
+      {(!isLoading || isReadOnly) && allItems && allItems.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {allProjects.map((project) => {
-            const image = getPlaceholderImage(project.imageId);
-            const projectLink = project.projectUrl || '#';
+          {allItems.map((item) => {
+            const image = getPlaceholderImage(item.imageId);
+            const itemLink = item.itemUrl || '#';
             
             return (
-              <Card key={project.id} className="flex flex-col overflow-hidden">
-                <Link href={projectLink} target="_blank" rel="noopener noreferrer">
+              <Card key={item.id} className="flex flex-col overflow-hidden">
+                <Link href={itemLink} target="_blank" rel="noopener noreferrer">
                   {image && (
                       <Image
                         src={image.imageUrl}
-                        alt={project.name}
+                        alt={item.name}
                         width={600}
                         height={400}
                         data-ai-hint={image.imageHint}
@@ -158,17 +158,17 @@ export default function ProjectsPage() {
                 </Link>
                 <CardHeader>
                   <CardTitle className="font-headline text-lg">
-                    <Link href={projectLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {project.name}
+                    <Link href={itemLink} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      {item.name}
                     </Link>
                   </CardTitle>
                   <CardDescription className="line-clamp-3 h-[60px]">
-                    {project.description}
+                    {item.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
                   <div className="flex flex-wrap gap-2">
-                    {project.technologies?.map((tag: string) => (
+                    {item.tags?.map((tag: string) => (
                       <Badge key={tag} variant="secondary">
                         {tag}
                       </Badge>
@@ -176,9 +176,9 @@ export default function ProjectsPage() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                    {project.projectUrl && (
-                        <Link href={project.projectUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
-                            <ExternalLink className="mr-2 h-4 w-4" /> View Project
+                    {item.itemUrl && (
+                        <Link href={item.itemUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}>
+                            <ExternalLink className="mr-2 h-4 w-4" /> View Item
                         </Link>
                     )}
                 </CardFooter>

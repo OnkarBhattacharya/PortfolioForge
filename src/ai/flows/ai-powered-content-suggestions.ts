@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PortfolioContentSuggestionsInputSchema = z.object({
+  profession: z.string().optional().describe('The user\'s profession, e.g., "Software Engineer", "Graphic Designer".'),
   cvData: z.string().optional().describe('Data extracted from the uploaded CV.'),
   linkedInData: z.string().optional().describe('Data imported from LinkedIn profile.'),
   githubProjectsData: z.string().optional().describe('Data fetched from GitHub projects.'),
@@ -44,17 +45,18 @@ const prompt = ai.definePrompt({
   name: 'portfolioContentSuggestionsPrompt',
   input: {schema: PortfolioContentSuggestionsInputSchema},
   output: {schema: PortfolioContentSuggestionsOutputSchema},
-  prompt: `You are an AI assistant that helps software engineers create compelling portfolio content.
+  prompt: `You are an expert career coach and copywriter who helps professionals create compelling portfolio content.
 
-  Based on the provided data from their CV, LinkedIn, and GitHub projects, generate suggestions for their portfolio description and summary.
+  Based on the user's profession and the provided data from their CV, LinkedIn, and projects, generate engaging suggestions for their portfolio description and summary.
+
+  The user's profession is: {{{profession}}}
 
   CV Data: {{{cvData}}}
   LinkedIn Data: {{{linkedInData}}}
   GitHub Projects Data: {{{githubProjectsData}}}
 
-  Please provide creative and engaging content suggestions that highlight the candidate's skills and experience.
-  Your output should be a JSON object that conforms to PortfolioContentSuggestionsOutputSchema. Make sure the description and summary
-  are relevant and tailored to the provided data.
+  Your tone should be professional but also creative and engaging. The suggestions should highlight the candidate's unique skills and experience in a way that is tailored to their specific field.
+  Your output should be a JSON object that conforms to PortfolioContentSuggestionsOutputSchema.
 `,
 });
 

@@ -24,34 +24,34 @@ import { useUser, useCollection, useFirebase, useMemoFirebase } from '@/firebase
 import { collection, query, limit } from 'firebase/firestore';
 
 
-type Project = {
+type PortfolioItem = {
   id: string;
   name: string;
   description: string;
-  technologies: string[];
+  tags: string[];
   imageId: string;
 };
 
-const sampleProjects: Project[] = [
+const sampleItems: PortfolioItem[] = [
     {
         id: 'sample-1',
-        name: 'E-commerce Platform',
-        description: 'A full-stack e-commerce solution with a modern UI, secure payment gateway, and a powerful admin dashboard for managing products and orders.',
-        technologies: ['React', 'Next.js', 'Firebase', 'Stripe'],
+        name: 'Corporate Rebranding Campaign',
+        description: 'A full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.',
+        tags: ['Branding', 'Marketing', 'Design'],
         imageId: 'project-5',
     },
     {
         id: 'sample-2',
-        name: 'Data Visualization Dashboard',
+        name: 'Data-driven SEO Strategy',
         description: 'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
-        technologies: ['D3.js', 'TypeScript', 'Node.js'],
+        tags: ['SEO', 'Analytics', 'Content Strategy'],
         imageId: 'project-2',
     },
     {
         id: 'sample-3',
-        name: 'AI Content Summarizer',
+        name: 'Mobile App UI/UX',
         description: 'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
-        technologies: ['Python', 'FastAPI', 'Genkit', 'Docker'],
+        tags: ['UI/UX', 'Figma', 'Mobile Design'],
         imageId: 'project-3',
     }
 ];
@@ -63,14 +63,14 @@ export default function DashboardPage() {
   const { firestore } = useFirebase();
   const isReadOnly = !user || user.isAnonymous;
 
-  const projectsQuery = useMemoFirebase(() => {
+  const itemsQuery = useMemoFirebase(() => {
     if (isReadOnly || !firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'projects'), limit(3));
+    return query(collection(firestore, 'users', user.uid, 'portfolioItems'), limit(3));
   }, [user, firestore, isReadOnly]);
 
-  const { data: dbProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: dbItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
 
-  const recentProjects = isReadOnly ? sampleProjects : dbProjects;
+  const recentItems = isReadOnly ? sampleItems : dbItems;
 
 
   useEffect(() => {
@@ -136,7 +136,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="flex-1">
             <p className="text-sm text-muted-foreground">
-              This platform helps you seamlessly import your projects and data
+              This platform helps you seamlessly import your data
               to create a professional portfolio. Use our AI Assistant to
               perfect your story.
             </p>
@@ -184,9 +184,9 @@ export default function DashboardPage() {
                 )}
                 <span>LinkedIn Imported</span>
               </li>
-              <li className="flex items-center text-muted-foreground/80">
+               <li className="flex items-center text-muted-foreground/80">
                 <Circle className="mr-3 h-5 w-5" />
-                <span>GitHub Synced</span>
+                <span>External Links Added</span>
               </li>
             </ul>
           </CardContent>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Button variant="outline" asChild>
-              <Link href="/projects">View Projects</Link>
+              <Link href="/projects">View Portfolio</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/ai-assistant">AI Assistant</Link>
@@ -219,20 +219,20 @@ export default function DashboardPage() {
       <div>
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Recent Projects</CardTitle>
+            <CardTitle className="font-headline">Recent Portfolio Items</CardTitle>
             <CardDescription>
-              A glimpse of your latest work. Add more from the projects page.
+              A glimpse of your latest work. Add more from the portfolio page.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentProjects?.map((project) => {
-              const image = getPlaceholderImage(project.imageId);
+            {recentItems?.map((item) => {
+              const image = getPlaceholderImage(item.imageId);
               return (
-                <Card key={project.id} className="overflow-hidden">
+                <Card key={item.id} className="overflow-hidden">
                   {image && (
                     <Image
                       src={image.imageUrl}
-                      alt={project.name}
+                      alt={item.name}
                       width={600}
                       height={400}
                       data-ai-hint={image.imageHint}
@@ -241,15 +241,15 @@ export default function DashboardPage() {
                   )}
                   <CardHeader>
                     <CardTitle className="font-headline text-lg">
-                      {project.name}
+                      {item.name}
                     </CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {project.description}
+                      {item.description}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {project.technologies?.map((tag: any) => (
+                      {item.tags?.map((tag: any) => (
                         <Badge key={tag} variant="secondary">
                           {tag}
                         </Badge>
@@ -259,11 +259,11 @@ export default function DashboardPage() {
                 </Card>
               );
             })}
-             {!areProjectsLoading && (!recentProjects || recentProjects.length === 0) && (
+             {!areItemsLoading && (!recentItems || recentItems.length === 0) && (
                 <Card className="md:col-span-2 lg:col-span-3">
                     <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                        <h3 className="text-xl font-bold">No projects yet!</h3>
-                        <p className="text-muted-foreground">Add your first project from the 'Projects' page to see it here.</p>
+                        <h3 className="text-xl font-bold">No portfolio items yet!</h3>
+                        <p className="text-muted-foreground">Add your first item from the 'Portfolio' page to see it here.</p>
                     </CardContent>
                 </Card>
              )}

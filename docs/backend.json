@@ -49,48 +49,50 @@
         "email"
       ]
     },
-    "Project": {
+    "PortfolioItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Project",
+      "title": "PortfolioItem",
       "type": "object",
-      "description": "Represents a project showcased in the user's portfolio, sourced from GitHub or Firebase.",
+      "description": "Represents a generic item in a user's portfolio, such as a project, case study, or artwork.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Project entity."
+          "description": "Unique identifier for the PortfolioItem entity."
         },
         "userProfileId": {
           "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Project)"
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N PortfolioItem)"
         },
         "name": {
           "type": "string",
-          "description": "Name of the project."
+          "description": "Name of the portfolio item."
         },
         "description": {
           "type": "string",
-          "description": "Description of the project."
+          "description": "Description of the portfolio item."
         },
         "imageId": {
           "type": "string",
-          "description": "ID of the placeholder image for the project."
+          "description": "ID of the placeholder image for the item."
         },
-        "projectUrl": {
+        "itemUrl": {
           "type": "string",
-          "description": "URL to the live project or GitHub repository.",
+          "description": "URL to the live item, case study, or source code.",
           "format": "uri"
         },
-        "source": {
-          "type": "string",
-          "description": "Source of the project (e.g., 'GitHub', 'Firebase')."
+        "tags": {
+          "type": "array",
+          "description": "A list of tags, skills, or technologies associated with the item.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
         "id",
         "userProfileId",
         "name",
-        "description",
-        "source"
+        "description"
       ]
     },
     "Theme": {
@@ -181,13 +183,13 @@
         }
       },
       {
-        "path": "/users/{userId}/projects/{projectId}",
+        "path": "/users/{userId}/portfolioItems/{itemId}",
         "definition": {
-          "entityName": "Project",
+          "entityName": "PortfolioItem",
           "schema": {
-            "$ref": "#/entities/Project"
+            "$ref": "#/entities/PortfolioItem"
           },
-          "description": "Stores projects associated with a specific user. Only the user can read/write their own projects."
+          "description": "Stores portfolio items associated with a specific user. Only the user can read/write their own items."
         }
       },
       {

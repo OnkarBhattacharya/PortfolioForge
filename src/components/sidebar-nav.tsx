@@ -14,12 +14,11 @@ import {
   Sparkles,
   UploadCloud,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutGrid },
   { href: "/import-data", label: "Import Data", icon: UploadCloud },
-  { href: "/projects", label: "Projects", icon: CodeXml },
+  { href: "/projects", label: "Portfolio Items", icon: CodeXml },
   { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

@@ -36,12 +36,12 @@ type UserProfile = {
   cv?: CvData;
 };
 
-type Project = {
+type PortfolioItem = {
   id: string;
   name: string;
   description: string;
-  technologies: string[];
-  projectUrl?: string;
+  tags: string[];
+  itemUrl?: string;
   imageId: string;
 };
 
@@ -60,31 +60,57 @@ const sampleProfile: UserProfile = {
     linkedinUrl: 'https://linkedin.com/in/example',
     githubUrl: 'https://github.com/example',
     themeId: 'default',
+    cv: {
+      personalInfo: {
+        name: 'Alex Doe',
+        email: 'alex.doe@example.com',
+      },
+      profession: 'Multi-disciplinary Professional',
+      summary: 'A passionate professional with a love for creating beautiful and functional work, experienced in multiple domains.',
+      experience: [
+        {
+          jobTitle: 'Senior Product Designer',
+          company: 'Innovate Inc.',
+          location: 'San Francisco, CA',
+          startDate: 'Jan 2020',
+          endDate: 'Present',
+          responsibilities: ['Led the design of a new mobile application.', 'Conducted user research and usability testing.'],
+        },
+      ],
+      education: [
+        {
+          degree: 'Bachelor of Arts in Design',
+          institution: 'Creative University',
+          graduationDate: 'May 2019',
+        },
+      ],
+      skills: ['UI/UX Design', 'Product Strategy', 'User Research', 'Figma'],
+    }
 };
 
-const sampleProjects: Project[] = [
+const sampleItems: PortfolioItem[] = [
     {
         id: 'sample-1',
-        name: 'E-commerce Platform',
-        description: 'A full-stack e-commerce solution with a modern UI, secure payment gateway, and a powerful admin dashboard for managing products and orders.',
-        technologies: ['React', 'Next.js', 'Firebase', 'Stripe'],
-        projectUrl: '#',
+        name: 'Corporate Rebranding Campaign',
+        description: 'Led a full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.',
+        tags: ['Branding', 'Marketing', 'Design'],
+        itemUrl: '#',
         imageId: 'project-5',
     },
     {
         id: 'sample-2',
-        name: 'Data Visualization Dashboard',
+        name: 'Data-driven SEO Strategy',
         description: 'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
-        technologies: ['D3.js', 'TypeScript', 'Node.js'],
-        projectUrl: '#',
+        tags: ['SEO', 'Analytics', 'Content Strategy'],
+        itemUrl: '#',
         imageId: 'project-2',
     },
     {
         id: 'sample-3',
-        name: 'AI Content Summarizer',
+        name: 'Mobile App UI/UX',
         description: 'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
-        technologies: ['Python', 'FastAPI', 'Genkit', 'Docker'],
-        projectUrl: '#',
+        tags: ['UI/UX', 'Figma', 'Mobile Design'],
+        itemUrl: '#',
         imageId: 'project-3',
     }
 ];
@@ -108,17 +134,17 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
 
   const { data: theme, isLoading: isThemeLoading } = useDoc<Theme>(themeDocRef);
 
-  const projectsQuery = useMemoFirebase(() => {
+  const itemsQuery = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
-    return query(collection(firestore, 'users', userId, 'projects'));
+    return query(collection(firestore, 'users', userId, 'portfolioItems'));
   }, [firestore, userId]);
 
-  const { data: dbProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: dbItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
   
-  const isLoading = isProfileLoading || isThemeLoading || areProjectsLoading;
+  const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
   
   const profile = !isLoading && !dbProfile && !profileError ? sampleProfile : dbProfile;
-  const projects = !isLoading && (!dbProjects || dbProjects.length === 0) && !profileError ? sampleProjects : dbProjects;
+  const items = !isLoading && (!dbItems || dbItems.length === 0) && !profileError ? sampleItems : dbItems;
   
   const selectedTheme = useMemo(() => {
     if (theme) return theme;
@@ -173,6 +199,8 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
   if (!profile) {
     return null; 
   }
+  
+  const portfolioCvData = cvData || sampleProfile.cv;
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground">
@@ -181,8 +209,8 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
           <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
           <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
-        <h1 className="mt-6 font-headline text-5xl font-bold">{cvData?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
-        <p className="mt-2 text-xl text-muted-foreground">{cvData?.summary || 'A passionate full-stack developer with a love for creating beautiful and functional web applications.'}</p>
+        <h1 className="mt-6 font-headline text-5xl font-bold">{portfolioCvData?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
+        <p className="mt-2 text-xl text-muted-foreground">{portfolioCvData?.profession || 'A passionate professional with a love for creating beautiful and functional web applications.'}</p>
         <div className="mt-6 flex justify-center gap-4">
           {profile.githubUrl && <Button variant="outline" asChild><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> GitHub</a></Button>}
           {profile.linkedinUrl && <Button variant="outline" asChild><a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="mr-2" /> LinkedIn</a></Button>}
@@ -196,17 +224,17 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
            <Card>
             <CardContent className="pt-6">
                 <p className="text-lg leading-relaxed">
-                    {cvData?.summary || "Welcome to my portfolio! I'm a dedicated software engineer specializing in building modern web applications with React, Next.js, and Firebase. My experience spans from creating beautiful user interfaces to designing robust backend systems. I thrive on solving complex problems and am always eager to learn new technologies. This portfolio showcases some of my favorite projects. Feel free to explore and get in touch!"}
+                    {portfolioCvData?.summary || "Welcome to my portfolio! I'm a dedicated professional specializing in building modern solutions. My experience spans from creating beautiful user interfaces to designing robust systems. I thrive on solving complex problems and am always eager to learn new things. This portfolio showcases some of my favorite work. Feel free to explore and get in touch!"}
                 </p>
             </CardContent>
            </Card>
         </section>
 
-        {cvData?.experience && cvData.experience.length > 0 && (
+        {portfolioCvData?.experience && portfolioCvData.experience.length > 0 && (
           <section id="experience" className="mb-16">
             <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Work Experience</h2>
             <div className="space-y-8">
-              {cvData.experience.map((job, index) => (
+              {portfolioCvData.experience.map((job, index) => (
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-start gap-4">
                     <Briefcase className="h-8 w-8 text-accent" />
@@ -227,11 +255,11 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
           </section>
         )}
 
-        {cvData?.education && cvData.education.length > 0 && (
+        {portfolioCvData?.education && portfolioCvData.education.length > 0 && (
             <section id="education" className="mb-16">
                 <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Education</h2>
                 <div className="space-y-8">
-                    {cvData.education.map((edu, index) => (
+                    {portfolioCvData.education.map((edu, index) => (
                         <Card key={index}>
                              <CardHeader className="flex flex-row items-start gap-4">
                                 <GraduationCap className="h-8 w-8 text-accent" />
@@ -247,12 +275,12 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
             </section>
         )}
 
-        {cvData?.skills && cvData.skills.length > 0 && (
+        {portfolioCvData?.skills && portfolioCvData.skills.length > 0 && (
             <section id="skills" className="mb-16">
                  <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Skills</h2>
                 <Card>
                     <CardContent className="flex flex-wrap gap-4 pt-6">
-                        {cvData.skills.map((skill, index) => (
+                        {portfolioCvData.skills.map((skill, index) => (
                             <Badge key={index} variant="secondary" className="text-lg px-4 py-2">{skill}</Badge>
                         ))}
                     </CardContent>
@@ -261,42 +289,41 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
         )}
 
         <section id="projects">
-          <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Projects</h2>
+          <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Portfolio</h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {projects?.map((project) => {
-              const image = getPlaceholderImage(project.imageId);
+            {items?.map((item) => {
+              const image = getPlaceholderImage(item.imageId);
               return (
-                <Card key={project.id} className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                <Card key={item.id} className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl">
                   {image && (
                     <Image
                       src={image.imageUrl}
-                      alt={project.name}
+                      alt={item.name}
                       width={600}
                       height={400}
                       className="aspect-video w-full object-cover"
                     />
                   )}
                   <CardHeader>
-                    <CardTitle className="font-headline">{project.name}</CardTitle>
-                    <CardDescription className="h-[60px] line-clamp-3">{project.description}</CardDescription>
+                    <CardTitle className="font-headline">{item.name}</CardTitle>
+                    <CardDescription className="h-[60px] line-clamp-3">{item.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-1 flex-col">
                     <div className="mb-4 flex flex-wrap gap-2">
-                        {project.technologies.map(tech => <Badge key={tech} variant="secondary">{tech}</Badge>)}
+                        {item.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
                     </div>
                   </CardContent>
                    <CardContent className="flex gap-2">
-                      {project.projectUrl && <Button asChild className="flex-1"><a href={project.projectUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2" /> Live Demo</a></Button>}
-                      {project.projectUrl && <Button asChild variant="secondary" className="flex-1"><a href={project.projectUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> Source Code</a></Button>}
+                      {item.itemUrl && <Button asChild className="flex-1"><a href={item.itemUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2" /> View Item</a></Button>}
                   </CardContent>
                 </Card>
               );
             })}
-             {!projects || projects.length === 0 && (
+             {!items || items.length === 0 && (
                 <Card className="md:col-span-2 lg:col-span-3">
                     <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                        <h3 className="text-xl font-bold">No projects yet!</h3>
-                        <p className="text-muted-foreground">Add your first project from the 'Projects' page to see it here.</p>
+                        <h3 className="text-xl font-bold">No portfolio items yet!</h3>
+                        <p className="text-muted-foreground">Add your first item from the 'Portfolio' page to see it here.</p>
                     </CardContent>
                 </Card>
              )}
@@ -304,7 +331,7 @@ export default function PortfolioPage({ params }: { params: { userId: string } }
         </section>
       </main>
       <footer className="mt-16 bg-muted py-8 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} {cvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
+        <p>&copy; {new Date().getFullYear()} {portfolioCvData?.personalInfo?.name || profile.fullName}. Built with PortfolioForge.</p>
       </footer>
     </div>
   );

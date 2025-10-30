@@ -23,6 +23,7 @@ export const CvDataSchema = z.object({
         .optional(),
     })
     .describe('The personal contact information of the candidate.'),
+  profession: z.string().describe("The candidate's profession, e.g., 'Software Engineer', 'Graphic Designer', 'Marketing Manager'."),
   summary: z
     .string()
     .describe(
@@ -71,7 +72,7 @@ export const CvDataSchema = z.object({
   skills: z
     .array(z.string())
     .describe(
-      'A list of 10-15 of the most important technical skills, programming languages, and tools mentioned in the CV.'
+      'A list of 10-15 of the most important technical skills, software, or methodologies mentioned in the CV.'
     ),
 });
 
@@ -88,8 +89,13 @@ const prompt = ai.definePrompt({
     name: 'cvParserPrompt',
     input: { schema: CvParserInputSchema },
     output: { schema: CvDataSchema },
-    prompt: `Parse the following CV and extract structured data. For responsibilities, provide a list of 2-4 key achievements for each role. For skills, list the top 10-15 most relevant technical skills.
-    
+    prompt: `You are an expert document analyst. Your task is to parse the following CV and extract structured data based on the provided schema.
+
+    Key tasks:
+    1.  **Identify the Profession**: Based on job titles and work experience, determine the candidate's profession (e.g., 'Software Engineer', 'Graphic Designer', 'Marketing Manager').
+    2.  **Extract Standard Fields**: Accurately extract personal information, summary, work experience, and education.
+    3.  **List Relevant Skills**: Identify and list the top 10-15 most relevant skills. These can be technical skills (like programming languages), software (like Adobe Photoshop), or methodologies (like Agile).
+
     CV Image: {{media url=prompt}}`,
     config: {
       model: 'googleai/gemini-1.5-pro',

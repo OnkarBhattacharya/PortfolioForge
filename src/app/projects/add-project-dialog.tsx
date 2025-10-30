@@ -33,13 +33,13 @@ import { useToast } from '@/hooks/use-toast';
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().min(1, 'Description is required'),
-  technologies: z.string().optional(),
-  projectUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  tags: z.string().optional(),
+  itemUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function AddProjectDialog({ children }: { children: React.ReactNode }) {
+export default function AddPortfolioItemDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { firestore } = useFirebase();
@@ -52,8 +52,8 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
     defaultValues: {
       name: '',
       description: '',
-      technologies: '',
-      projectUrl: '',
+      tags: '',
+      itemUrl: '',
     },
   });
   
@@ -62,7 +62,7 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
        toast({
         variant: "destructive",
         title: "Authentication Required",
-        description: "Please log in or sign up to add a project.",
+        description: "Please log in or sign up to add a portfolio item.",
       });
     } else {
         setOpen(true);
@@ -73,24 +73,23 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
     if (!firestore || !user || user.isAnonymous) return;
 
     setIsSubmitting(true);
-    const projectsCol = collection(firestore, 'users', user.uid, 'projects');
-    const technologiesArray =
-      values.technologies?.split(',').map((t) => t.trim()).filter(Boolean) || [];
+    const itemsCol = collection(firestore, 'users', user.uid, 'portfolioItems');
+    const tagsArray =
+      values.tags?.split(',').map((t) => t.trim()).filter(Boolean) || [];
     
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
-    addDocumentNonBlocking(projectsCol, {
+    addDocumentNonBlocking(itemsCol, {
         name: values.name,
         description: values.description,
-        projectUrl: values.projectUrl,
-        technologies: technologiesArray,
+        itemUrl: values.itemUrl,
+        tags: tagsArray,
         userProfileId: user.uid,
         imageId,
-        source: 'firebase',
     });
 
     toast({
-        title: 'Project Added!',
+        title: 'Portfolio Item Added!',
         description: `${values.name} has been added to your portfolio.`,
     });
 
@@ -106,9 +105,9 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
       </div>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Add a New Project</DialogTitle>
+          <DialogTitle className="font-headline">Add Portfolio Item</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new project to your portfolio.
+            Fill in the details below to add a new item to your portfolio.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -118,9 +117,9 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel>Item Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Awesome App" {...field} />
+                    <Input placeholder="e.g., 'My Awesome App', 'Marketing Campaign'" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,7 +132,7 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="A brief description of your project..." {...field} />
+                    <Textarea placeholder="A brief description of your work..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,15 +140,15 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
             />
             <FormField
               control={form.control}
-              name="technologies"
+              name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Technologies</FormLabel>
+                  <FormLabel>Tags / Technologies</FormLabel>
                   <FormControl>
-                    <Input placeholder="React, Next.js, Firebase" {...field} />
+                    <Input placeholder="e.g., React, Next.js, SEO, Graphic Design" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Enter a comma-separated list of technologies.
+                    Enter a comma-separated list of relevant skills or technologies.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -157,15 +156,15 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
             />
              <FormField
               control={form.control}
-              name="projectUrl"
+              name="itemUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project URL</FormLabel>
+                  <FormLabel>Item URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://github.com/user/repo" {...field} />
+                    <Input placeholder="https://example.com/my-work" {...field} />
                   </FormControl>
                    <FormDescription>
-                    Link to the live demo or source code repository.
+                    Link to the live project, case study, or source code.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -174,7 +173,7 @@ export default function AddProjectDialog({ children }: { children: React.ReactNo
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Project
+                Add Item
               </Button>
             </DialogFooter>
           </form>
