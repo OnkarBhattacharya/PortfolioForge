@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { run } from '@genkit-ai/core';
 import { importFromUrl, WebImporterOutput } from '@/ai/flows/web-importer';
-import { collection, writeBatch, getFirestore } from 'firebase/firestore';
+import { collection, writeBatch, getFirestore, doc } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,7 +21,7 @@ export const saveWebImportToFirestore = async (userId: string, url: string, data
   const newItemId = uuidv4();
   const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
-  const newDocRef = collection(portfolioItemsRef).doc(newItemId);
+  const newDocRef = doc(portfolioItemsRef, newItemId);
   batch.set(newDocRef, {
     id: newItemId,
     userProfileId: userId,

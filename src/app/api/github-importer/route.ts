@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { run } from '@genkit-ai/core';
 import { importGithubRepositories, GithubRepository } from '@/ai/flows/github-importer';
-import { collection, writeBatch, getFirestore } from 'firebase/firestore';
+import { collection, writeBatch, getFirestore, doc } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,7 +23,7 @@ export const saveProjectsToFirestore = async (userId: string, projects: GithubRe
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
     const tags = project.language ? [project.language] : [];
 
-    const newDocRef = collection(portfolioItemsRef).doc(newItemId);
+    const newDocRef = doc(portfolioItemsRef, newItemId);
     batch.set(newDocRef, {
       id: newItemId,
       userProfileId: userId,
