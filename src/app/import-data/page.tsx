@@ -68,7 +68,7 @@ export default function ImportDataPage() {
   };
 
   const handleUpload = async () => {
-    if (isReadOnly) {
+    if (isReadOnly || !user) {
        toast({
         variant: "destructive",
         title: "Authentication Required",
@@ -90,21 +90,25 @@ export default function ImportDataPage() {
     try {
       const fileDataUri = await fileToDataURI(selectedFile);
       
-      const response = await fetch('/api/cvParserFlow', {
+      const response = await fetch('/api/cv-parser', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ cvFile: fileDataUri }),
+        body: JSON.stringify({ cvFile: fileDataUri, userId: user.uid }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'CV parsing failed');
+        throw new Error(errorData.error || 'CV parsing failed');
       }
 
       const result = await response.json();
-      localStorage.setItem('cvData', JSON.stringify(result));
+      localStorage.setItem('cvData', JSON.stringify(result.data));
       localStorage.setItem("cvUploadSuccess", "true");
       setCvUploadSuccess(true);
+      
+      // Dispatch a storage event to notify other components (like the dashboard)
+      window.dispatchEvent(new Event('storage'));
+      
       toast({
         title: "AI-Powered CV Scan Successful",
         description: "Your CV has been parsed and the data is now available in your portfolio and the AI Assistant.",
@@ -151,6 +155,7 @@ export default function ImportDataPage() {
       localStorage.setItem('cvData', JSON.stringify(result.data)); 
       localStorage.setItem('linkedInSuccess', 'true');
       setLinkedInSuccess(true);
+      window.dispatchEvent(new Event('storage'));
       toast({
         title: "AI-Powered LinkedIn Import Successful",
         description: "Your LinkedIn data has been parsed and saved to your profile.",

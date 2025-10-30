@@ -4,8 +4,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {CvDataSchema} from '@/lib/types';
-import {auth} from 'firebase-admin';
-import {getFirestore} from 'firebase-admin/firestore';
 
 const CvParserInputSchema = z.object({
   cvFile: z
@@ -46,27 +44,12 @@ export const cvParserFlow = ai.defineFlow(
     name: 'cvParserFlow',
     inputSchema: CvParserInputSchema,
     outputSchema: CvDataSchema,
-    auth: async (input, auth) => {
-      // Allow any Firebase-authenticated user to call this flow.
-      if (!auth) {
-        throw new Error('Authentication required.');
-      }
-    },
   },
-  async (input, streamingCallback, context) => {
+  async (input) => {
     const {output} = await prompt(input);
     if (!output) {
       throw new Error('Failed to parse CV. The model did not return valid data.');
     }
-
-    if (!context.auth) {
-      throw new Error('Authentication context not found.');
-    }
-    const userId = context.auth.uid;
-    const userDocRef = getFirestore().doc(`users/${userId}`);
-
-    await userDocRef.set({...output}, {merge: true});
-
     return output;
   }
 );
