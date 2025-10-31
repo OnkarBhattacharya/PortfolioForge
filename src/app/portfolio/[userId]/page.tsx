@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useMemo } from 'react';
 import {
@@ -8,22 +7,15 @@ import {
 } from 'firebase/firestore';
 import { useFirebase, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, ExternalLink, Loader2, Briefcase, GraduationCap } from 'lucide-react';
+import { Github, Linkedin, Mail, Loader2, Plus, Globe } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
-import { Footer } from '@/components/footer';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -45,12 +37,19 @@ type PortfolioItem = {
   imageId: string;
 };
 
-type Theme = {
-    id: string;
-    primary: string;
-    background: string;
-    foreground: string;
-    accent: string;
+// Custom Star Divider Component inspired by the Freelancer theme
+function StarDivider({ className, lineClassName, starClassName }: { className?: string, lineClassName?: string, starClassName?: string }) {
+  return (
+    <div className={cn("divider-custom flex items-center justify-center w-full", className)}>
+      <div className={cn("divider-custom-line w-full h-1 bg-current rounded-full", lineClassName)} />
+      <div className="divider-custom-icon px-4">
+        <svg className={cn("h-7 w-7 text-current", starClassName)} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+          <path d="M512 198.5l-177.2-25.7L256 12.5 177.2 172.8 0 198.5l128.2 125-30.3 176.5L256 420.3l158.1 80.2L483.8 323.5 512 198.5z" />
+        </svg>
+      </div>
+      <div className={cn("divider-custom-line w-full h-1 bg-current rounded-full", lineClassName)} />
+    </div>
+  );
 }
 
 export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
@@ -68,7 +67,7 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
     return doc(firestore, 'themes', profile.themeId);
   }, [firestore, profile?.themeId]);
 
-  const { data: theme, isLoading: isThemeLoading } = useDoc<Theme>(themeDocRef);
+  const { data: theme, isLoading: isThemeLoading } = useDoc<any>(themeDocRef);
 
   const itemsQuery = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
@@ -80,17 +79,9 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
   
   const selectedTheme = useMemo(() => {
-    if (theme) return theme;
-    const themeId = profile?.themeId || 'default';
-    const foundTheme = staticThemes.find(t => t.id === themeId) || staticThemes[0];
-    return {
-        id: foundTheme.id,
-        primary: foundTheme.primary,
-        background: foundTheme.background,
-        foreground: foundTheme.foreground,
-        accent: foundTheme.accent,
-    };
-  }, [theme, profile?.themeId]);
+    const themeId = profile?.themeId || 'freelancer-teal';
+    return staticThemes.find(t => t.id === themeId) || staticThemes.find(t => t.id === 'freelancer-teal')!;
+  }, [profile?.themeId]);
 
 
   useEffect(() => {
@@ -112,8 +103,8 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   
   if (isLoading) {
       return (
-          <div className="flex h-screen w-full items-center justify-center bg-background">
-              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <div className="flex h-screen w-full items-center justify-center" style={{ backgroundColor: `hsl(${selectedTheme.primary})`}}>
+              <Loader2 className="h-16 w-16 animate-spin text-white" />
           </div>
       )
   }
@@ -123,142 +114,123 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
           <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
               <div className="text-center">
                 <h1 className="text-2xl font-bold">Portfolio Not Found</h1>
-                <p className="text-muted-foreground">This user profile could not be loaded. It may have been deleted or the link is incorrect.</p>
+                <p className="text-muted-foreground">This user profile could not be loaded.</p>
               </div>
           </div>
       )
   }
   
+  // Split summary into two paragraphs for the two-column layout
+  const summarySentences = profile?.summary?.match(/[^.!?]+[.!?]+/g) || [];
+  const midPoint = Math.ceil(summarySentences.length / 2);
+  const summaryLeft = summarySentences.slice(0, midPoint).join(' ');
+  const summaryRight = summarySentences.slice(midPoint).join(' ');
+
 
   return (
-    <div className="min-h-screen bg-background font-body text-foreground">
-      <header className="container mx-auto px-4 py-16 text-center">
-        <Avatar className="mx-auto h-32 w-32 border-4 border-primary shadow-lg">
-          <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
-          <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
-        </Avatar>
-        <h1 className="mt-6 font-headline text-5xl font-bold">{profile?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
-        <p className="mt-2 text-xl text-muted-foreground">{profile?.profession || 'A passionate professional with a love for creating beautiful and functional web applications.'}</p>
-        <div className="mt-6 flex justify-center gap-4">
-          {profile.githubUrl && <Button variant="outline" asChild><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="mr-2" /> GitHub</a></Button>}
-          {profile.linkedinUrl && <Button variant="outline" asChild><a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="mr-2" /> LinkedIn</a></Button>}
-          {profile.email && <Button variant="outline" asChild><a href={`mailto:${profile.email}`}><Mail className="mr-2" /> Email</a></Button>}
+    <div className="min-h-screen bg-background font-body text-foreground" style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}>
+      
+      {/* Masthead */}
+      <header className="text-center text-white" style={{ backgroundColor: `hsl(${selectedTheme.primary})` }}>
+        <div className="container mx-auto flex flex-col items-center px-4 py-24">
+          <Avatar className="mx-auto h-40 w-40 mb-8 border-4 border-white shadow-lg">
+            <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
+            <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
+          </Avatar>
+          <h1 className="font-headline text-5xl md:text-6xl font-bold uppercase">{profile?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
+          <StarDivider className="my-6 text-white" />
+          <p className="text-xl md:text-2xl font-light">{profile?.profession || 'A Passionate Professional'}</p>
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-8">
-        <section id="about" className="mb-16">
-          <h2 className="mb-6 font-headline text-4xl font-bold text-primary">About Me</h2>
-           <Card>
-            <CardContent className="pt-6">
-                <p className="text-lg leading-relaxed">
-                    {profile?.summary || "Welcome to my portfolio! I'm a dedicated professional specializing in building modern solutions. My experience spans from creating beautiful user interfaces to designing robust systems. I thrive on solving complex problems and am always eager to learn new things. This portfolio showcases some of my favorite work. Feel free to explore and get in touch!"}
-                </p>
-            </CardContent>
-           </Card>
-        </section>
-
-        {profile?.experience && profile.experience.length > 0 && (
-          <section id="experience" className="mb-16">
-            <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Work Experience</h2>
-            <div className="space-y-8">
-              {profile.experience.map((job, index) => (
-                <Card key={index}>
-                  <CardHeader className="flex flex-row items-start gap-4">
-                    <Briefcase className="h-8 w-8 text-accent" />
-                    <div>
-                      <CardTitle className="font-headline text-2xl">{job.jobTitle}</CardTitle>
-                      <CardDescription className="text-lg">{job.company} &middot; {job.location}</CardDescription>
-                      <p className="text-sm text-muted-foreground">{job.startDate} - {job.endDate}</p>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc space-y-2 pl-6">
-                      {job.responsibilities?.map((res, i) => <li key={i}>{res}</li>)}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
+      <main>
+        {/* Portfolio Section */}
+        <section id="portfolio" className="py-20">
+          <div className="container mx-auto px-4">
+            <h2 className="text-center font-headline text-4xl font-bold uppercase text-foreground">Portfolio</h2>
+            <StarDivider className="my-6 text-foreground" lineClassName="bg-foreground/50" />
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {items?.map((item) => {
+                const image = getPlaceholderImage(item.imageId);
+                return (
+                  <div key={item.id} className="group relative cursor-pointer">
+                    <a href={item.itemUrl} target="_blank" rel="noopener noreferrer">
+                      <Image
+                        src={image?.imageUrl || `https://picsum.photos/seed/${item.id}/600/400`}
+                        alt={item.name}
+                        width={600}
+                        height={400}
+                        className="aspect-video w-full rounded-lg object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary opacity-0 transition-opacity duration-300 group-hover:opacity-90">
+                        <Plus className="h-16 w-16 text-white" />
+                      </div>
+                    </a>
+                  </div>
+                );
+              })}
             </div>
-          </section>
-        )}
-
-        {profile?.education && profile.education.length > 0 && (
-            <section id="education" className="mb-16">
-                <h2 className="mb-8 font-headline text-4xl font-bold text-primary">Education</h2>
-                <div className="space-y-8">
-                    {profile.education.map((edu, index) => (
-                        <Card key={index}>
-                             <CardHeader className="flex flex-row items-start gap-4">
-                                <GraduationCap className="h-8 w-8 text-accent" />
-                                <div>
-                                    <CardTitle className="font-headline text-2xl">{edu.institution}</CardTitle>
-                                    <CardDescription className="text-lg">{edu.degree}</CardDescription>
-                                    <p className="text-sm text-muted-foreground">Graduated: {edu.graduationDate}</p>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    ))}
-                </div>
-            </section>
-        )}
-
-        {profile?.skills && profile.skills.length > 0 && (
-            <section id="skills" className="mb-16">
-                 <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Skills</h2>
-                <Card>
-                    <CardContent className="flex flex-wrap gap-4 pt-6">
-                        {profile.skills.map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="text-lg px-4 py-2">{skill}</Badge>
-                        ))}
-                    </CardContent>
-                </Card>
-            </section>
-        )}
-
-        <section id="projects">
-          <h2 className="mb-6 font-headline text-4xl font-bold text-primary">Portfolio</h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {items?.map((item) => {
-              const image = getPlaceholderImage(item.imageId);
-              return (
-                <Card key={item.id} className="flex flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl">
-                  {image && (
-                    <Image
-                      src={image.imageUrl}
-                      alt={item.name}
-                      width={600}
-                      height={400}
-                      className="aspect-video w-full object-cover"
-                    />
-                  )}
-                  <CardHeader>
-                    <CardTitle className="font-headline">{item.name}</CardTitle>
-                    <CardDescription className="h-[60px] line-clamp-3">{item.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-1 flex-col">
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        {item.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                    </div>
-                  </CardContent>
-                   <CardContent className="flex gap-2">
-                      {item.itemUrl && <Button asChild className="flex-1"><a href={item.itemUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2" /> View Item</a></Button>}
-                  </CardContent>
-                </Card>
-              );
-            })}
-             {!items || items.length === 0 && (
-                <Card className="md:col-span-2 lg:col-span-3">
-                    <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                        <h3 className="text-xl font-bold">No portfolio items yet!</h3>
-                        <p className="text-muted-foreground">Add your first item from the 'Portfolio' page to see it here.</p>
-                    </CardContent>
-                </Card>
+             {!isLoading && (!items || items.length === 0) && (
+                 <p className="text-center text-muted-foreground mt-8">This portfolio doesn't have any items yet.</p>
              )}
           </div>
         </section>
+
+        {/* About Section */}
+        <section id="about" className="py-20 text-white" style={{ backgroundColor: `hsl(${selectedTheme.primary})` }}>
+          <div className="container mx-auto px-4">
+            <h2 className="text-center font-headline text-4xl font-bold uppercase">About</h2>
+            <StarDivider className="my-6 text-white" />
+            <div className="grid gap-8 md:grid-cols-2">
+              <p className="text-lg font-light leading-relaxed">
+                {summaryLeft || "This professional is skilled in creating amazing things. With a keen eye for detail and a passion for technology, they bring ideas to life."}
+              </p>
+              <p className="text-lg font-light leading-relaxed">
+                {summaryRight || "Whether it's building a complex web application or designing a beautiful user interface, they are ready for any challenge. Feel free to get in touch!"}
+              </p>
+            </div>
+             <div className="text-center mt-12">
+                <Button asChild variant="outline" className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary transition-colors duration-300 px-6 py-6 text-lg">
+                    <a href={profile.githubUrl || profile.linkedinUrl || `mailto:${profile.email}`}>
+                        <Globe className="mr-2 h-5 w-5" />
+                        Learn More
+                    </a>
+                </Button>
+            </div>
+          </div>
+        </section>
       </main>
-      <Footer />
+
+      {/* Footer */}
+      <footer className="text-white" style={{ backgroundColor: `hsl(${selectedTheme.foreground})`}}>
+        <div className="container mx-auto px-4 py-16">
+          <div className="grid gap-12 text-center md:grid-cols-3 md:text-left">
+            <div>
+              <h4 className="mb-4 font-headline text-2xl font-bold uppercase">Location</h4>
+              <p className="font-light leading-relaxed">{profile?.personalInfo?.location || "Planet Earth"}</p>
+            </div>
+            <div>
+              <h4 className="mb-4 font-headline text-2xl font-bold uppercase">Around the Web</h4>
+              <div className="flex justify-center gap-2 md:justify-start">
+                  {profile.linkedinUrl && <a href={profile.linkedinUrl} className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white hover:bg-white hover:text-foreground transition-colors"><Linkedin /></a>}
+                  {profile.githubUrl && <a href={profile.githubUrl} className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white hover:bg-white hover:text-foreground transition-colors"><Github /></a>}
+                  {profile.email && <a href={`mailto:${profile.email}`} className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white hover:bg-white hover:text-foreground transition-colors"><Mail /></a>}
+              </div>
+            </div>
+            <div>
+              <h4 className="mb-4 font-headline text-2xl font-bold uppercase">About PortfolioForge</h4>
+              <p className="font-light leading-relaxed">PortfolioForge is a free to use, AI-powered portfolio builder created by Google Studio.</p>
+            </div>
+          </div>
+        </div>
+        <div className="py-6" style={{ backgroundColor: `hsl(${selectedTheme.foreground}, 5%)` }}>
+            <div className="container mx-auto px-4 text-center">
+                <small>Copyright &copy; PortfolioForge {new Date().getFullYear()}</small>
+            </div>
+        </div>
+      </footer>
     </div>
   );
 }
+
+    
