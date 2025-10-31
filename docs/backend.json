@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -190,6 +191,45 @@
         "userProfileId",
         "themeId"
       ]
+    },
+     "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a message sent via the contact form on a user's portfolio.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "userProfileId": {
+          "type": "string",
+          "description": "The ID of the portfolio owner receiving the message."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the person who sent the message."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the sender."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the message was sent."
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Whether the portfolio owner has read the message."
+        }
+      },
+      "required": ["id", "userProfileId", "name", "email", "message", "createdAt"]
     }
   },
   "auth": {
@@ -228,6 +268,16 @@
             "$ref": "#/entities/Theme"
           },
           "description": "Stores themes available for portfolios. Publicly readable."
+        }
+      },
+      {
+        "path": "/users/{userId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/entities/Message"
+          },
+          "description": "Stores messages sent to the user. Only the user can read their own messages. Writes are not allowed from the client."
         }
       }
     ]

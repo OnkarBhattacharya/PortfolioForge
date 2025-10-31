@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import type { UserProfile, PortfolioItem } from './page';
+import { ContactForm } from './contact-form';
 
 interface StylishPortfolioThemeProps {
     profile: UserProfile;
@@ -159,26 +160,31 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                 </div>
             </section>
 
-             {/* Call to Action */}
-            <section id="contact" className="py-20 bg-muted">
-                <div className="container mx-auto text-center">
-                    <h2 className="text-4xl font-bold mb-8">The buttons below are impossible to resist!</h2>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Button asChild size="lg" className="bg-primary text-primary-foreground rounded-full px-8 py-6 text-lg font-bold">
-                            <a href={`mailto:${profile.email}`}>Email Me</a>
-                        </Button>
-                        <Button asChild size="lg" variant="secondary" className="bg-foreground text-background rounded-full px-8 py-6 text-lg font-bold">
-                             <a href={profile.linkedinUrl || '#'}>See My Profile</a>
-                        </Button>
-                    </div>
-                </div>
-            </section>
-
              {/* Map */}
             <section className="h-[500px] w-full bg-gray-300 flex items-center justify-center">
                 <p className="text-gray-500">Map Placeholder</p>
             </section>
 
+            {/* Contact Section */}
+            <section id="contact" className="py-20">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold uppercase">Contact</h2>
+                        <p className="text-muted-foreground">Let's Get In Touch!</p>
+                    </div>
+                    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <ContactForm userId={profile.id} />
+                        <div className="flex flex-col items-center text-center">
+                           <Phone className="h-8 w-8 mb-4 text-primary" />
+                           <h4 className="text-xl font-bold mb-2">Phone</h4>
+                           <p className="text-muted-foreground mb-4">{profile.personalInfo?.phone || '(123) 456-7890'}</p>
+                           <Mail className="h-8 w-8 mb-4 text-primary" />
+                           <h4 className="text-xl font-bold mb-2">Email</h4>
+                           <a href={`mailto:${profile.email}`} className="text-primary hover:underline">{profile.email}</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <footer className="py-16 text-center">
@@ -186,7 +192,6 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                 <div className="flex justify-center gap-4 mb-8">
                     {profile.linkedinUrl && <a href={profile.linkedinUrl} className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"><Linkedin /></a>}
                     {profile.githubUrl && <a href={profile.githubUrl} className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"><Github /></a>}
-                    {profile.email && <a href={`mailto:${profile.email}`} className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"><Mail /></a>}
                 </div>
                 <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} {profile.fullName || 'Your Name'}. All Rights Reserved.</p>
                  <div className="text-xs text-muted-foreground mt-4">

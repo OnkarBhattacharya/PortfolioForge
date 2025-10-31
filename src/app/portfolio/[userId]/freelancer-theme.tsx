@@ -8,6 +8,7 @@ import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Globe, Github, Linkedin, Mail, Plus } from 'lucide-react';
 import Image from 'next/image';
 import type { UserProfile, PortfolioItem } from './page';
+import { ContactForm } from './contact-form';
 
 // Custom Star Divider Component inspired by the Freelancer theme
 function StarDivider({ className, lineClassName, starClassName }: { className?: string, lineClassName?: string, starClassName?: string }) {
@@ -108,6 +109,17 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
                 </Button>
             </div>
           </div>
+        </section>
+
+        {/* Contact Section */}
+        <section id="contact" className="py-20">
+            <div className="container mx-auto px-4">
+                <h2 className="text-center font-headline text-4xl font-bold uppercase">Contact Me</h2>
+                <StarDivider className="my-6 text-foreground" lineClassName="bg-foreground/50" />
+                <div className="mx-auto max-w-2xl">
+                    <ContactForm userId={profile.id} />
+                </div>
+            </div>
         </section>
       </main>
 

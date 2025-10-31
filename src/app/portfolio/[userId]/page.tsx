@@ -15,6 +15,7 @@ import { FreelancerTheme } from './freelancer-theme';
 import { AgencyTheme } from './agency-theme';
 import { StylishPortfolioTheme } from './stylish-portfolio-theme';
 import { ThemeConfig } from '@/lib/theme-schema';
+import { ContactForm } from './contact-form';
 
 type CvData = z.infer<typeof CvDataSchema>;
 

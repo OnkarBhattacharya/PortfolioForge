@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { UserProfile, PortfolioItem } from './page';
+import { ContactForm } from './contact-form';
 
 interface AgencyThemeProps {
     profile: UserProfile;
@@ -180,11 +181,9 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                  <div className="container mx-auto px-4 text-center">
                     <h2 className="text-4xl font-bold uppercase mb-4">Contact Me</h2>
                     <p className="text-muted-foreground text-lg italic mb-12">I'd love to hear from you.</p>
-                     <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/80 rounded-full px-8 py-6 text-lg uppercase font-bold tracking-wider">
-                        <a href={`mailto:${profile.email}`}>
-                            <Mail className="mr-4 h-6 w-6" /> Send a Message
-                        </a>
-                    </Button>
+                     <div className="mx-auto max-w-2xl">
+                        <ContactForm userId={profile.id} />
+                    </div>
                 </div>
             </section>
         </main>
