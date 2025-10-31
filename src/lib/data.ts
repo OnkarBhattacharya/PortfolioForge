@@ -95,5 +95,17 @@ export const themes = [
     "foreground": "0 0% 98%",
     "primary": "45 86% 62%",
     "accent": "45 86% 62%"
+  },
+  {
+    "id": "stylish-portfolio",
+    "name": "Stylish Portfolio",
+    "description": "A stylish, one-page portfolio theme with a full-page hero image and smooth scrolling.",
+    "previewImageUrl": "https://picsum.photos/seed/stylish-portfolio/600/400",
+    "price": 0,
+    "isPremium": false,
+    "background": "0 0% 100%",
+    "foreground": "215 28% 17%",
+    "primary": "203 76% 43%",
+    "accent": "203 76% 43%"
   }
 ];

@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 import { FreelancerTheme } from './freelancer-theme';
 import { AgencyTheme } from './agency-theme';
+import { StylishPortfolioTheme } from './stylish-portfolio-theme';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -106,6 +107,10 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
 
   if (selectedTheme.id === 'agency') {
     return <AgencyTheme {...themeProps} />;
+  }
+  
+  if (selectedTheme.id === 'stylish-portfolio') {
+    return <StylishPortfolioTheme {...themeProps} />;
   }
 
   // Default to Freelancer theme
