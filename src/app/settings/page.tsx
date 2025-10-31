@@ -240,7 +240,7 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
-        <Dialog onOpenChange={() => setPreviewTheme(null)}>
+        <Dialog>
             <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Portfolio Themes</CardTitle>
@@ -294,16 +294,25 @@ export default function SettingsPage() {
                 </Button>
             </CardFooter>
             </Card>
-            {previewTheme && (
-                <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-auto rounded-lg border">
-                        <ThemePreview theme={previewTheme} />
-                    </div>
-                </DialogContent>
-            )}
+            <DialogContent 
+                className="max-w-4xl w-full h-[90vh] flex flex-col"
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setPreviewTheme(null);
+                    }
+                }}
+            >
+                {previewTheme && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1 overflow-auto rounded-lg border">
+                            <ThemePreview theme={previewTheme} />
+                        </div>
+                    </>
+                )}
+            </DialogContent>
         </Dialog>
       </div>
     </div>
