@@ -240,7 +240,14 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
-        <Dialog>
+        <Dialog
+            open={!!previewTheme}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    setPreviewTheme(null);
+                }
+            }}
+        >
             <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Portfolio Themes</CardTitle>
@@ -294,13 +301,8 @@ export default function SettingsPage() {
                 </Button>
             </CardFooter>
             </Card>
-            <DialogContent 
+            <DialogContent
                 className="max-w-4xl w-full h-[90vh] flex flex-col"
-                onOpenChange={(isOpen) => {
-                    if (!isOpen) {
-                        setPreviewTheme(null);
-                    }
-                }}
             >
                 {previewTheme && (
                     <>
