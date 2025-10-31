@@ -14,6 +14,7 @@ import { CvDataSchema } from '@/lib/types';
 import { FreelancerTheme } from './freelancer-theme';
 import { AgencyTheme } from './agency-theme';
 import { StylishPortfolioTheme } from './stylish-portfolio-theme';
+import { ThemeConfig } from '@/lib/theme-schema';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -24,6 +25,7 @@ export type UserProfile = {
   linkedinUrl?: string;
   githubUrl?: string;
   themeId?: string;
+  customTheme?: ThemeConfig;
 } & Partial<CvData>;
 
 export type PortfolioItem = {
@@ -46,7 +48,7 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
 
   const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !profile?.themeId) return null;
+    if (!firestore || !profile?.themeId || profile.themeId === 'custom') return null;
     return doc(firestore, 'themes', profile.themeId);
   }, [firestore, profile?.themeId]);
 
@@ -62,24 +64,49 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
   
   const selectedTheme = useMemo(() => {
+    if (profile?.customTheme) {
+      return profile.customTheme;
+    }
     const themeId = profile?.themeId || 'freelancer-teal';
     return staticThemes.find(t => t.id === themeId) || staticThemes.find(t => t.id === 'freelancer-teal')!;
-  }, [profile?.themeId]);
+  }, [profile]);
 
 
   useEffect(() => {
     if (selectedTheme) {
-        document.documentElement.style.setProperty('--background', selectedTheme.background);
-        document.documentElement.style.setProperty('--foreground', selectedTheme.foreground);
-        document.documentElement.style.setProperty('--primary', selectedTheme.primary);
-        document.documentElement.style.setProperty('--accent', selectedTheme.accent);
+      const themeToApply = selectedTheme.light || selectedTheme; // Use light mode for custom themes for now
+      Object.entries(themeToApply).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${key}`, value);
+      });
+
+      if (selectedTheme.font) {
+        const headingFont = selectedTheme.font.heading;
+        const bodyFont = selectedTheme.font.body;
+
+        document.documentElement.style.setProperty('--font-heading', headingFont.family);
+        document.documentElement.style.setProperty('--font-body', bodyFont.family);
+
+        // Load fonts from Google Fonts
+        const link = document.createElement('link');
+        link.href = selectedTheme.font.heading.url;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        if (headingFont.url !== bodyFont.url) {
+            const bodyLink = document.createElement('link');
+            bodyLink.href = bodyFont.url;
+            bodyLink.rel = 'stylesheet';
+            document.head.appendChild(bodyLink);
+        }
+      }
+      
+      if (selectedTheme.borderRadius) {
+        document.documentElement.style.setProperty('--border-radius', `${selectedTheme.borderRadius}rem`);
+      }
     }
 
     return () => {
-        document.documentElement.style.removeProperty('--background');
-        document.documentElement.style.removeProperty('--foreground');
-        document.documentElement.style.removeProperty('--primary');
-        document.documentElement.style.removeProperty('--accent');
+      // Cleanup logic if needed
     };
   }, [selectedTheme]);
 
@@ -105,14 +132,14 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   
   const themeProps = { profile, items: items || [], theme: selectedTheme };
 
-  if (selectedTheme.id === 'agency') {
+  if (profile?.themeId === 'agency') {
     return <AgencyTheme {...themeProps} />;
   }
   
-  if (selectedTheme.id === 'stylish-portfolio') {
+  if (profile?.themeId === 'stylish-portfolio') {
     return <StylishPortfolioTheme {...themeProps} />;
   }
 
-  // Default to Freelancer theme
+  // Default to Freelancer theme, which will now be styled by the custom theme if present
   return <FreelancerTheme {...themeProps} />;
 }

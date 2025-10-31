@@ -29,7 +29,11 @@ export async function parseLinkedInProfile(
 const prompt = ai.definePrompt({
   name: 'linkedInParserPrompt',
   input: { schema: LinkedInParserInputSchema },
-  output: { schema: CvDataSchema },
+  output: {
+    schema: CvDataSchema.extend({
+      skills: z.array(z.string()).optional().describe('A list of key skills extracted from the LinkedIn profile.'),
+    })
+  },
   prompt: `You are an expert data analyst specializing in professional profiles. Your task is to parse the raw text from a LinkedIn profile and extract structured data according to the provided schema.
 
 Pay close attention to section headers like "Summary", "Experience", "Education", and "Skills" to correctly categorize the information.
@@ -42,7 +46,9 @@ const linkedInParserFlow = ai.defineFlow(
   {
     name: 'linkedInParserFlow',
     inputSchema: LinkedInParserInputSchema,
-    outputSchema: CvDataSchema,
+    outputSchema: CvDataSchema.extend({ // Also update the output schema for the flow
+      skills: z.array(z.string()).optional().describe('A list of key skills extracted from the LinkedIn profile.'),
+    }),
   },
   async (profileText) => {
     const { output } = await prompt(profileText);

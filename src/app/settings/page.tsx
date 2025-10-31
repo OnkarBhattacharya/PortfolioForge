@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useFirebase, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, updateDoc } from "firebase/firestore";
-import { Check, Loader2, KeyRound, Copy } from "lucide-react";
+import { Check, Loader2, KeyRound, Copy, Wand2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
@@ -22,6 +22,8 @@ import { themes as staticThemes } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ThemePreview } from "@/components/theme-preview";
+import { Textarea } from "@/components/ui/textarea";
+import { ThemeConfig } from "@/lib/theme-schema";
 
 type Theme = {
   id: string;
@@ -41,6 +43,7 @@ type UserProfile = {
     themeId?: string;
     customDomain?: string;
     customDomainStatus?: 'pending' | 'active' | 'error';
+    customTheme?: ThemeConfig;
 };
 
 export default function SettingsPage() {
@@ -55,6 +58,9 @@ export default function SettingsPage() {
   const [domainName, setDomainName] = useState('');
   const [isConnectingDomain, setIsConnectingDomain] = useState(false);
   const [previewTheme, setPreviewTheme] = useState<Theme | null>(null);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatedTheme, setGeneratedTheme] = useState<ThemeConfig | null>(null);
+  const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -77,6 +83,9 @@ export default function SettingsPage() {
       if (userProfile?.customDomain) {
           setDomainName(userProfile.customDomain);
       }
+      if (userProfile?.customTheme) {
+          setGeneratedTheme(userProfile.customTheme);
+      }
   }, [userProfile]);
 
   const displayedThemes = useMemo(() => {
@@ -93,14 +102,16 @@ export default function SettingsPage() {
       return;
     }
     setSelectedThemeId(themeId);
+    setGeneratedTheme(null); // Clear generated theme when selecting a pre-made one
   };
   
   const handleSaveTheme = async () => {
-    if (!userProfileRef || !selectedThemeId) return;
+    if (!userProfileRef || (!selectedThemeId && !generatedTheme)) return;
 
     setIsSaving(true);
     try {
-      await updateDoc(userProfileRef, { themeId: selectedThemeId });
+      const themeToSave = generatedTheme ? { customTheme: generatedTheme, themeId: 'custom' } : { themeId: selectedThemeId, customTheme: null };
+      await updateDoc(userProfileRef, themeToSave);
       toast({
         title: "Theme Updated!",
         description: "Your portfolio will now use the new theme.",
@@ -147,6 +158,33 @@ export default function SettingsPage() {
       } finally {
           setIsConnectingDomain(false);
       }
+  };
+
+  const handleGenerateTheme = async () => {
+    if (!aiPrompt) return;
+    setIsGeneratingTheme(true);
+    try {
+      const response = await fetch('/api/theme-generator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate theme');
+      }
+      const theme = await response.json();
+      setGeneratedTheme(theme);
+      setSelectedThemeId('custom'); // Select the new custom theme
+    } catch (error) {
+      console.error("Error generating theme:", error);
+      toast({
+        variant: "destructive",
+        title: "Theme Generation Failed",
+        description: "Could not generate a new theme. Please try a different prompt.",
+      });
+    } finally {
+      setIsGeneratingTheme(false);
+    }
   };
   
   const copyToClipboard = (text: string) => {
@@ -240,6 +278,34 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
+        <Card>
+          <CardHeader>
+              <CardTitle className="font-headline">AI Theme Generator</CardTitle>
+              <CardDescription>
+                  Describe the style you want, and our AI will create a unique theme for you. Try things like "a minimalist theme with a touch of neon" or "a professional theme for a photographer".
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <Textarea
+                  placeholder="e.g., A dark, futuristic theme with glowing blue accents..."
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  disabled={isReadOnly || isGeneratingTheme}
+              />
+              <Button onClick={handleGenerateTheme} disabled={isReadOnly || !aiPrompt || isGeneratingTheme}>
+                  {isGeneratingTheme ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  Generate Theme
+              </Button>
+
+              {generatedTheme && (
+                  <div className="space-y-4 rounded-lg border p-4">
+                      <h3 className="font-headline text-lg">Generated Theme Preview</h3>
+                      <ThemePreview theme={generatedTheme} />
+                  </div>
+              )}
+          </CardContent>
+        </Card>
+
         <Dialog
             open={!!previewTheme}
             onOpenChange={(isOpen) => {
@@ -256,6 +322,24 @@ export default function SettingsPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {generatedTheme && (
+                  <div key="custom" className="relative" onClick={() => setSelectedThemeId('custom')}>
+                    <Card 
+                        className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === 'custom' ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
+                    >
+                        <ThemePreview theme={generatedTheme} />
+                        <div className="p-4">
+                        <div className="font-bold text-lg">Your AI Theme</div>
+                        <p className="text-sm text-muted-foreground h-10">The custom theme generated by AI.</p>
+                        </div>
+                    </Card>
+                    {selectedThemeId === 'custom' && (
+                        <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-4 w-4" />
+                        </div>
+                    )}
+                  </div>
+                )}
                 {isLoading ? (
                 [...Array(6)].map((_, i) => (
                     <div key={i} className="space-y-2">
@@ -294,7 +378,7 @@ export default function SettingsPage() {
                 )}
             </CardContent>
             <CardFooter>
-                <Button onClick={handleSaveTheme} disabled={isSaving || !selectedThemeId || isReadOnly}>
+                <Button onClick={handleSaveTheme} disabled={isSaving || (!selectedThemeId && !generatedTheme) || isReadOnly}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isSaving ? "Saving..." : "Save Selection"}
                 </Button>

@@ -20,8 +20,8 @@ import {
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
-import { useUser, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, limit } from 'firebase/firestore';
+import { useUser, useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, limit, doc } from 'firebase/firestore';
 
 
 type PortfolioItem = {
@@ -69,6 +69,13 @@ export default function DashboardPage() {
   }, [user, firestore, isReadOnly]);
 
   const { data: dbItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
+  
+  const userProfileQuery = useMemoFirebase(() => {
+    if (isReadOnly || !firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore, isReadOnly]);
+
+  const { data: userProfile } = useDoc(userProfileQuery);
 
   const recentItems = isReadOnly ? sampleItems : dbItems;
 
@@ -216,6 +223,28 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {userProfile?.skills && userProfile.skills.length > 0 && (
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline">Your Top Skills</CardTitle>
+              <CardDescription>
+                These are the top skills identified from your profile.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {userProfile.skills.map((skill: string) => (
+                  <Badge key={skill} variant="secondary">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div>
         <Card>
