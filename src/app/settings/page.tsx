@@ -281,7 +281,7 @@ export default function SettingsPage() {
                                     <div className="p-4">
                                     <div className="font-bold text-lg">{theme.name}</div>
                                     <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
-                                    <p className="mt-2 font-semibold">{theme.isPremium ? `$${theme.price}` : 'Free'}</p>
+                                    <p className="mt-2 font-semibold">Free</p>
                                     </div>
                                 </Card>
                             </DialogTrigger>
