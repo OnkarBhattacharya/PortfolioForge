@@ -83,3 +83,5 @@ This is the core data aggregation suite of the platform, designed to eliminate t
     2.  The user's professional data (from their parsed CV/LinkedIn) is passed to the `generatePortfolioContentSuggestions` flow.
     3.  The flow constructs a prompt that assigns the model the persona of an expert career coach.
     4.  The model generates a `suggestedDescription` and `suggestedSummary`, which are displayed to the user.
+
+    

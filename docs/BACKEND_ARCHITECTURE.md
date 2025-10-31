@@ -80,3 +80,5 @@ The `auth` section defines the sign-in methods enabled for the application.
 - **Providers**:
     - `"password"`: Standard email and password authentication.
     - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
+
+    

@@ -24,13 +24,13 @@ PortfolioForge is not just another template-based website builder. It's an intel
 - **Multi-Modal AI CV Parser**: Our core innovation. Users upload a CV (PDF, DOCX, or image), and our multi-modal AI agent analyzes both the textual content and the document's visual layout. It intelligently extracts professional history, identifies the user's profession, and even infers key skills—providing a rich data foundation in seconds.
 - **AI Content Co-pilot**: Powered by Genkit, our AI assistant acts as a professional copywriter. It uses the imported data to generate compelling headlines, professional summaries, and project descriptions tailored to the user's specific industry and role.
 - **Effortless Data Aggregation**: Users can import data not just from their CV, but also by pasting their LinkedIn profile, connecting their GitHub account, or even providing a URL to a blog post or project. Our AI handles the rest, creating a comprehensive professional profile with minimal effort.
-- **Premium, Customizable Themes**: We offer a range of beautifully designed, fully responsive themes. Users can start with a stunning free theme or upgrade to a premium design that fits their personal brand.
+- **Free, High-Quality Themes**: We offer a range of beautifully designed, fully responsive themes inspired by popular web designs. Users can choose from structurally distinct layouts—from a classic freelancer profile to a modern agency one-pager—at no cost.
 
 ## Market & Monetization Strategy
 
 PortfolioForge targets the vast, untapped market of all professionals who need to manage their online presence. Our business model is built on a freemium foundation with clear, scalable revenue streams:
 
-- **Premium Themes:** A marketplace of professionally designed, premium themes for users who want to stand out.
+- **Premium Themes:** (Future) A marketplace of professionally designed, premium themes for users who want to stand out.
 - **Custom Domains:** An easy, one-click solution for users to connect and manage a custom domain directly through the platform.
 - **Advanced AI Features:** Future tiers will offer even more powerful AI capabilities, such as AI-driven career path suggestions and skill-gap analysis.
 
@@ -112,11 +112,10 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Tailored Prompts:** The flow uses a dynamically generated prompt to instruct the Gemini model to act as an expert copywriter, ensuring the output is relevant, professional, and engaging for the user's specific field.
 
 ### 4. Dynamic, Theme-Based Public Portfolios
-- **Description:** Every registered user gets a publicly accessible portfolio page (`/portfolio/{userId}`). The look and feel of this page can be customized by selecting from a range of themes available in the settings. The chosen theme dynamically adjusts the colors and styles of the live portfolio.
+- **Description:** Every registered user gets a publicly accessible portfolio page (`/portfolio/{userId}`). The look and feel of this page can be radically transformed by selecting from a range of structurally distinct themes, such as "Freelancer," "Agency," or "Stylish Portfolio," each inspired by popular, professional web designs.
 - **Implementation:**
-  - **Dynamic Routing:** Next.js dynamic routes are used to generate a unique page for each user.
-  - **Firestore for Data:** The portfolio page fetches the user's profile, CV data, and portfolio items directly from Firestore using the `useDoc` and `useCollection` hooks.
-  - **Theming System:** The selected theme ID is stored in the user's profile. On the portfolio page, this ID is used to fetch the theme's color variables (e.g., primary, background), which are then applied to the page using CSS custom properties.
+  - **Dynamic Rendering:** The main portfolio page (`src/app/portfolio/[userId]/page.tsx`) acts as a dynamic router. It checks the user's selected `themeId` and renders the corresponding theme component (`freelancer-theme.tsx`, `agency-theme.tsx`, etc.).
+  - **Theming System:** The selected theme is stored in the user's Firestore profile. Each theme component uses its associated color variables to style the page via CSS custom properties, ensuring a unique and consistent visual identity.
 
 ### 5. Generalized Portfolio Item Management
 - **Description:** The platform supports a flexible data model that is not limited to a single profession. Users can add, view, and manage `PortfolioItem` entities, which can represent anything from a software project or a design case study to a marketing campaign or a published article.
@@ -155,3 +154,5 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
+
+    
