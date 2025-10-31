@@ -73,28 +73,39 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 
 ---
 
-## AI Content & Translation Services
+## AI Content & Design Services
 
-### 1. AI Content Co-pilot
+### 1. Skills & Keyword Analysis
 
-- **Purpose**: To help users overcome writer's block by generating professional headlines and summaries for their portfolio.
-- **Model Used**: `googleai/gemini-2.5-flash` for its low latency.
-- **Flow File**: `src/ai/flows/ai-powered-content-suggestions.ts`
+- **Purpose**: To analyze a user's professional data (from their CV or LinkedIn profile) and extract a list of their key skills and professional keywords.
+- **Model Used**: `googleai/gemini-1.5-pro` for its powerful reasoning and data extraction capabilities.
+- **Flow File**: `src/ai/flows/keyword-extractor.ts`
+- **API Route**: `src/app/api/keyword-extractor/route.ts`
 - **Technical Flow**:
-    1.  On the "AI Assistant" page, the user clicks "Generate Suggestions."
-    2.  The user's professional data (from their parsed CV/LinkedIn) is passed to the `generatePortfolioContentSuggestions` flow.
-    3.  The flow constructs a prompt that assigns the model the persona of an expert career coach.
-    4.  The model generates a `suggestedDescription` and `suggestedSummary`, which are displayed to the user.
+    1.  After a user imports their CV or LinkedIn data, the frontend sends the user's professional summary and work experience to `/api/keyword-extractor`.
+    2.  The `keywordExtractorFlow` is invoked, which instructs the model to act as a professional recruiter and identify the most important skills.
+    3.  The flow returns a list of skills, which is then saved to the user's profile in Firestore.
 
-### 2. AI-Powered Translation
+### 2. AI-Powered Theme Generation
 
-- **Purpose**: To provide on-the-fly translation for portfolio content, enabling users to reach a global audience.
-- **Model Used**: `googleai/gemini-2.5-flash` for fast and accurate translation.
-- **Flow File**: `src/ai/flows/translator.ts`
-- **API Route**: `src/app/api/translate/route.ts`
+- **Purpose**: To allow users to generate unique portfolio themes by describing their desired style in plain text.
+- **Model Used**: `googleai/gemini-1.5-pro`.
+- **Flow File**: `src/ai/flows/theme-generator.ts`
+- **API Route**: `src/app/api/theme-generator/route.ts`
 - **Technical Flow**:
-    1.  The user selects a target language and clicks a "Translate" button.
-    2.  The frontend sends the text content and target language to the `/api/translate` route.
-    3.  The `translatorFlow` is invoked, which instructs the Gemini model to translate the text.
-    4.  The API route returns the translated text, which is then displayed in the UI.
+    1.  On the settings page, the user enters a text prompt describing their desired theme.
+    2.  The frontend sends the prompt to `/api/theme-generator`.
+    3.  The `themeGeneratorFlow` is invoked, which instructs the model to generate a theme configuration that conforms to a predefined Zod schema (`ThemeConfigSchema`).
+    4.  The API route returns the generated theme, which is then displayed to the user for preview and can be saved to their profile.
 
+### 3. AI-Powered Content Suggestions
+
+- **Purpose**: To help users refine their project descriptions and other portfolio content with AI-powered suggestions.
+- **Model Used**: `googleai/gemini-1.5-pro`.
+- **Flow File**: `src/ai/flows/content-suggester.ts`
+- **API Route**: `src/app/api/content-suggester/route.ts`
+- **Technical Flow**:
+    1.  When editing a project, the user can click an "AI Suggestions" button.
+    2.  The frontend sends the user's current text and the content type (e.g., "project description") to `/api/content-suggester`.
+    3.  The `contentSuggesterFlow` is invoked, instructing the model to generate a list of suggestions to improve the text.
+    4.  The API route returns the suggestions, which are then displayed to the user in a dialog.
