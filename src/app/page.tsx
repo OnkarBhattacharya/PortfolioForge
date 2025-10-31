@@ -202,16 +202,16 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Button variant="outline" asChild>
-              <Link href="/projects">View Portfolio</Link>
+              <Link href="/projects"><span className="truncate">View Portfolio</span></Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/ai-assistant">AI Assistant</Link>
+              <Link href="/ai-assistant"><span className="truncate">AI Assistant</span></Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/settings">Settings</Link>
+              <Link href="/settings"><span className="truncate">Settings</span></Link>
             </Button>
             <Button asChild className="bg-accent text-accent-foreground">
-              <Link href={liveSiteUrl}>View Live Site</Link>
+              <Link href={liveSiteUrl}><span className="truncate">View Live Site</span></Link>
             </Button>
           </CardContent>
         </Card>
