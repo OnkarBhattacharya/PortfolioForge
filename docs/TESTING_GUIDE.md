@@ -52,9 +52,22 @@ To run the entire E2E test suite:
 ```bash
 npm run test:e2e
 ```
-**Note:** The Playwright configuration will automatically start the development server (`npm run dev`) if it's not already running.
+**Note:** The first time you run Playwright tests, you will need to install the necessary browser binaries. You can do this by running `npx playwright install`.
 
----
+## Mocking Strategy
+
+In our Vitest tests, we use `vi.mock` to mock external dependencies like Firebase and Next.js. This allows us to isolate the component or function being tested and control its environment. Our mocking strategy is defined in `tests/setup.ts`, which is automatically included in every test run.
+
+For example, we mock the `useUser` hook to simulate different user authentication states:
+
+```typescript
+import { vi } from 'vitest';
+
+vi.mock('@/firebase', () => ({
+  useUser: vi.fn(() => ({ user: { uid: '123' }, isUserLoading: false })),
+  // ... other mocked functions
+}));
+```
 
 ## Test Structure & Location
 
@@ -64,4 +77,3 @@ npm run test:e2e
 - **`tests/contract/placeholder.test.ts`**: A placeholder file explaining how contract tests will be used to verify the data schema between the frontend and the AI APIs (e.g., `/api/cv-parser`).
 - **`tests/performance/placeholder.test.ts`**: A placeholder file describing how performance tests (e.g., using k6 or Lighthouse) will be implemented to measure API response times and page load speeds.
 
-    

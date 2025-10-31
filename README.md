@@ -81,11 +81,15 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
    ```bash
    npm run dev
    ```
-   Open [http://localhost:9002](http://localhost:9002) to see your application.
+   Open [http://localhost:3000](http://localhost:3000) to see your application.
 
 2. **Experience the Magic**: Sign up for an account, import your CV on the "Import Data" page, and watch the AI build the foundation of your portfolio. Use the "AI Assistant" to generate compelling copy and see your live portfolio come to life.
 
 ---
+
+## Contributing
+
+We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get involved.
 
 ## Key Implemented Features
 
@@ -102,7 +106,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **AI CV Parser:** A powerful Genkit flow in `src/ai/flows/cv-parser.ts` leverages the multi-modal capabilities of **Gemini 1.5 Pro** to analyze the text and visual layout of an uploaded CV (PDF or image).
   - **AI LinkedIn Parser:** A Genkit flow in `src/ai/flows/linkedin-parser.ts` takes raw text copied from a user's LinkedIn profile and intelligently structures it into the standard `CvData` format.
   - **GitHub Importer:** A Genkit flow in `src/ai/flows/github-importer.ts` fetches a user's public repositories via the GitHub API, automatically creating portfolio items for their top projects.
-  - **AI Web Importer:** An advanced flow in `src/ai/flows/web-importer.ts` can crawl any public URL (like a blog post or project page), use AI to generate a title, summary, and tags, and add it to the user's portfolio.
+  - **AI Web Importer:** An advanced flow in `src/ai/flows/web-importer.ts` can crawl any public URL (like a blog post or project page), use AI to generate a title, a summary, and tags, and add it to the user's portfolio.
   - **API Routes:** Each importer is powered by a dedicated Next.js API route (`/api/cv-parser`, `/api/linkedin-parser`, `/api/github-importer`, `/api/web-importer`) that orchestrates the flow and saves the data to Firestore.
 
 ### 3. AI Content Co-pilot
@@ -155,4 +159,3 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
 
-    

@@ -73,7 +73,9 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 
 ---
 
-## AI Content Co-pilot
+## AI Content & Translation Services
+
+### 1. AI Content Co-pilot
 
 - **Purpose**: To help users overcome writer's block by generating professional headlines and summaries for their portfolio.
 - **Model Used**: `googleai/gemini-2.5-flash` for its low latency.
@@ -84,4 +86,15 @@ This is the core data aggregation suite of the platform, designed to eliminate t
     3.  The flow constructs a prompt that assigns the model the persona of an expert career coach.
     4.  The model generates a `suggestedDescription` and `suggestedSummary`, which are displayed to the user.
 
-    
+### 2. AI-Powered Translation
+
+- **Purpose**: To provide on-the-fly translation for portfolio content, enabling users to reach a global audience.
+- **Model Used**: `googleai/gemini-2.5-flash` for fast and accurate translation.
+- **Flow File**: `src/ai/flows/translator.ts`
+- **API Route**: `src/app/api/translate/route.ts`
+- **Technical Flow**:
+    1.  The user selects a target language and clicks a "Translate" button.
+    2.  The frontend sends the text content and target language to the `/api/translate` route.
+    3.  The `translatorFlow` is invoked, which instructs the Gemini model to translate the text.
+    4.  The API route returns the translated text, which is then displayed in the UI.
+

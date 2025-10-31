@@ -35,6 +35,19 @@ The `entities` section defines the shape and validation rules for all data objec
     - `subscriptionStatus` (string, enum): The status of the subscription (`active`, `canceled`, `past_due`).
     - `subscriptionPeriodEndDate` (string, date-time): The date when the current subscription period ends.
 
+### `CvData`
+- **Description**: An intermediate data structure that holds the professional information extracted by our AI parsers (from a CV or LinkedIn profile). This data is then merged into the `UserProfile` document.
+- **Key Properties**:
+    - `fullName` (string): The user's full name, as extracted from the document.
+    - `email` (string): The user's email address.
+    - `phoneNumber` (string): The user's phone number.
+    - `website` (string, uri): The user's personal website or portfolio link.
+    - `location` (string): The user's general location (e.g., "London, UK").
+    - `professionalSummary` (string): A summary of the user's professional background.
+    - `workExperience` (array of objects): A list of previous jobs, including company, role, dates, and responsibilities.
+    - `education` (array of objects): A list of educational qualifications, including institution, degree, and dates.
+    - `skills` (array of strings): A list of identified skills.
+
 ### `PortfolioItem`
 - **Description**: A generic item within a user's portfolio. This can represent a software project, a design case study, a marketing campaign, etc.
 - **Key Properties**:
@@ -61,7 +74,7 @@ The `firestore.structure` section in `backend.json` maps our entities to specifi
 
 ### `/users/{userId}`
 - **Schema**: `UserProfile`
-- **Description**: This is the root collection for all user data. The document ID (`userId`) is the same as the user's Firebase Authentication UID. This document stores the user's profile information, settings, and subscription details.
+- **Description**: This is the root collection for all user data. The document ID (`userId`) is the same as the user's Firebase Authentication UID. This document stores the user's profile information, settings, and subscription details. When a user parses their CV or LinkedIn profile, the extracted `CvData` is merged into this document.
 
 ### `/users/{userId}/portfolioItems/{itemId}`
 - **Schema**: `PortfolioItem`
@@ -81,4 +94,3 @@ The `auth` section defines the sign-in methods enabled for the application.
     - `"password"`: Standard email and password authentication.
     - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
 
-    
