@@ -20,6 +20,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { ThemePreview } from "@/components/theme-preview";
 
 type Theme = {
   id: string;
@@ -28,6 +30,10 @@ type Theme = {
   previewImageUrl: string;
   price: number;
   isPremium: boolean;
+  background: string;
+  foreground: string;
+  primary: string;
+  accent: string;
 };
 
 type UserProfile = {
@@ -48,6 +54,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [domainName, setDomainName] = useState('');
   const [isConnectingDomain, setIsConnectingDomain] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<Theme | null>(null);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -233,58 +240,71 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Portfolio Themes</CardTitle>
-            <CardDescription>
-              Choose a theme to change the look and feel of your live portfolio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-             {isLoading ? (
-               [...Array(6)].map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="aspect-video w-full rounded-md bg-muted animate-pulse" />
-                    <div className="h-5 w-3/4 rounded-md bg-muted animate-pulse" />
-                    <div className="h-4 w-1/2 rounded-md bg-muted animate-pulse" />
-                  </div>
-               ))
-             ) : (
-                displayedThemes.map((theme) => (
-                <div key={theme.id} className="relative">
-                  <Card 
-                    className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
-                    onClick={() => handleSelectTheme(theme.id)}
-                  >
-                    <Image
-                      src={theme.previewImageUrl}
-                      alt={theme.name}
-                      width={600}
-                      height={400}
-                      className="aspect-video w-full object-cover"
-                    />
-                    <div className="p-4">
-                      <div className="font-bold text-lg">{theme.name}</div>
-                      <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
-                      <p className="mt-2 font-semibold">{theme.isPremium ? `$${theme.price}` : 'Free'}</p>
+        <Dialog onOpenChange={() => setPreviewTheme(null)}>
+            <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Portfolio Themes</CardTitle>
+                <CardDescription>
+                Choose a theme to change the look and feel of your live portfolio. Click to preview.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {isLoading ? (
+                [...Array(6)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                        <div className="aspect-video w-full rounded-md bg-muted animate-pulse" />
+                        <div className="h-5 w-3/4 rounded-md bg-muted animate-pulse" />
+                        <div className="h-4 w-1/2 rounded-md bg-muted animate-pulse" />
                     </div>
-                  </Card>
-                   {selectedThemeId === theme.id && (
-                      <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                          <Check className="h-4 w-4" />
-                      </div>
-                    )}
-                </div>
-              ))
-             )}
-          </CardContent>
-           <CardFooter>
-              <Button onClick={handleSaveTheme} disabled={isSaving || !selectedThemeId || isReadOnly}>
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSaving ? "Saving..." : "Save Selection"}
-              </Button>
+                ))
+                ) : (
+                    displayedThemes.map((theme) => (
+                        <div key={theme.id} className="relative" onClick={() => handleSelectTheme(theme.id)}>
+                            <DialogTrigger asChild onClick={() => setPreviewTheme(theme)}>
+                                <Card 
+                                    className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
+                                >
+                                    <Image
+                                        src={theme.previewImageUrl}
+                                        alt={theme.name}
+                                        width={600}
+                                        height={400}
+                                        className="aspect-video w-full object-cover"
+                                    />
+                                    <div className="p-4">
+                                    <div className="font-bold text-lg">{theme.name}</div>
+                                    <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
+                                    <p className="mt-2 font-semibold">{theme.isPremium ? `$${theme.price}` : 'Free'}</p>
+                                    </div>
+                                </Card>
+                            </DialogTrigger>
+                            {selectedThemeId === theme.id && (
+                                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                    <Check className="h-4 w-4" />
+                                </div>
+                                )}
+                        </div>
+                    ))
+                )}
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleSaveTheme} disabled={isSaving || !selectedThemeId || isReadOnly}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSaving ? "Saving..." : "Save Selection"}
+                </Button>
             </CardFooter>
-        </Card>
+            </Card>
+            {previewTheme && (
+                <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-auto rounded-lg border">
+                        <ThemePreview theme={previewTheme} />
+                    </div>
+                </DialogContent>
+            )}
+        </Dialog>
       </div>
     </div>
   );
