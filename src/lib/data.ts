@@ -83,5 +83,17 @@ export const themes = [
     "foreground": "210 29% 24%",
     "primary": "168 76% 42%",
     "accent": "168 76% 42%"
+  },
+  {
+    "id": "agency",
+    "name": "Agency",
+    "description": "A stylish, one-page theme for agencies and small businesses with a services section and timeline.",
+    "previewImageUrl": "https://picsum.photos/seed/agency-theme/600/400",
+    "price": 20,
+    "isPremium": true,
+    "background": "222.2 47.4% 11.2%",
+    "foreground": "0 0% 98%",
+    "primary": "45 86% 62%",
+    "accent": "45 86% 62%"
   }
 ];
