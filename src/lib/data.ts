@@ -71,5 +71,17 @@ export const themes = [
     "foreground": "0 0% 98%",
     "primary": "45 90% 55%",
     "accent": "45 90% 55%"
+  },
+  {
+    "id": "freelancer-teal",
+    "name": "Freelancer",
+    "description": "A clean, flat theme inspired by creative professionals and freelancers, featuring a bold teal accent.",
+    "previewImageUrl": "https://picsum.photos/seed/freelancer-theme/600/400",
+    "price": 0,
+    "isPremium": false,
+    "background": "0 0% 100%",
+    "foreground": "210 29% 24%",
+    "primary": "168 76% 42%",
+    "accent": "168 76% 42%"
   }
 ];
