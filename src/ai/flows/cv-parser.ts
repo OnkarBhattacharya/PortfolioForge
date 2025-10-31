@@ -24,9 +24,7 @@ const prompt = ai.definePrompt({
   name: 'cvParserPrompt',
   input: {schema: CvParserInputSchema},
   output: {
-    schema: CvDataSchema.extend({
-      skills: z.array(z.string()).optional().describe('A list of key skills extracted from the CV.'),
-    })
+    schema: CvDataSchema
   },
   prompt: `You are an expert document analyst. Your task is to parse the following CV/Resume and extract structured data based on the provided schema. The document can be an image or a PDF.
 
@@ -47,9 +45,7 @@ export const cvParserFlow = ai.defineFlow(
   {
     name: 'cvParserFlow',
     inputSchema: CvParserInputSchema,
-    outputSchema: CvDataSchema.extend({ // Also update the output schema for the flow
-      skills: z.array(z.string()).optional().describe('A list of key skills extracted from the CV.'),
-    }),
+    outputSchema: CvDataSchema,
   },
   async (input) => {
     const {output} = await prompt(input);
