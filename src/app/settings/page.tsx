@@ -20,7 +20,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { themes as staticThemes } from "@/lib/data";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ThemePreview } from "@/components/theme-preview";
 
 type Theme = {
