@@ -30,9 +30,8 @@ PortfolioForge is not just another template-based website builder. It's an intel
 
 PortfolioForge targets the vast, untapped market of all professionals who need to manage their online presence. Our business model is built on a freemium foundation with clear, scalable revenue streams:
 
-- **Premium Themes:** (Future) A marketplace of professionally designed, premium themes for users who want to stand out.
-- **Custom Domains:** An easy, one-click solution for users to connect and manage a custom domain directly through the platform.
-- **Advanced AI Features:** Future tiers will offer even more powerful AI capabilities, such as AI-driven career path suggestions and skill-gap analysis.
+- **Premium AI Features**: (Future) Advanced tiers will offer even more powerful AI capabilities, such as AI-driven career path suggestions and skill-gap analysis.
+- **Custom Domains**: An easy, one-click solution for users to connect and manage a custom domain directly through the platform.
 
 ## Scalable & Modern Architecture
 
@@ -106,7 +105,7 @@ We welcome contributions from the community! Please see our [Contributing Guidel
 - **Implementation:**
   - **AI CV Parser:** A powerful Genkit flow in `src/ai/flows/cv-parser.ts` leverages the multi-modal capabilities of **Gemini 1.5 Pro** to analyze the text and visual layout of an uploaded CV (PDF or image).
   - **AI LinkedIn Parser:** A Genkit flow in `src/ai/flows/linkedin-parser.ts` takes raw text copied from a user's LinkedIn profile and intelligently structures it into the standard `CvData` format.
-  - **GitHub Importer:** A Genkit flow in `src/ai/flows/github-importer.ts` fetches a user's public repositories via the GitHub API, automatically creating portfolio items for their top projects.
+  - **GitHub Importer with AI Summarization:** A Genkit flow in `src/ai/flows/github-importer.ts` fetches a user's public repositories via the GitHub API and uses a nested AI flow (`readme-summarizer`) to automatically generate a polished project description from the `README.md` file.
   - **AI Web Importer:** An advanced flow in `src/ai/flows/web-importer.ts` can crawl any public URL (like a blog post or project page), use AI to generate a title, a summary, and tags, and add it to the user's portfolio.
   - **API Routes:** Each importer is powered by a dedicated Next.js API route (`/api/cv-parser`, `/api/linkedin-parser`, `/api/github-importer`, `/api/web-importer`) that orchestrates the flow and saves the data to Firestore.
 
@@ -146,17 +145,30 @@ We welcome contributions from the community! Please see our [Contributing Guidel
   - **Settings UI:** The page at `src/app/settings/page.tsx` contains the input for the domain name and the logic to save it to the user's profile.
   - **Status Tracking:** The `UserProfile` schema includes `customDomain` and `customDomainStatus` fields to manage and display the connection state.
 
-### 9. Comprehensive Testing Suite
+### 9. Secure Contact Form
+- **Description:** A professional and secure contact form is available on every user's public portfolio. This allows visitors to send messages directly to the portfolio owner without exposing the owner's email address.
+- **Implementation:**
+  - **Firestore Integration:** Messages are saved to a secure `messages` sub-collection under the user's document in Firestore.
+  - **Secure API Endpoint:** A dedicated API route at `/api/contact` handles form submissions.
+  - **Security Rules:** Firestore security rules are configured to ensure that only the authenticated user can read their own messages, and all write operations are forbidden from the client side, simulating a secure backend process.
+
+### 10. AI-Powered Translation
+- **Description:** An integrated, AI-powered translation module allows users to translate the content of any page on the fly.
+- **Implementation:**
+  - **Genkit Flow:** A dedicated flow at `src/ai/flows/translator.ts` leverages the Gemini model for accurate, real-time translations.
+  - **Dynamic Content Replacement:** A custom hook (`useTranslation`) traverses the DOM, collects all text nodes, sends them to the AI for translation via a secure API route (`/api/translate`), and then replaces the text in place without a page reload.
+  - **UI Component:** A clean and intuitive `LanguageSwitcher` dropdown is integrated into the main application header.
+
+### 11. Comprehensive Testing Suite
 - **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
 - **Implementation:**
   - **Vitest & React Testing Library:** Used for unit and component testing. Configuration is in `vite.config.ts`, and tests are located in the `tests/` directory.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
 
-### 10. Legal & Compliance Features
+### 12. Legal & Compliance Features
 - **Description:** A set of essential legal and compliance features to build user trust and meet regulatory requirements. This includes standard legal pages and a cookie consent banner.
 - **Implementation:**
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
-

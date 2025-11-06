@@ -64,7 +64,18 @@ The `entities` section defines the shape and validation rules for all data objec
     - `id` (string): A unique identifier for the theme (e.g., "default", "dark-sapphire").
     - `name` (string): The display name of the theme.
     - `previewImageUrl` (string, uri): A URL to an image showing a preview of the theme.
-    - `isPremium` (boolean): Whether the theme requires a purchase.
+    - `isPremium` (boolean): Whether the theme is a premium theme.
+
+### `Message`
+- **Description**: Represents a message sent via the contact form on a user's public portfolio.
+- **Key Properties**:
+    - `id` (string): A unique identifier for the message.
+    - `userProfileId` (string): The ID of the portfolio owner receiving the message.
+    - `name` (string): The name of the sender.
+    - `email` (string): The email address of the sender.
+    - `message` (string): The content of the message.
+    - `createdAt` (string, date-time): Timestamp when the message was sent.
+    - `read` (boolean): Flag to indicate if the message has been read.
 
 ---
 
@@ -80,9 +91,13 @@ The `firestore.structure` section in `backend.json` maps our entities to specifi
 - **Schema**: `PortfolioItem`
 - **Description**: This is a **sub-collection** under each user document. It stores all the portfolio items belonging to that specific user. This structure is efficient and secure, as it allows us to query for a single user's items without scanning a global collection.
 
+### `/users/{userId}/messages/{messageId}`
+- **Schema**: `Message`
+- **Description**: This is a **sub-collection** under each user document for storing messages submitted via the contact form. This allows for secure, user-specific message retrieval. The security rules are configured to only allow the user to read their own messages, while writes are handled by a trusted backend process.
+
 ### `/themes/{themeId}`
 - **Schema**: `Theme`
--**Description**: A top-level collection that stores all available portfolio themes. This collection is typically configured to be publicly readable so that themes can be displayed and selected by users in the settings.
+- **Description**: A top-level collection that stores all available portfolio themes. This collection is configured to be publicly readable so that themes can be displayed and selected by users in the settings.
 
 ---
 
@@ -93,4 +108,3 @@ The `auth` section defines the sign-in methods enabled for the application.
 - **Providers**:
     - `"password"`: Standard email and password authentication.
     - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
-
