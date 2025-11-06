@@ -73,4 +73,29 @@ PortfolioForge is a well-architected application with a strong foundation. The i
 
 By implementing these changes, the project is more stable, maintainable, and secure, positioning it well for future growth and feature development.
 
-    
+## 5. Bilingual Environment & Firebase Hosting Audit
+
+- **Date of Audit**: July 30, 2024
+- **Auditor**: Studio AI Agent
+
+### 5.1. Build & Configuration
+
+- **Finding (Medium)**: The `next.config.ts` file included `ignoreBuildErrors: true` and `ignoreDuringBuilds: true`. This could lead to discrepancies between the development and production environments by allowing builds to succeed even if there are code-quality issues.
+- **Recommendation**: Remove these flags to enforce stricter build checks and ensure a more stable production environment.
+- **Status**: **Resolved**.
+
+### 5.2. Firebase Hosting & App Hosting
+
+- **Finding (High)**: The `firebase.json` file was missing the required `hosting` configuration for deployment to Firebase Hosting.
+- **Recommendation**: Add a hosting configuration to `firebase.json` to specify the public directory, ignored files, and backend framework settings.
+- **Status**: **Resolved**.
+
+- **Finding (Low)**: The `apphosting.yaml` file had a basic configuration.
+- **Recommendation**: Optimize the `apphosting.yaml` by explicitly setting `cpu: 1` for consistent performance and adding a `vpc` connector for enhanced security.
+- **Status**: **Resolved**.
+
+### 5.3. Code Redundancy
+
+- **Finding (Informational)**: A previous audit noted the existence of a redundant `useUser` hook.
+- **Recommendation**: Verify the removal of the redundant hook.
+- **Status**: **Verified & Resolved**. The redundant hook at `src/firebase/auth/use-user.tsx` has been confirmed as deleted.

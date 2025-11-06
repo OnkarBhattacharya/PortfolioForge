@@ -40,6 +40,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 
 - **Framework**: **Next.js (App Router)** using React Server Components for a fast, modern, and SEO-friendly user experience.
 - **Backend & Database**: **Firebase (Firestore & Authentication)** provides a secure, serverless backend that scales automatically, ensuring reliability and low operational overhead.
+- **Deployment**: **Firebase Hosting** with an optimized `apphosting.yaml` configuration for a secure, scalable, and cost-effective deployment.
 - **Generative AI**: **Firebase Genkit** orchestrates our powerful AI features, allowing us to leverage state-of-the-art models from Google (Gemini 1.5 Pro) for multi-modal analysis and content generation.
 - **UI & Styling**: **ShadCN UI** and **Tailwind CSS** enable us to build beautiful, accessible, and consistent user interfaces with high velocity.
 - **Testing & Quality Assurance**: A comprehensive testing suite using **Vitest**, **React Testing Library**, and **Playwright** ensures application reliability, from individual components to full end-to-end user flows.
@@ -64,7 +65,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 ### **2. Secure & Resilient Infrastructure**
 - **Principle of Least Privilege**: Our Firestore Security Rules are designed to be restrictive by default, ensuring users can only access and modify their own data. The rules prevent unauthorized data access between accounts.
 - **Secure Authentication**: We use Firebase Authentication, which provides a managed, secure, and scalable identity solution. Our current implementation includes email/password and anonymous modes, with a clear path to adding Multi-Factor Authentication (MFA) for enhanced security.
-- **Network Security**: By building on Firebase, we inherit Google's robust network security, which includes protection against DDoS attacks, traffic sniffing, and other common network-level threats.
+- **Network Security**: By building on Firebase, we inherit Google's robust network security, which includes protection against DDoS attacks, traffic sniffing, and other common network-level threats. We've further enhanced this by configuring a VPC connector in our `apphosting.yaml`, isolating our backend services for an additional layer of security.
 
 ### **3. AI Governance & Transparency (EU AI Act Alignment)**
 - **Human-in-the-Loop**: Our AI features act as co-pilots, not autopilots. The user is always in control. The AI *suggests* content based on the user's data, but the user must approve and save it.
