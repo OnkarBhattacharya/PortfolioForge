@@ -1,135 +1,70 @@
+"use client";
 
-'use client';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { FcGoogle } from "react-icons/fc";
+import { FaApple } from "react-icons/fa";
+import { useFirebase } from "@/firebase/provider";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { useFirebase, initiateEmailSignIn } from '@/firebase';
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
-const formSchema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
-  password: z.string().min(6, 'Password must be at least 6 characters long.'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+  GoogleAuthProvider,
+  signInWithPopup,
+  OAuthProvider,
+} from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const { auth, firestore } = useFirebase();
+  const { auth } = useFirebase();
   const router = useRouter();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  async function onSubmit(values: FormValues) {
-    setLoading(true);
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
     try {
-      if (!auth || !firestore) {
-        throw new Error("Authentication service not available.");
-      }
-      await initiateEmailSignIn(auth, firestore, values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: "Welcome back!",
-      });
-      router.push('/');
-    } catch (error: any) {
-      console.error('Login failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message || 'An unknown error occurred. Please try again.',
-      });
-    } finally {
-      setLoading(false);
+      await signInWithPopup(auth, provider);
+      router.push("/admin");
+    } catch (error) {
+      console.error("Error signing in with Google", error);
     }
-  }
+  };
+
+  const handleAppleSignIn = async () => {
+    const provider = new OAuthProvider("apple.com");
+    try {
+      await signInWithPopup(auth, provider);
+      router.push("/admin");
+    } catch (error) {
+      console.error("Error signing in with Apple", error);
+    }
+  };
 
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login
-              </Button>
-            </form>
-          </Form>
-
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-medium text-primary underline">
-              Sign up
-            </Link>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Sign In
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Choose your preferred sign-in method
           </p>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="space-y-4">
+          <Button
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center"
+            variant="outline"
+          >
+            <FcGoogle className="w-5 h-5 mr-2" />
+            Sign in with Google
+          </Button>
+          <Button
+            onClick={handleAppleSignIn}
+            className="w-full flex items-center justify-center"
+            variant="outline"
+          >
+            <FaApple className="w-5 h-5 mr-2" />
+            Sign in with Apple
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

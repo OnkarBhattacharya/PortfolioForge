@@ -47,7 +47,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 ### Architectural Overview
 
 - `src/app/`: Next.js App Router for all application routes, leveraging server-side rendering for performance.
-- `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling. All data mutations are non-blocking for a fluid UI.
+- `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling.
 - `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser, data importers, and content assistant.
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
 - `tests/`: A comprehensive testing suite covering unit, integration, frontend, and end-to-end tests to ensure code quality and application stability.
@@ -63,7 +63,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 
 ### **2. Secure & Resilient Infrastructure**
 - **Principle of Least Privilege**: Our Firestore Security Rules are designed to be restrictive by default, ensuring users can only access and modify their own data. The rules prevent unauthorized data access between accounts.
-- **Secure Authentication**: We use Firebase Authentication, which provides a managed, secure, and scalable identity solution. Our current implementation includes email/password and anonymous modes, with a clear path to adding Multi-Factor Authentication (MFA) for enhanced security.
+- **Secure Authentication**: We use Firebase Authentication, which provides a managed, secure, and scalable identity solution. Authentication is handled through a hybrid model that includes both anonymous access for guests and federated sign-in (Google and Apple) for registered users.
 - **Network Security**: By building on Firebase, we inherit Google's robust network security, which includes protection against DDoS attacks, traffic sniffing, and other common network-level threats. We've further enhanced this by configuring a VPC connector in our `apphosting.yaml`, isolating our backend services for an additional layer of security.
 
 ### **3. AI Governance & Transparency (EU AI Act Alignment)**
@@ -83,7 +83,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
    ```
    Open [http://localhost:3000](http://localhost:3000) to see your application.
 
-2. **Experience the Magic**: Sign up for an account, import your CV on the "Import Data" page, and watch the AI build the foundation of your portfolio. Use the "AI Assistant" to generate compelling copy and see your live portfolio come to life.
+2. **Experience the Magic**: When you first visit, you'll start in a seamless guest session. You can explore the app's features immediately. To save your work and create a permanent portfolio, sign in with Google or Apple via the login page. Then, import your CV and watch the AI build the foundation of your portfolio.
 
 ---
 
@@ -93,12 +93,14 @@ We welcome contributions from the community! Please see our [Contributing Guidel
 
 ## Key Implemented Features
 
-### 1. User Authentication (Email/Password & Anonymous)
-- **Description:** A complete and secure user management system. New users can sign up with an email and password. Returning users can log in to access their portfolio data. The system also includes a seamless "read-only" guest mode for new visitors, powered by Firebase Anonymous Authentication, allowing them to explore the app's features without creating an account.
+### 1. User Authentication (Federated & Anonymous Sign-In)
+- **Description:** A complete and secure user management system that provides a seamless experience for both guests and registered users. New visitors are automatically signed in with a temporary, anonymous "guest" session, allowing them to explore the platform's features in a read-only mode without commitment. When a user decides to register, they can sign in with their Google or Apple account. Firebase automatically links their new, permanent account with their previous guest session, preserving any work they may have started.
 - **Implementation:**
-  - **Firebase Authentication:** Handles all user creation, session management, and security.
-  - **Custom Hooks:** The `useUser()` and `useAuth()` hooks provide easy, reactive access to the current user's state throughout the application.
-  - **Authentication Flows:** The `initiateEmailSignUp`, `initiateEmailSignIn`, and `initiateAnonymousSignIn` functions in `src/firebase/non-blocking-login.tsx` manage all authentication logic, including creating user profiles in Firestore upon sign-up.
+  - **Firebase Authentication:** Handles all user session management and security via Google, Apple, and Anonymous providers.
+  - **Seamless Guest Mode:** The `FirebaseProvider` at `src/firebase/provider.tsx` automatically detects if a visitor has an active session. If not, it silently calls `signInAnonymously()` to create a guest session in the background.
+  - **Simplified Login Flow:** The `/login` page provides direct options to "Sign in with Google" and "Sign in with Apple" for users who wish to create a permanent account.
+  - **Intelligent Profile Creation:** The `FirebaseProvider` ensures that a user profile is created in Firestore only when a user signs in with a permanent, non-anonymous account (Google or Apple), keeping the database clean.
+  - **Custom Hooks:** The `useUser()` and `useAuth()` hooks provide easy, reactive access to the current user's state, whether they are a guest or a registered user.
 
 ### 2. Multi-Source AI Data Import Engine
 - **Description:** This is the core intelligent data aggregation suite of the platform. It allows users to import professional data from a variety of sources with a single click, using AI to structure and save the information automatically.

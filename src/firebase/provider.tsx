@@ -2,8 +2,8 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
 interface FirebaseProviderProps {
@@ -69,17 +69,45 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+    if (!auth || !firestore) { // If no Auth service instance, cannot determine user state
+      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
-
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+      async (firebaseUser) => { // Auth state determined
+        if (firebaseUser) {
+          // If the user is a permanent user (not anonymous), check for and create their profile.
+          if (!firebaseUser.isAnonymous) {
+            const userRef = doc(firestore, "users", firebaseUser.uid);
+            const docSnap = await getDoc(userRef);
+            if (!docSnap.exists()) {
+              // Create a new user profile if it doesn't exist
+              await setDoc(userRef, {
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                role: 'user', // Assign a default role
+                createdAt: new Date(),
+              });
+            }
+          }
+          // For any signed-in user (anonymous or permanent), update the state.
+          setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        } else {
+          // No user is signed in; initiate a new anonymous session.
+          try {
+            await signInAnonymously(auth);
+            // onAuthStateChanged will fire again with the new anonymous user.
+            // We don't set state here to avoid a flicker; isUserLoading remains true
+            // until the new user state is confirmed by the next listener call.
+          } catch (error) {
+            console.error("FirebaseProvider: Anonymous sign-in failed", error);
+            // If anonymous sign-in fails, we stop loading and record the error.
+            setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
+          }
+        }
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -87,7 +115,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+  }, [auth, firestore]); // Depends on the auth and firestore instances
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {

@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth, useUser, useDoc, useFirebase, useMemoFirebase } from '@/firebase';
-import { CreditCard, LogOut, User, LogIn, UserPlus, Settings, Shield } from 'lucide-react';
+import { CreditCard, LogOut, User, LogIn, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -55,11 +55,6 @@ export function UserNav() {
         <Button asChild variant="ghost">
           <Link href="/login">
             <LogIn className="mr-2" /> Login
-          </Link>
-        </Button>
-        <Button asChild>
-          <Link href="/signup">
-             <UserPlus className="mr-2" /> Sign Up
           </Link>
         </Button>
       </div>
