@@ -4,21 +4,13 @@ import { parseLinkedInProfile } from '@/ai/flows/linkedin-parser';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import { z } from 'zod';
-import { CvDataSchema } from '@/lib/types';
 
-// Initialize Firebase Admin for server-side operations
+// Correctly initialize Firebase for server-side operations
 if (getApps().length === 0) {
   initializeApp(firebaseConfig);
 }
 const db = getFirestore();
 
-const saveLinkedInDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
-  if (!userId) throw new Error("User ID is required to save CV data.");
-  // Save parsed data by merging it into the user's document
-  const userDocRef = doc(db, 'users', userId);
-  await setDoc(userDocRef, { ...cvData }, { merge: true });
-};
 
 export async function POST(req: NextRequest) {
   const { linkedInData, userId } = await req.json();
@@ -29,7 +21,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const parsedData = await parseLinkedInProfile(linkedInData);
-    await saveLinkedInDataToFirestore(userId, parsedData);
+    
+    if (!userId) throw new Error("User ID is required to save data.");
+    const userDocRef = doc(db, 'users', userId);
+    await setDoc(userDocRef, { ...parsedData }, { merge: true });
     
     return NextResponse.json({ success: true, data: parsedData });
     
