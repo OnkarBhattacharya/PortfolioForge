@@ -13,7 +13,7 @@ if (getApps().length === 0) {
 }
 const db = getFirestore();
 
-export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
+const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   if (!userId) throw new Error("User ID is required to save CV data.");
   // Save parsed data by merging it into the user's document
   const userDocRef = doc(db, 'users', userId);
@@ -42,5 +42,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred during CV processing' }, { status: 500 });
   }
 }
-
-    

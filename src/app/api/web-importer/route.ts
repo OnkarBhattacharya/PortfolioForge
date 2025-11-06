@@ -11,7 +11,7 @@ if (getApps().length === 0) {
 }
 const db = getFirestore();
 
-export const saveWebImportToFirestore = async (userId: string, url: string, data: WebImporterOutput) => {
+const saveWebImportToFirestore = async (userId: string, url: string, data: WebImporterOutput) => {
   if (!userId) throw new Error("User ID is required.");
 
   const portfolioItemsRef = collection(db, 'users', userId, 'portfolioItems');
@@ -54,5 +54,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }
 }
-
-    

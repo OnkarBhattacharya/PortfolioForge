@@ -11,7 +11,7 @@ if (getApps().length === 0) {
 }
 const db = getFirestore();
 
-export const saveProjectsToFirestore = async (userId: string, projects: GithubRepository[]) => {
+const saveProjectsToFirestore = async (userId: string, projects: GithubRepository[]) => {
   if (!userId) throw new Error("User ID is required to save projects.");
 
   const portfolioItemsRef = collection(db, 'users', userId, 'portfolioItems');
@@ -59,5 +59,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }
 }
-
-    
