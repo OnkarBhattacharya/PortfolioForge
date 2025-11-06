@@ -5,6 +5,8 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -81,16 +83,39 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           // If the user is a permanent user (not anonymous), check for and create their profile.
           if (!firebaseUser.isAnonymous) {
             const userRef = doc(firestore, "users", firebaseUser.uid);
-            const docSnap = await getDoc(userRef);
-            if (!docSnap.exists()) {
-              // Create a new user profile if it doesn't exist
-              await setDoc(userRef, {
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL,
-                role: 'user', // Assign a default role
-                createdAt: new Date(),
-              });
+            try {
+              const docSnap = await getDoc(userRef);
+              if (!docSnap.exists()) {
+                const newUserProfile = {
+                  id: firebaseUser.uid, // Add the ID to satisfy security rules
+                  email: firebaseUser.email,
+                  fullName: firebaseUser.displayName,
+                  role: 'user', // Assign a default role
+                  subscriptionTier: 'free',
+                  subscriptionStatus: 'active',
+                  themeId: 'freelancer-teal',
+                  createdAt: new Date().toISOString(),
+                };
+
+                // Create a new user profile if it doesn't exist
+                setDoc(userRef, newUserProfile)
+                  .catch((error) => {
+                    console.error("Error creating user profile:", error);
+                    const permissionError = new FirestorePermissionError({
+                      path: userRef.path,
+                      operation: 'create',
+                      requestResourceData: newUserProfile,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                  });
+              }
+            } catch (error) {
+                 console.error("Error fetching user profile:", error);
+                 const permissionError = new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'get',
+                 });
+                 errorEmitter.emit('permission-error', permissionError);
             }
           }
           // For any signed-in user (anonymous or permanent), update the state.
