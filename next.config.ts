@@ -35,10 +35,13 @@ const nextConfig: NextConfig = {
   },
   ...(isDev && {
     experimental: {
-      allowedDevOrigins: [
-        'https://6000-firebase-studio-1761648462474.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev',
-      ],
+      // The allowedDevOrigins key should be at the top level of the config, not here.
+      // Keeping this block for any other future experimental flags.
     },
+    // This is the correct placement for allowedDevOrigins
+    allowedDevOrigins: [
+        'https://6000-firebase-studio-1761648462474.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev',
+    ],
   }),
 };
 
