@@ -1,16 +1,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { parseLinkedInProfile } from '@/ai/flows/linkedin-parser';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import * as admin from 'firebase-admin';
 
-// Correctly initialize Firebase for server-side operations
-if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+  } catch (error) {
+    console.error('Firebase Admin Initialization Error:', error);
+  }
 }
-const db = getFirestore();
 
+const db = admin.firestore();
 
 export async function POST(req: NextRequest) {
   const { linkedInData, userId } = await req.json();
@@ -22,9 +26,8 @@ export async function POST(req: NextRequest) {
   try {
     const parsedData = await parseLinkedInProfile(linkedInData);
     
-    if (!userId) throw new Error("User ID is required to save data.");
-    const userDocRef = doc(db, 'users', userId);
-    await setDoc(userDocRef, { ...parsedData }, { merge: true });
+    const userDocRef = db.collection('users').doc(userId);
+    await userDocRef.set({ ...parsedData }, { merge: true });
     
     return NextResponse.json({ success: true, data: parsedData });
     

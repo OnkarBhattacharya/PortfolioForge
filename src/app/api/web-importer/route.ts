@@ -1,16 +1,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { importFromUrl } from '@/ai/flows/web-importer';
-import { collection, addDoc, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 
-// Correctly initialize Firebase for server-side operations
-if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+  } catch (error) {
+    console.error('Firebase Admin Initialization Error:', error);
+  }
 }
-const db = getFirestore();
+
+const db = admin.firestore();
 
 export async function POST(req: NextRequest) {
   const { url, userId } = await req.json();
@@ -21,14 +26,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const importData = await importFromUrl({ url });
-    
-    if (!userId) throw new Error("User ID is required.");
-    
-    const portfolioItemsRef = collection(db, 'users', userId, 'portfolioItems');
+        
+    const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
     const newItemId = uuidv4();
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
-    await addDoc(portfolioItemsRef, {
+    const newDocRef = portfolioItemsRef.doc(newItemId);
+    await newDocRef.set({
         id: newItemId,
         userProfileId: userId,
         name: importData.name,

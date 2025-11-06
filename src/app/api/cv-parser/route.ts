@@ -1,15 +1,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { parseCv } from '@/ai/flows/cv-parser';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import * as admin from 'firebase-admin';
 
-// Correctly initialize Firebase for server-side operations
-if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+  } catch (error) {
+    console.error('Firebase Admin Initialization Error:', error);
+  }
 }
-const db = getFirestore();
+
+const db = admin.firestore();
 
 export async function POST(req: NextRequest) {
   const { cvFile, userId } = await req.json();
@@ -22,10 +27,9 @@ export async function POST(req: NextRequest) {
     // 1. Call the Genkit flow to parse the CV
     const parsedData = await parseCv({ cvFile });
     
-    // 2. Save the parsed data to Firestore
-    if (!userId) throw new Error("User ID is required to save CV data.");
-    const userDocRef = doc(db, 'users', userId);
-    await setDoc(userDocRef, { ...parsedData }, { merge: true });
+    // 2. Save the parsed data to Firestore using the Admin SDK
+    const userDocRef = db.collection('users').doc(userId);
+    await userDocRef.set({ ...parsedData }, { merge: true });
     
     // 3. Return the parsed data to the client
     return NextResponse.json({ success: true, data: parsedData });
