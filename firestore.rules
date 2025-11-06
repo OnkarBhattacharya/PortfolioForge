@@ -14,8 +14,9 @@
  *
  * Key Security Decisions:
  * - Users can only access their own profile data and portfolio items.
- * - Themes are publicly readable to allow browsing.
- * - User listing is disallowed.
+ * - Admins can list all users for the admin dashboard.
+ * - Themes are publicly readable.
+ * - General user listing is disallowed.
  *
  * Denormalization for Authorization:
  *  - UserProfile documents use their document ID as the user ID.
@@ -46,7 +47,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
       allow get: if isOwner(userId);
-      allow list: if false;
+      // Allow an admin user to list all users for the admin dashboard.
+      allow list: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
