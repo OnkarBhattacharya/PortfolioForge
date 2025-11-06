@@ -1,39 +1,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { importFromUrl, WebImporterOutput } from '@/ai/flows/web-importer';
-import { collection, writeBatch, getFirestore, doc } from 'firebase/firestore';
+import { importFromUrl } from '@/ai/flows/web-importer';
+import { collection, addDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { v4 as uuidv4 } from 'uuid';
 
+// Correctly initialize Firebase for server-side operations
 if (getApps().length === 0) {
   initializeApp(firebaseConfig);
 }
 const db = getFirestore();
-
-const saveWebImportToFirestore = async (userId: string, url: string, data: WebImporterOutput) => {
-  if (!userId) throw new Error("User ID is required.");
-
-  const portfolioItemsRef = collection(db, 'users', userId, 'portfolioItems');
-  const batch = writeBatch(db);
-
-  const newItemId = uuidv4();
-  const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
-
-  const newDocRef = doc(portfolioItemsRef, newItemId);
-  batch.set(newDocRef, {
-    id: newItemId,
-    userProfileId: userId,
-    name: data.name,
-    description: data.description,
-    itemUrl: url, // Save the original URL
-    tags: data.tags,
-    imageId,
-  });
-
-  await batch.commit();
-};
-
 
 export async function POST(req: NextRequest) {
   const { url, userId } = await req.json();
@@ -45,7 +22,21 @@ export async function POST(req: NextRequest) {
   try {
     const importData = await importFromUrl({ url });
     
-    await saveWebImportToFirestore(userId, url, importData);
+    if (!userId) throw new Error("User ID is required.");
+    
+    const portfolioItemsRef = collection(db, 'users', userId, 'portfolioItems');
+    const newItemId = uuidv4();
+    const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
+
+    await addDoc(portfolioItemsRef, {
+        id: newItemId,
+        userProfileId: userId,
+        name: importData.name,
+        description: importData.description,
+        itemUrl: url,
+        tags: importData.tags,
+        imageId,
+    });
     
     return NextResponse.json({ success: true, name: importData.name });
     
