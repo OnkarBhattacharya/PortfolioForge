@@ -13,25 +13,16 @@ import { UserNav } from "@/components/user-nav";
 import { SidebarNav } from "./sidebar-nav";
 import { Logo } from "./logo";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUser, useAuth } from "@/firebase";
-import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
-import { useEffect } from "react";
+import { useUser } from "@/firebase";
 import { Loader2 } from "lucide-react";
 import { Footer } from "./footer";
 
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const { isUserLoading } = useUser();
 
-  useEffect(() => {
-    if (!isUserLoading && !user && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
-
-  if (isUserLoading && !user) {
+  if (isUserLoading) {
     return (
         <div className="flex h-screen w-screen items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />

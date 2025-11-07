@@ -1,11 +1,8 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { MainLayout } from '@/components/main-layout';
-import { Toaster } from '@/components/ui/toaster';
-import CookieBanner from '@/components/cookie-banner';
 import { Providers } from '@/components/providers';
+import { MainLayout } from '@/components/main-layout';
 
 export const metadata: Metadata = {
   title: 'PortfolioForge',
@@ -30,8 +27,6 @@ export default function RootLayout({
           <MainLayout>
             {children}
           </MainLayout>
-          <Toaster />
-          <CookieBanner />
         </Providers>
       </body>
     </html>
