@@ -21,8 +21,11 @@ let firebaseServices: FirebaseServices | null = null;
  * @returns An object containing the initialized FirebaseApp, Auth, and Firestore instances.
  */
 export function initializeFirebase(): FirebaseServices {
+  // CRITICAL FIX: Only execute initialization logic on the client side.
   if (typeof window === 'undefined') {
-    throw new Error('Firebase can only be initialized on the client side.');
+    // On the server, return null to prevent crashes.
+    // @ts-ignore
+    return null;
   }
 
   // If already initialized, return the existing services.
