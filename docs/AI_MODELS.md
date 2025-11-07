@@ -40,7 +40,7 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 ### 2. AI LinkedIn Profile Parser
 
 - **Purpose**: Allows users to paste the raw text from their LinkedIn profile and have the AI intelligently structure it.
-- **Model Used**: `googleai/gemini-2.5-flash` for its speed in text analysis.
+- **Model Used**: `googleai/gemini-1.5-pro` for its speed in text analysis.
 - **Flow File**: `src/ai/flows/linkedin-parser.ts`
 - **API Route**: `src/app/api/linkedin-parser/route.ts`
 - **Technical Flow**:
@@ -63,7 +63,7 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 ### 4. AI Web Content Importer
 
 - **Purpose**: To create a portfolio item from any public URL (e.g., a blog post, an article, or a project website).
-- **Model Used**: `googleai/gemini-2.5-flash`.
+- **Model Used**: `googleai/gemini-1.5-pro`.
 - **Flow File**: `src/ai/flows/web-importer.ts`
 - **API Route**: `src/app/api/web-importer/route.ts`
 - **Technical Flow**:
