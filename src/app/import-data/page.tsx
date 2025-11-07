@@ -16,7 +16,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useUser } from "@/firebase";
+import { useUser } from "@/firebase/provider";
 import Link from "next/link";
 import { CvData } from "@/lib/types";
 
@@ -498,5 +498,3 @@ export default function ImportDataPage() {
     </div>
   );
 }
-
-    

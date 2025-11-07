@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useFirebase, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
+import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc, updateDoc } from "firebase/firestore";
 import { Check, Loader2, KeyRound, Copy, Wand2 } from "lucide-react";
 import Image from "next/image";
@@ -47,7 +47,7 @@ type UserProfile = {
 };
 
 export default function SettingsPage() {
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 

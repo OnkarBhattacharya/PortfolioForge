@@ -10,10 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { Check, CheckCircle, KeyRound, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-import { useFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import {
   Table,
@@ -91,7 +90,7 @@ const sampleInvoices = [
 
 export default function BillingPage() {
   const { user } = useUser();
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const isReadOnly = !user || user.isAnonymous;

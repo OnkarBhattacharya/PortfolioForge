@@ -71,7 +71,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth || !firestore) { // If no Auth service instance, cannot determine user state
+    // If no Auth service instance, cannot determine user state
+    if (!auth || !firestore) {
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
     }
@@ -120,7 +121,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           }
           // For any signed-in user (anonymous or permanent), update the state.
           setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-        } else {
+        } else if (auth) { // Ensure auth is available before trying to sign in
           // No user is signed in; initiate a new anonymous session.
           try {
             await signInAnonymously(auth);

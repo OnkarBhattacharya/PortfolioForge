@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { useCollection, useFirebase, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle, KeyRound, ExternalLink } from 'lucide-react';
@@ -60,7 +60,7 @@ const sampleItems: PortfolioItem[] = [
   ];
 
 export default function PortfolioItemsPage() {
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
 

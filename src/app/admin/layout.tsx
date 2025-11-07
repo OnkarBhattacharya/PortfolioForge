@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useDoc, useMemoFirebase, useFirebase } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous || !firestore) return null;

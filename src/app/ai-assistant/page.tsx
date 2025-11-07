@@ -30,7 +30,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Sparkles, KeyRound } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/firebase";
+import { useUser } from "@/firebase/provider";
 import Link from "next/link";
 import { CvDataSchema } from "@/lib/types";
 

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser, useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { CreditCard, LogOut, User, LogIn, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ type UserProfile = {
 export function UserNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const router = useRouter();
 
   const userProfileRef = useMemoFirebase(() => {

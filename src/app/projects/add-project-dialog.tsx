@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useFirebase, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { collection } from 'firebase/firestore';
 import { Loader2, Wand2, Sparkles } from 'lucide-react';
@@ -30,6 +31,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { Card, CardContent } from '@/components/ui/card';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -46,7 +48,7 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const isReadOnly = !user || user.isAnonymous;

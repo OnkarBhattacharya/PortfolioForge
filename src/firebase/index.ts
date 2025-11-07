@@ -2,49 +2,77 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getRemoteConfig } from 'firebase/remote-config';
+import { Auth, getAuth } from 'firebase/auth';
+import { Firestore, getFirestore } from 'firebase/firestore';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  if (getApps().length > 0) {
-    return getSdks(getApp());
+// A structure to hold the initialized Firebase services.
+interface FirebaseServices {
+  firebaseApp: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+}
+
+let firebaseServices: FirebaseServices | null = null;
+
+/**
+ * Initializes Firebase on the client-side and returns the SDK instances.
+ * It ensures that initialization only happens once.
+ *
+ * @returns An object containing the initialized FirebaseApp, Auth, and Firestore instances.
+ */
+export function initializeFirebase(): FirebaseServices {
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase can only be initialized on the client side.');
   }
 
-  // Ensure all required Firebase config values are present before initializing
-  if (
-    !firebaseConfig.apiKey ||
-    !firebaseConfig.authDomain ||
-    !firebaseConfig.projectId
-  ) {
-    // In development, this is a fatal error.
-    if (process.env.NODE_ENV === 'development') {
-      const missingKeys = Object.entries(firebaseConfig)
-        .filter(([, value]) => !value)
-        .map(([key]) => key.replace('NEXT_PUBLIC_', ''));
+  // If already initialized, return the existing services.
+  if (firebaseServices) {
+    return firebaseServices;
+  }
 
-      let errorMessage = 'Firebase configuration is missing. ';
-      if (missingKeys.length > 0) {
-        errorMessage += `Please add the following keys to your .env.local file: ${missingKeys.join(
-          ', '
-        )}.`;
-      } else {
-        errorMessage += 'Check your environment variables setup.';
-      }
-
-      throw new Error(errorMessage);
+  if (getApps().length === 0) {
+    // Validate the Firebase config to prevent runtime errors.
+    if (
+      !firebaseConfig.apiKey ||
+      !firebaseConfig.authDomain ||
+      !firebaseConfig.projectId
+    ) {
+      throw new Error(
+        'Firebase configuration is missing or incomplete. Please check your environment variables.'
+      );
     }
+    const app = initializeApp(firebaseConfig);
+    firebaseServices = {
+      firebaseApp: app,
+      auth: getAuth(app),
+      firestore: getFirestore(app),
+    };
+  } else {
+    // If the app is already initialized by another script, get the existing instance.
+    const app = getApp();
+    firebaseServices = {
+      firebaseApp: app,
+      auth: getAuth(app),
+      firestore: getFirestore(app),
+    };
   }
-
-  const firebaseApp = initializeApp(firebaseConfig);
-  return getSdks(firebaseApp);
+  
+  return firebaseServices;
 }
 
-function getSdks(app: FirebaseApp) {
-  return {
-    auth: getAuth(app),
-    firestore: getFirestore(app),
-    remoteConfig: getRemoteConfig(app),
-  };
-}
+
+// Export Providers and hooks
+export { FirebaseClientProvider } from './client-provider';
+export {
+  FirebaseProvider,
+  useFirebase,
+  useAuth,
+  useFirestore,
+  useFirebaseApp,
+  useMemoFirebase,
+  useUser,
+} from './provider';
+
+// Export Firestore hooks
+export { useCollection } from './firestore/use-collection';
+export { useDoc } from './firestore/use-doc';

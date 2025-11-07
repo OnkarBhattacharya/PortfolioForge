@@ -20,7 +20,7 @@ import {
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
-import { useUser, useCollection, useFirebase, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, doc } from 'firebase/firestore';
 
 
@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const [cvUploaded, setCvUploaded] = useState(false);
   const [linkedInImported, setLinkedInImported] = useState(false);
   const { user } = useUser();
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const isReadOnly = !user || user.isAnonymous;
 
   const itemsQuery = useMemoFirebase(() => {

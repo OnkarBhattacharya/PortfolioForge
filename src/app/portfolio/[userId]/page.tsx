@@ -6,7 +6,7 @@ import {
   doc,
   query,
 } from 'firebase/firestore';
-import { useFirebase, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
@@ -39,7 +39,7 @@ export type PortfolioItem = {
 };
 
 export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !userId) return null;
