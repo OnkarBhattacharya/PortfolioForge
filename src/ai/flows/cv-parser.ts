@@ -26,19 +26,7 @@ const prompt = ai.definePrompt({
   output: {
     schema: CvDataSchema
   },
-  prompt: `You are an expert document analyst. Your task is to parse the following CV/Resume and extract structured data based on the provided schema. The document can be an image or a PDF.
-
-    Key tasks:
-    1.  **Identify the Profession**: Based on job titles and work experience, determine the candidate's profession (e.g., 'Software Engineer', 'Graphic Designer', 'Marketing Manager').
-    2.  **Extract Standard Fields**: Accurately extract personal information, summary, work experience, and education.
-    3.  **List Relevant Skills**: Identify and list the top 10-15 most relevant skills. These can be technical skills (like programming languages), software (like Adobe Photoshop), or methodologies (like Agile).
-
-    CV Document: {{media url=cvFile}}
-    
-    Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`,
-  config: {
-    model: 'googleai/gemini-1.5-pro',
-  },
+  prompt: `You are an expert document analyst. Your task is to parse the following CV/Resume and extract structured data based on the provided schema. The document can be an image or a PDF.\n\n    Key tasks:\n    1.  **Identify the Profession**: Based on job titles and work experience, determine the candidate\'s profession (e.g., \'Software Engineer\', \'Graphic Designer\', \'Marketing Manager\').\n    2.  **Extract Standard Fields**: Accurately extract personal information, summary, work experience, and education.\n    3.  **List Relevant Skills**: Identify and list the top 10-15 most relevant skills. These can be technical skills (like programming languages), software (like Adobe Photoshop), or methodologies (like Agile).\n\n    CV Document: {{media url=cvFile}}\n    \n    Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`,
 });
 
 export const cvParserFlow = ai.defineFlow(

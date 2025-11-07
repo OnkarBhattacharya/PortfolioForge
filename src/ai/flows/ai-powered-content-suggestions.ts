@@ -49,11 +49,11 @@ const prompt = ai.definePrompt({
 
   Based on the user's profession and the provided data from their CV, LinkedIn, and projects, generate engaging suggestions for their portfolio description and summary.
 
-  The user's profession is: {{{profession}}}
+  The user's profession is: {{profession}}
 
-  CV Data: {{{cvData}}}
-  LinkedIn Data: {{{linkedInData}}}
-  GitHub Projects Data: {{{githubProjectsData}}}
+  CV Data: {{cvData}}
+  LinkedIn Data: {{linkedInData}}
+  GitHub Projects Data: {{githubProjectsData}}
 
   Your tone should be professional but also creative and engaging. The suggestions should highlight the candidate's unique skills and experience in a way that is tailored to their specific field.
   Your output should be a JSON object that conforms to PortfolioContentSuggestionsOutputSchema.
@@ -68,6 +68,9 @@ const portfolioContentSuggestionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate content suggestions. The model did not return valid data.');
+    }
+    return output;
   }
 );

@@ -10,7 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const ReadmeSummarizerInputSchema = z.object({
   readmeContent: z.string().describe('The full text content of a README.md file.'),
@@ -31,13 +31,20 @@ const prompt = ai.definePrompt({
   name: 'readmeSummarizerPrompt',
   input: { schema: ReadmeSummarizerInputSchema },
   output: { schema: ReadmeSummarizerOutputSchema },
-  prompt: `You are an expert technical writer. Your task is to read the following README.md file content and generate a concise, 1-2 sentence summary that would be appropriate for a software developer's portfolio. Focus on the project's purpose and key features.
+  prompt: `You are an expert technical writer. Your task is to read the following README.md file content and generate a concise, compelling 1-2 sentence summary for a developer portfolio.
 
-README Content:
-{{{readmeContent}}}`,
-  config: {
-      temperature: 0.3,
-  }
+    The summary should:
+    -   Clearly state the project's purpose (the "why").
+    -   Mention the key technologies or features (the "what" and "how").
+    -   Be engaging and easy for both technical and non-technical audiences to understand.
+
+    README Content:
+    {{readmeContent}}
+
+    Your output MUST be a single string containing only the summary. Do not include any other text, comments, or code block fences.`,
+    config: {
+        temperature: 0.4, // Slightly higher for more creative summaries
+    }
 });
 
 const readmeSummarizerFlow = ai.defineFlow(
@@ -47,13 +54,15 @@ const readmeSummarizerFlow = ai.defineFlow(
     outputSchema: ReadmeSummarizerOutputSchema,
   },
   async ({ readmeContent }) => {
-    // Limit content size to avoid excessive token usage
-    const truncatedContent = readmeContent.length > 20000 ? readmeContent.substring(0, 20000) : readmeContent;
+    // Truncate content to avoid excessive token usage, focusing on the most important part of the README.
+    const truncatedContent = readmeContent.length > 15000 ? readmeContent.substring(0, 15000) : readmeContent;
 
     const { output } = await prompt({ readmeContent: truncatedContent });
+    
     if (!output) {
       throw new Error('Failed to summarize README. The model did not return a valid summary.');
     }
+    
     return output;
   }
 );

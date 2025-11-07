@@ -21,7 +21,6 @@ export const themeGeneratorFlow = ai.defineFlow(
       prompt: `You are an expert theme designer. Your task is to generate a unique and visually appealing theme configuration based on the user's prompt. The output must be a valid JSON object that conforms to the provided schema.
 
 User Prompt: "${prompt}"`,
-      model: 'googleai/gemini-1.5-pro',
       output: {
         schema: ThemeConfigSchema,
       },

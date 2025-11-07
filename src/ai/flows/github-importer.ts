@@ -14,9 +14,19 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { summarizeReadme } from './readme-summarizer';
 
+// For better type safety, define an interface for the GitHub API response.
+interface GithubRepoApiResponse {
+  name: string;
+  description: string | null;
+  html_url: string;
+  language: string | null;
+  fork: boolean;
+  full_name: string;
+}
+
 const GithubRepositorySchema = z.object({
   name: z.string().describe('The name of the repository.'),
-  description: z.string().nullable().describe('The AI-generated summary of the repository\'s README.'),
+  description: z.string().nullable().describe("The AI-generated summary of the repository's README or the original description."),
   url: z.string().url().describe('The URL of the repository.'),
   language: z.string().nullable().describe('The primary programming language of the repository.'),
 });
@@ -37,6 +47,8 @@ export async function importGithubRepositories(
   return githubImporterFlow(input);
 }
 
+const GITHUB_API_BASE_URL = 'https://api.github.com';
+
 const githubImporterFlow = ai.defineFlow(
   {
     name: 'githubImporterFlow',
@@ -44,31 +56,48 @@ const githubImporterFlow = ai.defineFlow(
     outputSchema: GithubImporterOutputSchema,
   },
   async ({ username }) => {
+    // For higher rate limits, you should use a GitHub personal access token.
+    // Store it in your environment variables (e.g., GITHUB_TOKEN) and use it in the headers.
+    const headers = {
+      'Accept': 'application/vnd.github.v3+json',
+      // 'Authorization': `token ${process.env.GITHUB_TOKEN}`, // Uncomment and set GITHUB_TOKEN
+    };
+
     const response = await fetch(
-      `https://api.github.com/users/${username}/repos?sort=stars&per_page=10`
+      `${GITHUB_API_BASE_URL}/users/${username}/repos?sort=updated&per_page=10`,
+      { headers }
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch repositories for user: ${username}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch repositories for user: ${username}. Status: ${response.status}. Details: ${errorText}`);
     }
 
-    const repos: any[] = await response.json();
+    const repos: GithubRepoApiResponse[] = await response.json();
 
     const processedRepos = await Promise.all(
       repos
-        .filter((repo: any) => !repo.fork)
+        .filter((repo) => !repo.fork)
         .slice(0, 5) // Limit to top 5 to avoid long processing times & API limits
-        .map(async (repo: any) => {
-          let description = repo.description;
-          try {
-            // Attempt to fetch and summarize the README
-            const readmeUrl = `https://raw.githubusercontent.com/${repo.full_name}/master/README.md`;
+        .map(async (repo) => {
+          let description = repo.description; // Default to the repo description
+
+          const getReadmeContent = async (branch: string): Promise<string | null> => {
+            const readmeUrl = `https://raw.githubusercontent.com/${repo.full_name}/${branch}/README.md`;
             const readmeResponse = await fetch(readmeUrl);
             if (readmeResponse.ok) {
-              const readmeContent = await readmeResponse.text();
-              if (readmeContent.trim()) {
-                description = await summarizeReadme({ readmeContent });
-              }
+              return readmeResponse.text();
+            }
+            return null;
+          };
+
+          try {
+            // Try fetching README from 'main' then 'master' branch
+            const readmeContent = (await getReadmeContent('main')) ?? (await getReadmeContent('master'));
+
+            if (readmeContent && readmeContent.trim()) {
+              // If README content is available, summarize it for a better description
+              description = await summarizeReadme({ readmeContent });
             }
           } catch (error) {
             console.warn(`Could not summarize README for ${repo.name}:`, error);

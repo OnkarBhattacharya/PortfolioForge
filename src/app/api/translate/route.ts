@@ -1,19 +1,25 @@
 
-import { NextRequest, NextResponse } from 'next/server';
-import { translateTexts } from '@/ai/flows/translator';
+import { translate } from '@/ai/flows/translator';
+import {NextRequest, NextResponse} from 'next/server';
 
 export async function POST(req: NextRequest) {
   const { texts, targetLanguage } = await req.json();
 
-  if (!texts || !Array.isArray(texts) || !targetLanguage) {
-    return NextResponse.json({ error: '`texts` (array) and `targetLanguage` are required' }, { status: 400 });
+  if (!texts || !targetLanguage) {
+    return NextResponse.json(
+      { error: 'Missing required parameters: texts and targetLanguage' },
+      { status: 400 }
+    );
   }
 
   try {
-    const result = await translateTexts({ texts, targetLanguage });
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error('Error in translate API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred during translation' }, { status: 500 });
+    const { translations } = await translate({ texts, targetLanguage });
+    return NextResponse.json({ translations });
+  } catch (e: any) {
+    console.error('Translation flow failed', e);
+    return NextResponse.json(
+      { error: 'Translation failed', details: e.message },
+      { status: 500 }
+    );
   }
 }

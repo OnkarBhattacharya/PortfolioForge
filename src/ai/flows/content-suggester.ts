@@ -27,7 +27,6 @@ export const contentSuggesterFlow = ai.defineFlow(
 Content Type: "${contentType}"
 
 User\'s Text: "${text}"`,
-      model: 'googleai/gemini-1.5-pro',
       output: {
         schema: ContentSuggesterOutputSchema,
       },

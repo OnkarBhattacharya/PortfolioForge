@@ -108,3 +108,22 @@ By implementing these changes, the project is more stable, maintainable, and sec
 - **Finding (Critical)**: The project was in an un-buildable state due to a severe dependency conflict between `@genkit-ai/next` and the `next` package. The `npm install` command failed repeatedly, even after attempting to pin dependencies, clear caches, and remove the lockfile. The root cause was an incompatibility where a `genkit` package update required a newer version of Next.js than was installed.
 - **Recommendation**: Resolve the direct package incompatibility. Instead of attempting workarounds, the correct solution was to upgrade both the `@genkit-ai/*` packages and the `next` package to versions that are explicitly compatible with each other. This ensures a stable and predictable build environment.
 - **Status**: **Resolved**.
+
+## 7. Dynamic AI Model Configuration Audit
+
+- **Date of Audit**: November 7, 2025
+- **Auditor**: Studio AI Agent
+
+### 7.1. AI & Genkit Flows
+
+- **Finding (High)**: Several AI flows (`theme-generator.ts`, `content-suggester.ts`) contained hardcoded model names (`gemini-1.0-pro`, `gemini-1.5-pro`). This prevented dynamic model selection based on environment configuration, making it difficult to switch models without code changes.
+- **Recommendation**: Remove all hardcoded model names from the AI flow definitions. The flows should rely on the default model configured in the Genkit environment. This allows the model to be set dynamically via Firebase Remote Config in production or environment variables in development.
+- **Status**: **Resolved**.
+
+- **Finding (Informational)**: The development environment configuration file (`src/ai/dev.ts`) correctly sets a default model (`gemini-1.5-pro`) using the `genkit_model` environment variable.
+- **Recommendation**: No action needed. This is the correct approach for local development.
+- **Status**: **Verified**.
+
+- **Finding (Informational)**: The default values for the Firebase Remote Config parameter `genkit_model` are not stored within the project's codebase.
+- **Recommendation**: For better transparency and disaster recovery, consider documenting the default production Remote Config values in a project documentation file (e.g., in the `docs` folder).
+- **Status**: **Recommendation Noted**.
