@@ -3,14 +3,6 @@
 
 **PortfolioForge is a next-generation platform that empowers professionals across all industries to create stunning, AI-powered portfolios in minutes, not hours. We are revolutionizing how professional identity is presented online.**
 
-## Project Status (November 2025)
-
-This project recently underwent a significant dependency overhaul to resolve a critical security vulnerability and a persistent dependency conflict. The key resolutions include:
-
-- **Dependency Conflict Resolution:** A stubborn dependency conflict related to the `next` package was resolved by a series of aggressive debugging steps, including the removal of `node_modules`, `package-lock.json`, `.next`, and other cached artifacts, followed by a final `npm install --force`.
-- **Security Vulnerability Patched:** A critical security vulnerability in Next.js was identified via `npm audit` and patched by running `npm audit fix --force`.
-- **Testing Framework Configuration:** The `vite.config.ts` file was restored and configured to handle the project's specific needs, including path aliasing and the separation of Vitest and Playwright test runners.
-
 ## The Vision: Democratizing Professional Storytelling
 
 In today's digital-first economy, a powerful online portfolio is no longer optional—it's essential. However, creating one is a time-consuming, technically challenging, and often frustrating process. PortfolioForge solves this problem by leveraging cutting-edge AI to automate and elevate portfolio creation, making it accessible to everyone from software engineers and graphic designers to marketers and legal experts.
@@ -82,22 +74,6 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 ### **4. Continuous Security & Compliance Monitoring**
 - **Regular Audits**: We have a plan for periodic reviews of our Firebase Security Rules, application dependencies (to mitigate supply-chain risks), and data handling practices.
 - **Secure Development Lifecycle**: Our testing framework, including unit, integration, and E2E tests, forms a critical part of our development process, helping to catch potential security regressions before they reach production.
-
-## Get Started
-
-1. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) to see your application.
-
-2. **Experience the Magic**: When you first visit, you'll start in a seamless guest session. You can explore the app's features immediately. To save your work and create a permanent portfolio, sign in with Google or Apple via the login page. Then, import your CV and watch the AI build the foundation of your portfolio.
-
----
-
-## Contributing
-
-We welcome contributions from the community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get involved.
 
 ## Key Implemented Features
 
