@@ -1,22 +1,26 @@
+
 'use client';
 
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase/index';
+import { initializeFirebase, FirebaseServices } from '@/firebase/index';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // Initialize Firebase services. useMemo ensures this is done only once per render.
-  // The initializeFirebase function itself is idempotent, so it's safe to call.
-  const firebaseServices = useMemo(() => initializeFirebase(), []);
+  const firebaseServices = useMemo(() => {
+    // This check ensures that initializeFirebase is not called on the server.
+    if (typeof window !== 'undefined') {
+      return initializeFirebase();
+    }
+    return null;
+  }, []);
 
+  // During SSR or if initialization fails, render children without the provider.
+  // The client-side will then take over and render the provider.
   if (!firebaseServices) {
-    // This can happen on the server, where we don't want to initialize Firebase.
-    // Render children so that Server Components can still render.
-    // The client-side will then handle the full Firebase context.
     return <>{children}</>;
   }
 

@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Footer } from "./footer";
 
+
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const { user, isUserLoading } = useUser();

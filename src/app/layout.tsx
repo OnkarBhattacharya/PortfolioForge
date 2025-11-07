@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { MainLayout } from '@/components/main-layout';
 import { Toaster } from '@/components/ui/toaster';
 import CookieBanner from '@/components/cookie-banner';
-import { FirebaseClientProvider } from '@/firebase';
+import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
   title: 'PortfolioForge',
@@ -26,13 +26,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased')}>
-        <FirebaseClientProvider>
+        <Providers>
           <MainLayout>
             {children}
           </MainLayout>
-        </FirebaseClientProvider>
-        <Toaster />
-        <CookieBanner />
+          <Toaster />
+          <CookieBanner />
+        </Providers>
       </body>
     </html>
   );
