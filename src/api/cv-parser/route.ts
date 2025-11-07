@@ -1,23 +1,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { parseCv } from '@/ai/flows/cv-parser';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminApp } from '@/firebase/admin';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 
-// Initialize Firebase client SDK for server-side operations
-if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
-}
-const db = getFirestore();
+// Initialize Firebase Admin and Firestore
+const adminApp = getAdminApp();
+const db = getFirestore(adminApp);
 
 export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   if (!userId) throw new Error("User ID is required to save CV data.");
-  // Save parsed data by merging it into the user's document
-  const userDocRef = doc(db, 'users', userId);
-  await setDoc(userDocRef, { ...cvData }, { merge: true });
+  const userDocRef = db.collection('users').doc(userId);
+  await userDocRef.set({ ...cvData }, { merge: true });
 };
 
 export async function POST(req: NextRequest) {
@@ -31,7 +27,7 @@ export async function POST(req: NextRequest) {
     // 1. Call the Genkit flow to parse the CV
     const parsedData = await parseCv({ cvFile });
     
-    // 2. Save the parsed data to Firestore
+    // 2. Save the parsed data to Firestore using the Admin SDK
     await saveCvDataToFirestore(userId, parsedData);
     
     // 3. Return the parsed data to the client
@@ -42,5 +38,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred during CV processing' }, { status: 500 });
   }
 }
-
-    

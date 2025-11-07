@@ -1,6 +1,7 @@
 
-import { ai } from '@/ai/genkit';
+import { getAiInstance } from '@/ai/genkit';
 import { z } from 'zod';
+import { defineFlow } from '@genkit-ai/core';
 
 export const ContentSuggesterInputSchema = z.object({
   text: z.string().describe('The user\'s current text content.'),
@@ -14,13 +15,15 @@ export const ContentSuggesterOutputSchema = z.object({
 export type ContentSuggesterInput = z.infer<typeof ContentSuggesterInputSchema>;
 export type ContentSuggesterOutput = z.infer<typeof ContentSuggesterOutputSchema>;
 
-export const contentSuggesterFlow = ai.defineFlow(
+export const contentSuggesterFlow = defineFlow(
   {
     name: 'contentSuggesterFlow',
+
     inputSchema: ContentSuggesterInputSchema,
     outputSchema: ContentSuggesterOutputSchema,
   },
   async ({ text, contentType }) => {
+    const ai = await getAiInstance();
     const { output } = await ai.generate({
       prompt: `You are an expert copywriter and editor. Your task is to provide a list of suggestions to improve the user\'s text. The suggestions should be constructive, and a few of them should be complete rewrites in different tones (e.g. more professional, more casual, more impactful). Do not return your own preamble, just the suggestions.
 

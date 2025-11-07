@@ -1,20 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { parseCv } from '@/ai/flows/cv-parser';
-import * as admin from 'firebase-admin';
-
-// Initialize Firebase Admin SDK
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
-  } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
-  }
-}
-
-const db = admin.firestore();
+import { getAdminApp } from '@/firebase/admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 export async function POST(req: NextRequest) {
   const { cvFile, userId } = await req.json();
@@ -24,6 +12,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Initialize Firebase Admin and Firestore
+    const adminApp = getAdminApp();
+    const db = getFirestore(adminApp);
+    
     // 1. Call the Genkit flow to parse the CV
     const parsedData = await parseCv({ cvFile });
     

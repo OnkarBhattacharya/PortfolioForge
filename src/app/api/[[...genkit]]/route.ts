@@ -1,3 +1,3 @@
 
-import {nextHandler} from '@genkit-ai/next';
-export {nextHandler as GET, nextHandler as POST};
+import {appRoute} from '@genkit-ai/next';
+export {appRoute as GET, appRoute as POST};
