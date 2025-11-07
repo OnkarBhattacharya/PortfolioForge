@@ -99,3 +99,12 @@ By implementing these changes, the project is more stable, maintainable, and sec
 - **Finding (Informational)**: A previous audit noted the existence of a redundant `useUser` hook.
 - **Recommendation**: Verify the removal of the redundant hook.
 - **Status**: **Verified & Resolved**. The redundant hook at `src/firebase/auth/use-user.tsx` has been confirmed as deleted.
+
+## 6. Dependency Management & Build Stability Audit
+
+- **Date of Audit**: November 7, 2025
+- **Auditor**: Studio AI Agent
+
+- **Finding (Critical)**: The project was in an un-buildable state due to a severe dependency conflict between `@genkit-ai/next` and the `next` package. The `npm install` command failed repeatedly, even after attempting to pin dependencies, clear caches, and remove the lockfile. The root cause was an incompatibility where a `genkit` package update required a newer version of Next.js than was installed.
+- **Recommendation**: Resolve the direct package incompatibility. Instead of attempting workarounds, the correct solution was to upgrade both the `@genkit-ai/*` packages and the `next` package to versions that are explicitly compatible with each other. This ensures a stable and predictable build environment.
+- **Status**: **Resolved**.

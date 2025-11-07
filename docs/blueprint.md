@@ -2,11 +2,11 @@
 
 ## Core Features:
 
-- CV Upload & Parsing: Allow users to upload their CV (e.g., PDF, DOCX) and parse the content to pre-fill sections of the portfolio.
-- LinkedIn Data Import: Enable users to import data directly from their LinkedIn profile to populate relevant sections.
-- GitHub Project Integration: Automatically fetch and display user's GitHub projects, including descriptions and links.
-- Firebase Project Showcase: Enable users to showcase projects hosted on Firebase, potentially fetching project details and live demos.
-- Theme Selection & Customization: Provide a selection of stunning, professionally designed themes that can be easily customized (colors, fonts, layout).
+- CV Upload & Parsing: Allow users to upload their CV in **PDF or image format** and have AI parse the content to pre-fill sections of the portfolio.
+- LinkedIn Data Import: Enable users to import data by **pasting the raw text from their LinkedIn profile** to populate relevant sections.
+- GitHub Project Integration: Automatically fetch and display a user's public GitHub repositories, including descriptions and links.
+- Web Content Importer: Create a portfolio item from any public URL (e.g., a blog post, an article, or a project website) using AI to generate a title, summary, and tags.
+- Theme Selection & Customization: Provide a selection of professionally designed themes that can be customized. Includes an **AI Theme Generator** to create unique styles from a text prompt.
 - AI-Powered Content Suggestions: Utilize a tool that offers suggestions for portfolio descriptions and summaries based on parsed data, improving overall presentation.
 - Custom Domain Support: Allow users to connect a custom domain to their portfolio for a professional online presence.
 

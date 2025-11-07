@@ -3,6 +3,14 @@
 
 **PortfolioForge is a next-generation platform that empowers professionals across all industries to create stunning, AI-powered portfolios in minutes, not hours. We are revolutionizing how professional identity is presented online.**
 
+## Project Status (November 2025)
+
+This project recently underwent a significant dependency overhaul to resolve a critical security vulnerability and a persistent dependency conflict. The key resolutions include:
+
+- **Dependency Conflict Resolution:** A stubborn dependency conflict related to the `next` package was resolved by a series of aggressive debugging steps, including the removal of `node_modules`, `package-lock.json`, `.next`, and other cached artifacts, followed by a final `npm install --force`.
+- **Security Vulnerability Patched:** A critical security vulnerability in Next.js was identified via `npm audit` and patched by running `npm audit fix --force`.
+- **Testing Framework Configuration:** The `vite.config.ts` file was restored and configured to handle the project's specific needs, including path aliasing and the separation of Vitest and Playwright test runners.
+
 ## The Vision: Democratizing Professional Storytelling
 
 In today's digital-first economy, a powerful online portfolio is no longer optional—it's essential. However, creating one is a time-consuming, technically challenging, and often frustrating process. PortfolioForge solves this problem by leveraging cutting-edge AI to automate and elevate portfolio creation, making it accessible to everyone from software engineers and graphic designers to marketers and legal experts.
@@ -162,9 +170,9 @@ We welcome contributions from the community! Please see our [Contributing Guidel
   - **UI Component:** A clean and intuitive `LanguageSwitcher` dropdown is integrated into the main application header.
 
 ### 11. Comprehensive Testing Suite
-- **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys.
+- **Description:** A full suite of tests to ensure application quality, reliability, and maintainability. This includes unit tests for isolated functions, frontend tests for React components, and end-to-end tests that validate complete user journeys. The unit and component tests are now passing after a series of configuration updates.
 - **Implementation:**
-  - **Vitest & React Testing Library:** Used for unit and component testing. Configuration is in `vite.config.ts`, and tests are located in the `tests/` directory.
+  - **Vitest & React Testing Library:** Used for unit and component testing. Configuration is in `vite.config.ts`, and tests are located in the `tests/` directory. The Vitest configuration is set up to handle the project's path aliases and to exclude Playwright E2E tests.
   - **Playwright:** Used for end-to-end testing in a real browser environment. The configuration is in `playwright.config.ts`, and E2E tests validate critical user flows like authentication.
   - **Test Stubs:** Placeholder files for contract and performance tests (`tests/contract/`, `tests/performance/`) have been created to establish a structure for future, more advanced testing.
 
