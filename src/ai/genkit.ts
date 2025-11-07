@@ -4,7 +4,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { adminRemoteConfig } from '@/firebase/admin';
 
 // Define a default model as a fallback.
-const defaultModel = 'gemini-1.5-flash';
+const defaultModel = 'gemini-1.5-pro';
 
 /**
  * Fetches the AI model ID from Firebase Remote Config using the Admin SDK.
@@ -34,13 +34,28 @@ async function getModelFromRemoteConfig(): Promise<string> {
   return defaultModel;
 }
 
-// Use top-level await to get the model name before configuring Genkit.
-const modelName = await getModelFromRemoteConfig();
+// Use a function to initialize the AI model on first use.
+let aiInstance: any;
 
-// Configure Genkit with necessary plugins and the dynamic model.
-export const ai = genkit({
-  plugins: [
-    googleAI({ apiVersion: 'v1beta' }),
-  ],
-  model: `googleai/${modelName}`, // Set the default model for flows.
-});
+async function getAiInstance() {
+    if (!aiInstance) {
+        const modelName = await getModelFromRemoteConfig();
+        aiInstance = genkit({
+            plugins: [
+                googleAI({ apiVersion: 'v1beta' }),
+            ],
+            model: `googleai/${modelName}`, // Set the default model for flows.
+        });
+    }
+    return aiInstance;
+}
+
+// Export a proxy that will initialize the AI model on first use.
+export const ai = new Proxy({}, {
+    get: (target, prop) => {
+        return async (...args: any[]) => {
+            const instance = await getAiInstance();
+            return (instance as any)[prop](...args);
+        };
+    }
+}) as any;
