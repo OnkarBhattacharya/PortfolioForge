@@ -1,8 +1,16 @@
 
-import { getAiInstance } from '@/ai/genkit';
+'use server';
+
+/**
+ * @fileOverview An AI flow for generating portfolio content suggestions.
+ *
+ * - generatePortfolioContentSuggestions - Generates suggestions for headlines and summaries.
+ * - PortfolioContentSuggestionsInput - The input type for the flow.
+ * - PortfolioContentSuggestionsOutput - The output type for the flow.
+ */
+
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { defineFlow } from '@genkit-ai/core';
-import { definePrompt } from '@genkit-ai/ai';
 
 const PortfolioContentSuggestionsInputSchema = z.object({
   profession: z.string().optional().describe('The user\'s profession, e.g., "Software Engineer", "Graphic Designer".'),
@@ -34,7 +42,8 @@ export async function generatePortfolioContentSuggestions(
   return portfolioContentSuggestionsFlow(input);
 }
 
-const portfolioContentSuggestionsPrompt = definePrompt({
+const portfolioContentSuggestionsPrompt = ai.definePrompt({
+  name: 'portfolioContentSuggestionsPrompt',
   input: {schema: PortfolioContentSuggestionsInputSchema},
   output: {schema: PortfolioContentSuggestionsOutputSchema},
   prompt: `You are an expert career coach and copywriter who helps professionals create compelling portfolio content.
@@ -52,15 +61,14 @@ const portfolioContentSuggestionsPrompt = definePrompt({
 `,
 });
 
-const portfolioContentSuggestionsFlow = defineFlow(
+const portfolioContentSuggestionsFlow = ai.defineFlow(
   {
     name: 'portfolioContentSuggestionsFlow',
     inputSchema: PortfolioContentSuggestionsInputSchema,
     outputSchema: PortfolioContentSuggestionsOutputSchema,
   },
   async (input) => {
-    const ai = await getAiInstance();
-    const {output} = await ai.prompt(portfolioContentSuggestionsPrompt, input);
+    const {output} = await portfolioContentSuggestionsPrompt(input);
     if (!output) {
       throw new Error('Failed to generate content suggestions. The model did not return valid data.');
     }

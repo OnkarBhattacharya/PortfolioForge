@@ -1,8 +1,16 @@
 
-import { getAiInstance } from '@/ai/genkit';
+'use server';
+
+/**
+ * @fileOverview A multi-modal AI flow for parsing a user's CV (PDF or image).
+ *
+ * - parseCv - A function that handles the CV parsing process.
+ * - CvParserInput - The input type for the parseCv function.
+ * - CvParserOutput - The return type for the parseCv function.
+ */
+
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { defineFlow } from '@genkit-ai/core';
-import { definePrompt } from '@genkit-ai/ai';
 import { CvDataSchema } from '@/lib/types';
 
 const CvParserInputSchema = z.object({
@@ -20,7 +28,8 @@ export async function parseCv(input: CvParserInput): Promise<CvParserOutput> {
   return cvParserFlow(input);
 }
 
-const cvParserPrompt = definePrompt({
+const cvParserPrompt = ai.definePrompt({
+  name: 'cvParserPrompt',
   input: {schema: CvParserInputSchema},
   output: {
     schema: CvDataSchema
@@ -29,15 +38,14 @@ const cvParserPrompt = definePrompt({
     CV Document: {{media url=cvFile}}\n    \n    Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`,
 });
 
-export const cvParserFlow = defineFlow(
+export const cvParserFlow = ai.defineFlow(
   {
     name: 'cvParserFlow',
     inputSchema: CvParserInputSchema,
     outputSchema: CvDataSchema,
   },
   async (input) => {
-    const ai = await getAiInstance();
-    const {output} = await ai.prompt(cvParserPrompt, input);
+    const {output} = await cvParserPrompt(input);
     if (!output) {
       throw new Error('Failed to parse CV. The model did not return valid data.');
     }
