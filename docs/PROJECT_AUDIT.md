@@ -47,7 +47,7 @@ This report identifies several areas for improvement, ranging from critical conf
 - **Status**: **Resolved**.
 
 - **Finding (Informational)**: Client-side state related to data import success (e.g., `cvUploadSuccess`) is currently managed via `localStorage`. While functional, this approach can become difficult to manage as the application grows.
-- **Recommendation**: For future development, consider centralizing client-side state using a dedicated state management library (like Zustand or Jotai) or React's built-in Context API. This is not an immediate issue but a consideration for future scalability.
+- **Recommendation**: For future development, consider centralizing client-side state using a dedicated state management library (like Zustand or Jotai) or React's built-in Context API.
 
 ### 2.4. Testing Suite
 
@@ -106,7 +106,7 @@ By implementing these changes, the project is more stable, maintainable, and sec
 - **Auditor**: Studio AI Agent
 
 - **Finding (Critical)**: The project was in an un-buildable state due to a severe dependency conflict between `@genkit-ai/next` and the `next` package. The `npm install` command failed repeatedly, even after attempting to pin dependencies, clear caches, and remove the lockfile. The root cause was an incompatibility where a `genkit` package update required a newer version of Next.js than was installed.
-- **Recommendation**: Resolve the direct package incompatibility. Instead of attempting workarounds, the correct solution was to upgrade both the `@genkit-ai/*` packages and the `next` package to versions that are explicitly compatible with each other. This ensures a stable and predictable build environment.
+- **Recommendation**: Resolve the direct package incompatibility. Instead of attempting workarounds, the correct solution was to upgrade both the `@genkit-ai/*` packages and the `next` package to versions that are explicitly compatible with each other.
 - **Status**: **Resolved**.
 
 ## 7. Dynamic AI Model Configuration Audit
@@ -135,9 +135,39 @@ By implementing these changes, the project is more stable, maintainable, and sec
 
 ### 8.1. Frontend Architecture
 
-- **Finding (Critical)**: The application was experiencing a recurring `useFirebase must be used within a FirebaseProvider` error. The root cause was an incorrect component architecture where Client Components (`MainLayout`) were attempting to access React context before the client-side provider (`FirebaseClientProvider`) had been initialized. This violated the rules of the Next.js App Router.
-- **Recommendation**: Implement the standard, officially recommended pattern for client-side providers. This involved:
-    1. Creating a single client boundary component (`src/components/providers.tsx`) to manage all client-side contexts.
-    2. Modifying the root `layout.tsx` (a Server Component) to delegate its children to this new `Providers` component.
-    3. Ensuring `MainLayout` and all other client components were rendered as children of `Providers`, thus guaranteeing access to the initialized context.
+- **Finding (Critical)**: The application was experiencing a recurring `useFirebase must be used within a FirebaseProvider` error. The root cause was an incorrect component architecture where Client Components were attempting to access React context before the client-side provider (`FirebaseClientProvider`) had been initialized. This violated the rules of the Next.js App Router.
+- **Recommendation**: Implement the standard, officially recommended pattern for client-side providers. This involved creating a single client boundary component (`src/components/providers.tsx`) to manage all client-side contexts, modifying the root `layout.tsx` (a Server Component) to delegate its children to this new `Providers` component, and ensuring all client components were rendered as children of `Providers`.
+- **Status**: **Resolved**.
+
+## 9. Production Hardening and Security Audit
+
+- **Date of Audit**: November 19, 2025
+- **Auditor**: Studio AI Agent
+
+### 9.1. Security & Configuration
+
+- **Finding (Critical)**: Sensitive credentials, including the Firebase client configuration and API keys, were hardcoded in the source code (`src/firebase/config.ts`).
+- **Recommendation**: Move all sensitive keys to environment variables (`.env`) and load them using `process.env`. This prevents secrets from being exposed in source control and client-side bundles.
+- **Status**: **Resolved**.
+
+- **Finding (Critical)**: The project lacked security rules for Firebase Storage, potentially exposing user-uploaded files.
+- **Recommendation**: Create a `storage.rules` file with restrictive defaults and link it in `firebase.json`.
+- **Status**: **Resolved**.
+
+- **Finding (High)**: The `apphosting.yaml` file was configured with a single instance, making it unsuitable for production scaling and availability.
+- **Recommendation**: Update `apphosting.yaml` to include `minInstances` and `maxInstances` to enable auto-scaling.
+- **Status**: **Resolved**.
+
+### 9.2. Best Practices & Observability
+
+- **Finding (High)**: Error handling relied on `console.error`, which is ineffective for monitoring in a production environment.
+- **Recommendation**: Implement a structured `logger` utility to replace all `console.error` calls, preparing the app for integration with a proper logging and error tracking service.
+- **Status**: **Resolved**.
+
+- **Finding (Medium)**: The application lacked performance monitoring.
+- **Recommendation**: Integrate Firebase Performance Monitoring and a Core Web Vitals tracker.
+- **Status**: **Resolved**.
+
+- **Finding (Medium)**: The application did not have protection against unauthorized backend access.
+- **Recommendation**: Implement Firebase App Check to ensure requests originate from a verified instance of the application.
 - **Status**: **Resolved**.

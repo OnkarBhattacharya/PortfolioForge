@@ -118,5 +118,9 @@ For operations that require administrative privileges (like creating portfolio i
 
 ### `src/firebase/admin.ts`
 - **Purpose**: This file provides a critical function, `getAdminApp()`, which ensures that the Firebase Admin SDK is initialized only **once** per server instance (a singleton pattern). This prevents common errors related to re-initialization in a serverless environment like Next.js.
-- **Authentication**: It securely initializes the Admin SDK using a service account key stored in the `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable.
-- **Usage**: All server-side code (primarily API routes in `src/app/api/`) uses this function to get a trusted Firestore instance for performing database operations that should not be exposed to the client.
+- **Authentication**: It securely initializes the Admin SDK using a service account key stored in the `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable. This variable is loaded via the `dotenv` package.
+- **Usage**: All server-side code (primarily API routes in `src/app/api/`) uses `getAdminFirestore()` from this file to get a trusted Firestore instance for performing database operations that should not be exposed to the client.
+
+### Firebase Storage
+- **Purpose**: User-uploaded content, such as images for portfolio items, is stored in Firebase Storage.
+- **Security**: Access is controlled by `storage.rules`, which ensures that users can only write to their own designated storage paths and enforces file size and type restrictions.

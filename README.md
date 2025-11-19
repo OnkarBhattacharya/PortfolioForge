@@ -48,7 +48,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 
 - `src/app/`: Next.js App Router for all application routes, leveraging server-side rendering for performance.
 - `src/components/providers.tsx`: The primary **Client Component boundary**, responsible for initializing all client-side contexts, including the `FirebaseClientProvider`, ensuring that Firebase is available to the entire component tree.
-- `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling.
+- `src/firebase/`: A clean, modular Firebase architecture. Client-side configuration is securely loaded from environment variables (`.env`). Custom hooks (`useUser`, `useCollection`) provide efficient and secure data handling.
 - `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser, data importers, and content assistant.
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
 - `tests/`: A comprehensive testing suite covering unit, integration, frontend, and end-to-end tests to ensure code quality and application stability.
@@ -61,11 +61,13 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 - **Encryption**: All user data is encrypted both in transit (using HTTPS/TLS) and at rest, leveraging the default server-side encryption provided by Google Cloud and Firestore.
 - **Data Minimization**: We only collect data that is essential for the functionality of the portfolio. The AI CV parser is designed to extract relevant professional information and discard extraneous personal data.
 - **User Consent & Control**: All AI-driven features require explicit user action (e.g., clicking "Parse CV"). Users will have clear options to manage and delete their data, in line with the "right to be forgotten."
+- **Secret Management**: All sensitive credentials, including Firebase API keys and service accounts, are managed securely through environment variables and are not stored in the source code.
 
 ### **2. Secure & Resilient Infrastructure**
-- **Principle of Least Privilege**: Our Firestore Security Rules are designed to be restrictive by default, ensuring users can only access and modify their own data. The rules prevent unauthorized data access between accounts.
+- **Principle of Least Privilege**: Our Firestore Security Rules (`firestore.rules`) and Firebase Storage Rules (`storage.rules`) are designed to be restrictive by default, ensuring users can only access and modify their own data.
 - **Secure Authentication**: We use Firebase Authentication, which provides a managed, secure, and scalable identity solution. Authentication is handled through a hybrid model that includes both anonymous access for guests and federated sign-in (Google and Apple) for registered users.
-- **Network Security**: By building on Firebase, we inherit Google's robust network security, which includes protection against DDoS attacks, traffic sniffing, and other common network-level threats. We've further enhanced this by configuring a VPC connector in our `apphosting.yaml`, isolating our backend services for an additional layer of security.
+- **API and Backend Protection**: We have implemented **Firebase App Check** to ensure that all requests to our backend services originate from our legitimate application, mitigating the risk of abuse. Additionally, API routes include rate-limiting and CORS policies.
+- **Network Security**: By building on Firebase, we inherit Google's robust network security. We've further enhanced this by configuring a VPC connector in our `apphosting.yaml`, isolating our backend services.
 
 ### **3. AI Governance & Transparency (EU AI Act Alignment)**
 - **Human-in-the-Loop**: Our AI features act as co-pilots, not autopilots. The user is always in control. The AI *suggests* content based on the user's data, but the user must approve and save it.
@@ -73,8 +75,9 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 - **Data Provenance**: Data used for AI content generation is sourced directly from the user's own provided information (CV, LinkedIn data), ensuring traceability and relevance. We do not use user data to train our models.
 
 ### **4. Continuous Security & Compliance Monitoring**
-- **Regular Audits**: We have a plan for periodic reviews of our Firebase Security Rules, application dependencies (to mitigate supply-chain risks), and data handling practices.
-- **Secure Development Lifecycle**: Our testing framework, including unit, integration, and E2E tests, forms a critical part of our development process, helping to catch potential security regressions before they reach production.
+- **Structured Logging**: All server-side operations and errors are captured using a structured logger, preparing the application for integration with monitoring and alerting services like Google Cloud Logging or Sentry.
+- **Regular Audits**: We have a plan for periodic reviews of our Firebase Security Rules, application dependencies, and data handling practices.
+- **Secure Development Lifecycle**: Our testing framework forms a critical part of our development process, helping to catch potential security regressions before they reach production.
 
 ## Key Implemented Features
 
@@ -159,3 +162,14 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
   - **Legal Pages:** The application includes dedicated pages for the **Terms & Conditions**, **Privacy Policy**, and **Cookie Policy**, accessible from the portfolio footer. These pages contain professional, boilerplate content that can be easily customized.
   - **Cookie Consent Banner:** A non-intrusive cookie banner is displayed to first-time visitors, informing them about the use of cookies and linking to the Cookie Policy. Consent is managed using local storage.
   - **Public Portfolio Footer:** The public portfolio page now includes a footer with links to all legal pages, ensuring they are easily accessible to visitors.
+
+### 13. Production Hardening & Security
+- **Description:** A comprehensive set of configurations and architectural patterns to make the application secure, scalable, and ready for a production environment.
+- **Implementation:**
+  - **Environment Variable Management:** All sensitive keys (Firebase client config, service accounts) are loaded from environment variables (`.env`) and are not committed to source control.
+  - **Firebase Storage Security:** `storage.rules` have been implemented to control access to user-uploaded files, such as portfolio images.
+  - **Production Scaling:** The `apphosting.yaml` configuration has been updated with `minInstances` and `maxInstances` to support auto-scaling and high availability.
+  - **Structured Logging:** All `console.error` calls have been replaced with a structured `logger` to enable effective monitoring and error tracking in a production environment.
+  - **API Security:** API routes now include CORS headers and rate-limiting placeholders to protect against abuse.
+  - **Firebase App Check:** The Firebase client is configured to use App Check, ensuring that requests to backend resources originate from the authentic application.
+  - **Performance Monitoring:** The application is set up to use Firebase Performance Monitoring and tracks Core Web Vitals to measure and improve user experience.
