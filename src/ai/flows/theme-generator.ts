@@ -1,10 +1,11 @@
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { ai, z } from '@/ai/genkit';
 import { ThemeConfigSchema } from '@/lib/theme-schema';
 
 export const ThemeGeneratorInputSchema = z.object({
-  prompt: z.string().describe('A user-provided text prompt describing the desired theme style.'),
+  prompt: z
+    .string()
+    .describe('A user-provided text prompt describing the desired theme style.'),
 });
 
 export type ThemeGeneratorInput = z.infer<typeof ThemeGeneratorInputSchema>;
@@ -30,7 +31,9 @@ User Prompt: "${prompt}"`,
     });
 
     if (!output) {
-      throw new Error('Failed to generate theme. The model did not return a valid configuration.');
+      throw new Error(
+        'Failed to generate theme. The model did not return a valid configuration.'
+      );
     }
 
     return output;

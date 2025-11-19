@@ -10,20 +10,20 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
         if (typeof window !== 'undefined') {
             return initializeFirebase();
         }
-        return null;
+        return { firebaseApp: null, auth: null, firestore: null };
     }, []);
 
     // During SSR or if services are not ready, render children without the provider.
     // The hooks will handle the loading state gracefully.
-    if (!firebaseServices) {
+    if (!firebaseServices.firebaseApp) {
         return <>{children}</>;
     }
 
     return (
         <FirebaseProvider
             firebaseApp={firebaseServices.firebaseApp}
-            auth={firebaseServices.auth}
-            firestore={firebaseServices.firestore}
+            auth={firebaseServices.auth!}
+            firestore={firebaseServices.firestore!}
         >
             {children}
         </FirebaseProvider>

@@ -1,36 +1,51 @@
 
-import { geminiPro, geminiProVision } from '@genkit-ai/google-genai';
-import { configureGenkit } from '@genkit-ai/core';
-import { firebase } from '@genkit-ai/firebase';
-import { getRemoteConfig } from 'firebase-admin/remote-config';
-import { adminApp } from '@/lib/firebase/admin';
+'use server';
 
-configureGenkit({
-  plugins: [firebase()],
-  enableTracingAndMetrics: true,
+/**
+ * @fileOverview Centralized Genkit AI configuration and initialization.
+ *
+ * This file configures a single `ai` instance for the entire application,
+ * ensuring that all necessary plugins are registered before any flows are defined.
+ * It replaces the previous dynamic `getAiInstance` model with a static,
+ * more robust configuration.
+ */
+
+import { genkit, readableFromAuthor, stringFromPart } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
+import { firebase } from '@genkit-ai/firebase';
+import { z } from 'zod';
+
+// Statically configure the `ai` instance with all required plugins.
+// This ensures that the plugins are registered once when the module is loaded.
+export const ai = genkit({
+  plugins: [
+    firebase(),
+    googleAI({
+      // You can specify the API version if needed, e.g., 'v1beta'
+      // apiVersion: 'v1beta',
+    }),
+  ],
+  // Log all traces to the console for easier debugging in development.
+  logLevel: 'debug',
+  // Enable native JS structured cloning for performance.
+  enableCloning: true,
 });
 
-async function getModelIdFromRemoteConfig(): Promise<string> {
-  try {
-    const remoteConfig = getRemoteConfig(adminApp);
-    const template = await remoteConfig.getTemplate();
-    if (template.parameters.gemini_model_id) {
-      const modelId = template.parameters.gemini_model_id.defaultValue?.value;
-      if (modelId) {
-        return modelId;
-      }
-    }
-    console.warn('gemini_model_id not found or is empty in Remote Config.');
-  } catch (error) {
-    console.error('Error fetching model from Admin Remote Config:', error);
+/**
+ * A simple helper to extract the text from a Genkit Part.
+ *
+ * @param {PartLike} part - The part to extract text from.
+ * @returns {string} The extracted text.
+ */
+export function getText(part: any): string {
+  if (part.text) {
+    return part.text;
   }
-  return 'gemini-pro';
+  if (part.content) {
+    return part.content.map(getText).join('');
+  }
+  return '';
 }
 
-export async function getAiInstance() {
-  const modelId = await getModelIdFromRemoteConfig();
-  if (modelId === 'gemini-pro') {
-    return geminiPro;
-  }
-  return geminiProVision;
-}
+// Re-export Zod for consistent usage in flows.
+export { z };
