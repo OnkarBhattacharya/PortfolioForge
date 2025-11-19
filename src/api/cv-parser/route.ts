@@ -5,6 +5,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 function getAdminApp(): App {
   if (getApps().length > 0) {
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     await saveCvDataToFirestore(userId, parsedData);
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
-    console.error('Error in cv-parser API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred during CV processing' }, { status: 500 });
+    logger.error('Error in cv-parser API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred during CV processing' }, { status: 500 });
   }
 }

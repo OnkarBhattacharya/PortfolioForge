@@ -1,0 +1,26 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images can be public, but only the user can write.
+    match /users/{userId}/profile/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024 // 5MB limit
+        && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Portfolio item assets can be public, but only the user can write.
+    match /users/{userId}/portfolio/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+    
+    // Deny all other access by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

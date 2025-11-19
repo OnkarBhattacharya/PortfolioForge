@@ -4,6 +4,7 @@ import { importGithubRepositories } from '@/ai/flows/github-importer';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { logger } from '@/lib/logger';
 
 function getAdminApp(): App {
   if (getApps().length > 0) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, importedCount: repositories.length });
     
   } catch (error: any) {
-    console.error('Error in github-importer API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
+    logger.error('Error in github-importer API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

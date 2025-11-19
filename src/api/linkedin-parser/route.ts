@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseLinkedInProfile } from '@/ai/flows/linkedin-parser';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { logger } from '@/lib/logger';
 
 function getAdminApp(): App {
   if (getApps().length > 0) {
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: parsedData });
     
   } catch (error: any) {
-    console.error('Error in linkedin-parser API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
+    logger.error('Error in linkedin-parser API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

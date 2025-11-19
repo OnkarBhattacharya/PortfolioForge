@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ThemePreview } from "@/components/theme-preview";
 import { Textarea } from "@/components/ui/textarea";
 import { ThemeConfig } from "@/lib/theme-schema";
+import { logger } from "@/lib/logger";
 
 type Theme = {
   id: string;
@@ -117,7 +118,7 @@ export default function SettingsPage() {
         description: "Your portfolio will now use the new theme.",
       });
     } catch (error) {
-      console.error("Error saving theme:", error);
+      logger.error("Error saving theme:", { error });
       toast({
         variant: "destructive",
         title: "Save Failed",
@@ -149,7 +150,7 @@ export default function SettingsPage() {
               description: `Verification process started for ${domainName}.`,
           });
       } catch (error) {
-          console.error("Error connecting domain:", error);
+          logger.error("Error connecting domain:", { error });
           toast({
               variant: "destructive",
               title: "Connection Failed",
@@ -176,7 +177,7 @@ export default function SettingsPage() {
       setGeneratedTheme(theme);
       setSelectedThemeId('custom'); // Select the new custom theme
     } catch (error) {
-      console.error("Error generating theme:", error);
+      logger.error("Error generating theme:", { error });
       toast({
         variant: "destructive",
         title: "Theme Generation Failed",

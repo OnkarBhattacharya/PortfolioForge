@@ -11,6 +11,7 @@ import {
   OAuthProvider,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 
 export default function LoginPage() {
   const { auth } = useFirebase();
@@ -22,7 +23,7 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       router.push("/admin");
     } catch (error) {
-      console.error("Error signing in with Google", error);
+      logger.error("Error signing in with Google", { error });
     }
   };
 
@@ -32,7 +33,7 @@ export default function LoginPage() {
       await signInWithPopup(auth, provider);
       router.push("/admin");
     } catch (error) {
-      console.error("Error signing in with Apple", error);
+      logger.error("Error signing in with Apple", { error });
     }
   };
 

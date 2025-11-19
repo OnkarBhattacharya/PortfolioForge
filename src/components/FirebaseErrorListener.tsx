@@ -1,8 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { logger } from '@/lib/logger';
 
 /**
  * An invisible component that listens for globally emitted 'permission-error' events.
@@ -19,7 +21,7 @@ export function FirebaseErrorListener() {
         setError(error);
       } else {
         // In production, just log the error without breaking the UI
-        console.error('Firestore Permission Error:', error.message);
+        logger.error('Firestore Permission Error:', { message: error.message });
       }
     };
 

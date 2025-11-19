@@ -1,11 +1,13 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { errorEmitter } from './error-emitter';
-import { FirestorePermissionError } from './errors';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { logger } from '@/lib/logger';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -93,7 +95,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 // Create a new user profile if it doesn't exist
                 setDoc(userRef, newUserProfile)
                   .catch((error) => {
-                    console.error("Error creating user profile:", error);
+                    logger.error("Error creating user profile:", { error });
                     const permissionError = new FirestorePermissionError({
                       path: userRef.path,
                       operation: 'create',
@@ -103,7 +105,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   });
               }
             } catch (error) {
-                 console.error("Error fetching user profile:", error);
+                 logger.error("Error fetching user profile:", { error });
                  const permissionError = new FirestorePermissionError({
                     path: userRef.path,
                     operation: 'get',
@@ -121,14 +123,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             // We don't set state here to avoid a flicker; isUserLoading remains true
             // until the new user state is confirmed by the next listener call.
           } catch (error) {
-            console.error("FirebaseProvider: Anonymous sign-in failed", error);
+            logger.error("FirebaseProvider: Anonymous sign-in failed", { error });
             // If anonymous sign-in fails, we stop loading and record the error.
             setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
           }
         }
       },
       (error) => { // Auth listener error
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
+        logger.error("FirebaseProvider: onAuthStateChanged error:", { error });
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );

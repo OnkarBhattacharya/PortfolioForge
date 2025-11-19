@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const ContactFormSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
@@ -27,6 +28,10 @@ function getAdminApp(): App {
 }
 
 export async function POST(req: NextRequest) {
+  const headers = {
+    'Access-Control-Allow-Origin': 'https://yourdomain.com',
+    'Access-Control-Allow-Methods': 'POST',
+  };
   try {
     const adminApp = getAdminApp();
     const db = getFirestore(adminApp);
@@ -35,7 +40,7 @@ export async function POST(req: NextRequest) {
     const validation = ContactFormSchema.safeParse(body);
     
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid input.', issues: validation.error.issues }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid input.', issues: validation.error.issues }, { status: 400, headers });
     }
 
     const { userId, name, email, message } = validation.data;
@@ -51,10 +56,10 @@ export async function POST(req: NextRequest) {
       read: false,
     });
     
-    return NextResponse.json({ success: true, message: "Your message has been sent successfully!" });
+    return NextResponse.json({ success: true, message: "Your message has been sent successfully!" }, { headers });
     
   } catch (error: any) {
-    console.error('Error in contact API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    logger.error('Error in contact API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500, headers });
   }
 }

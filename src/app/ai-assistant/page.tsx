@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/firebase";
 import Link from "next/link";
 import { CvDataSchema } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 const formSchema = z.object({
   profession: z.string().optional(),
@@ -72,7 +73,7 @@ export default function AiAssistantPage() {
                 }
             }
         } catch (error) {
-            console.error("Failed to parse CV data from local storage", error);
+            logger.error("Failed to parse CV data from local storage", { error });
         }
     };
     
@@ -101,7 +102,7 @@ export default function AiAssistantPage() {
       const result = await generatePortfolioContentSuggestions(values);
       setSuggestions(result);
     } catch (error) {
-      console.error("Error generating content:", error);
+      logger.error("Error generating content:", { error });
       toast({
         variant: "destructive",
         title: "Generation Failed",

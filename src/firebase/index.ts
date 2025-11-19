@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -6,12 +7,15 @@ import { Auth, getAuth, User } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { useContext } from 'react';
 import { FirebaseContext, FirebaseServicesAndUser } from './provider';
+import { getPerformance, Performance } from 'firebase/performance';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 // A structure to hold the initialized Firebase services.
 interface FirebaseServices {
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
+  performance: Performance;
 }
 
 let firebaseServices: FirebaseServices | null = null;
@@ -43,10 +47,19 @@ export function initializeFirebase(): FirebaseServices {
       );
     }
     const app = initializeApp(firebaseConfig);
+
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+        isTokenAutoRefreshEnabled: true
+      });
+    }
+
     firebaseServices = {
       firebaseApp: app,
       auth: getAuth(app),
       firestore: getFirestore(app),
+      performance: getPerformance(app),
     };
   } else {
     const app = getApp();
@@ -54,6 +67,7 @@ export function initializeFirebase(): FirebaseServices {
       firebaseApp: app,
       auth: getAuth(app),
       firestore: getFirestore(app),
+      performance: getPerformance(app),
     };
   }
   

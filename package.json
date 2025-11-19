@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -13,7 +14,9 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:e2e": "playwright test",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "predeploy": "npm run lint && npm run typecheck && npm run build",
+    "deploy:prod": "firebase deploy --only hosting"
   },
   "dependencies": {
     "@genkit-ai/ai": "^1.22.0",

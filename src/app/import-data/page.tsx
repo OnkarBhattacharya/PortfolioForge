@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { useUser } from "@/firebase";
 import Link from "next/link";
 import { CvData } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 export default function ImportDataPage() {
   const { user } = useUser();
@@ -118,7 +119,7 @@ export default function ImportDataPage() {
       });
 
     } catch (error: any) {
-      console.error(error);
+      logger.error("CV Upload Failed", { error });
       toast({
         variant: "destructive",
         title: "Upload Failed",

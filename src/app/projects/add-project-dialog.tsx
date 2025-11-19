@@ -32,6 +32,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -130,7 +131,7 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
       setShowSuggestions(true);
 
     } catch (error) {
-      console.error('Error getting suggestions:', error);
+      logger.error('Error getting suggestions:', { error });
       toast({ variant: 'destructive', title: 'Error', description: 'Could not get suggestions. Please try again.' });
     } finally {
       setIsSuggesting(false);
