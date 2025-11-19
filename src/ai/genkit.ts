@@ -8,9 +8,9 @@
  * ensuring that all necessary plugins are registered before any flows are defined.
  */
 
-import { genkit } from 'genkit';
+import { genkit, configureGenkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { firebase } from '@genkit-ai/firebase';
+import { firebase } from '@genkit-ai/firebase/plugin';
 import { z } from 'zod';
 
 // Statically configure the `ai` instance with all required plugins.
