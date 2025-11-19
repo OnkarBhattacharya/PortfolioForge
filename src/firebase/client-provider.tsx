@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -16,10 +17,15 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
         return null;
     }, []);
 
-    // During SSR or if Firebase is not yet initialized, render the layout
-    // without the provider. The children (the page) will be in a loading state.
-    if (!firebaseServices || !firebaseServices.firebaseApp) {
-        return <MainLayout>{children}</MainLayout>;
+    // During SSR or if Firebase is not yet initialized on the client,
+    // you might want to show a loading state or a skeleton layout.
+    // For simplicity, we render the MainLayout but the Firebase context will be unavailable.
+    if (!firebaseServices) {
+        return (
+            <MainLayout>
+                {children}
+            </MainLayout>
+        );
     }
 
     return (

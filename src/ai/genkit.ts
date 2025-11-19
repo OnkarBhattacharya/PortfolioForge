@@ -8,7 +8,7 @@
  * ensuring that all necessary plugins are registered before any flows are defined.
  */
 
-import { genkit, configureGenkit } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { firebase } from '@genkit-ai/firebase/plugin';
 import { z } from 'zod';
@@ -23,8 +23,8 @@ export const ai = genkit({
       // apiVersion: 'v1beta',
     }),
   ],
-  // Log all traces to the console for easier debugging in development.
-  logLevel: 'debug',
+  // Log 'warn' and 'error' messages in production. Use 'debug' for development.
+  logLevel: 'warn',
   // Enable native JS structured cloning for performance.
   enableCloning: true,
 });
