@@ -1,9 +1,10 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
-import { useFirebase } from "@/firebase/provider";
+import { useFirebase } from "@/firebase";
 import {
   GoogleAuthProvider,
   signInWithPopup,

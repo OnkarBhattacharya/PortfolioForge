@@ -1,29 +1,35 @@
 
-import { initializeApp, getApp, getApps, App, cert } from 'firebase-admin/app';
-import { config } from 'dotenv';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 
-// Load environment variables from .env file
-config();
+let adminApp: App | undefined;
 
-// This function initializes the Firebase Admin SDK using a true singleton pattern.
 export function getAdminApp(): App {
-  // If the app is already initialized, return the existing instance.
-  if (getApps().length > 0) {
-    return getApp();
+  if (adminApp) {
+    return adminApp;
   }
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
   if (!serviceAccountKey) {
-    throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. It is required for server-side operations.');
+    // This is not a user-facing error, so we log it to the server console.
+    // The API route will return a generic 500 error to the client.
+    console.error('CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set. Server-side operations will fail.');
+    throw new Error('Internal server configuration error.');
   }
 
-  try {
-    // Initialize the app and return it.
-    return initializeApp({
-      credential: cert(JSON.parse(serviceAccountKey)),
-    });
-  } catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error);
-    throw new Error(`Could not initialize Firebase Admin SDK. Please check the service account key. Original error: ${error.message}`);
+  if (getApps().length === 0) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountKey);
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } catch (error: any) {
+      console.error("Failed to parse service account key or initialize Firebase Admin SDK:", error);
+      throw new Error('Internal server configuration error.');
+    }
+  } else {
+    adminApp = getApps()[0];
   }
+
+  return adminApp!;
 }

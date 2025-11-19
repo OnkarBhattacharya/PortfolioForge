@@ -5,10 +5,6 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { getAdminApp } from '@/firebase/admin';
 
-// Initialize Firebase Admin and Firestore
-const adminApp = getAdminApp();
-const db = getFirestore(adminApp);
-
 export async function POST(req: NextRequest) {
   const { username, userId } = await req.json();
 
@@ -17,6 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const db = getFirestore(getAdminApp());
     const repositories = await importGithubRepositories({ username });
     
     if (repositories.length > 0) {
