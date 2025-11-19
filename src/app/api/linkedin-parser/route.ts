@@ -1,34 +1,29 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { parseLinkedInProfile } from '@/ai/flows/linkedin-parser';
-import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminApp } from '@/firebase/admin';
 
-// Initialize Firebase Admin SDK
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
-  } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
-  }
-}
-
-const db = admin.firestore();
+// Initialize Firebase Admin and Firestore
+const adminApp = getAdminApp();
+const db = getFirestore(adminApp);
 
 export async function POST(req: NextRequest) {
-  const { linkedInData, userId } = await req.json();
+  const { profileText, userId } = await req.json();
 
-  if (!linkedInData || !userId) {
-    return NextResponse.json({ error: 'linkedInData and userId are required' }, { status: 400 });
+  if (!profileText || !userId) {
+    return NextResponse.json({ error: 'profileText and userId are required' }, { status: 400 });
   }
 
   try {
-    const parsedData = await parseLinkedInProfile(linkedInData);
+    // 1. Call the Genkit flow to parse the LinkedIn data
+    const parsedData = await parseLinkedInProfile({ profileText });
     
+    // 2. Save the parsed data to Firestore using the Admin SDK
     const userDocRef = db.collection('users').doc(userId);
     await userDocRef.set({ ...parsedData }, { merge: true });
     
+    // 3. Return the parsed data to the client
     return NextResponse.json({ success: true, data: parsedData });
     
   } catch (error: any) {

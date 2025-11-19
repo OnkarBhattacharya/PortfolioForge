@@ -1,14 +1,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { collection, addDoc, serverTimestamp, getFirestore } from 'firebase/firestore';
-import { initializeApp, getApps } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
+import { getAdminApp } from '@/firebase/admin';
 import { z } from 'zod';
 
-if (getApps().length === 0) {
-  initializeApp(firebaseConfig);
-}
-const db = getFirestore();
+// Initialize Firebase Admin and Firestore
+const adminApp = getAdminApp();
+const db = getFirestore(adminApp);
 
 const ContactFormSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
@@ -28,14 +26,11 @@ export async function POST(req: NextRequest) {
 
     const { userId, name, email, message } = validation.data;
 
-    const messagesColRef = collection(db, 'users', userId, 'messages');
+    const messagesColRef = db.collection('users').doc(userId).collection('messages');
     
-    // Note: In a real-world scenario, you would not use addDoc from the client SDK
-    // in a public API route without strict authentication and security rules.
-    // We are simulating a secure backend function here. The security rules MUST
-    // be configured to deny write access to this collection from the public.
-    // For this project, we assume a Firebase Function would handle this.
-    await addDoc(messagesColRef, {
+    // Using the Admin SDK, which bypasses security rules.
+    // This is appropriate for a server-side endpoint that is meant to have privileged write access.
+    await messagesColRef.add({
       name,
       email,
       message,
