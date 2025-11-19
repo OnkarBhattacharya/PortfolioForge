@@ -1,12 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
-import { getAdminApp } from '@/firebase/admin';
+import { serverTimestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
-
-// Initialize Firebase Admin and Firestore
-const adminApp = getAdminApp();
-const db = getFirestore(adminApp);
+import { getAdminFirestore } from '@/firebase/admin';
 
 const ContactFormSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
@@ -17,6 +13,8 @@ const ContactFormSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getAdminFirestore();
+
     const body = await req.json();
     const validation = ContactFormSchema.safeParse(body);
     
@@ -28,18 +26,15 @@ export async function POST(req: NextRequest) {
 
     const messagesColRef = db.collection('users').doc(userId).collection('messages');
     
-    // Using the Admin SDK, which bypasses security rules.
-    // This is appropriate for a server-side endpoint that is meant to have privileged write access.
     await messagesColRef.add({
+      userProfileId: userId,
       name,
       email,
       message,
       createdAt: serverTimestamp(),
-      read: false, // To track unread messages
+      read: false,
     });
     
-    // In a real app, you would also trigger an email notification here.
-
     return NextResponse.json({ success: true, message: "Your message has been sent successfully!" });
     
   } catch (error: any) {
