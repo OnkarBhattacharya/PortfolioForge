@@ -47,6 +47,7 @@ Our platform is built on a robust, scalable, and secure tech stack, engineered f
 ### Architectural Overview
 
 - `src/app/`: Next.js App Router for all application routes, leveraging server-side rendering for performance.
+- `src/components/providers.tsx`: The primary **Client Component boundary**, responsible for initializing all client-side contexts, including the `FirebaseClientProvider`, ensuring that Firebase is available to the entire component tree.
 - `src/firebase/`: A clean, modular Firebase architecture with custom hooks (`useUser`, `useCollection`) for efficient and secure data handling.
 - `src/ai/`: Contains all Genkit flows, encapsulating the business logic for our AI-powered features like the CV parser, data importers, and content assistant.
 - `src/components/`: A library of reusable, production-quality React components built with ShadCN.
@@ -81,7 +82,7 @@ PortfolioForge is engineered with a security-first mindset, fully aligning with 
 - **Description:** A complete and secure user management system that provides a seamless experience for both guests and registered users. New visitors are automatically signed in with a temporary, anonymous "guest" session, allowing them to explore the platform's features in a read-only mode without commitment. When a user decides to register, they can sign in with their Google or Apple account. Firebase automatically links their new, permanent account with their previous guest session, preserving any work they may have started.
 - **Implementation:**
   - **Firebase Authentication:** Handles all user session management and security via Google, Apple, and Anonymous providers.
-  - **Seamless Guest Mode:** The `FirebaseProvider` at `src/firebase/provider.tsx` automatically detects if a visitor has an active session. If not, it silently calls `signInAnonymously()` to create a guest session in the background.
+  - **Seamless Guest Mode:** The `FirebaseProvider` in `src/firebase/provider.tsx` automatically detects if a visitor has an active session. If not, it silently calls `signInAnonymously()` to create a guest session in the background.
   - **Simplified Login Flow:** The `/login` page provides direct options to "Sign in with Google" and "Sign in with Apple" for users who wish to create a permanent account.
   - **Intelligent Profile Creation:** The `FirebaseProvider` ensures that a user profile is created in Firestore only when a user signs in with a permanent, non-anonymous account (Google or Apple), keeping the database clean.
   - **Custom Hooks:** The `useUser()` and `useAuth()` hooks provide easy, reactive access to the current user's state, whether they are a guest or a registered user.

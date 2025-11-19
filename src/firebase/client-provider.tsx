@@ -3,6 +3,8 @@
 import React, { useMemo } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase/index';
+import { MainLayout } from '@/components/main-layout';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
     const firebaseServices = useMemo(() => {
@@ -14,10 +16,10 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
         return null;
     }, []);
 
-    // During SSR or if Firebase is not yet initialized, you might want to show a loader
-    // or just render children. Here we render children to avoid layout shifts.
+    // During SSR or if Firebase is not yet initialized, render the layout
+    // without the provider. The children (the page) will be in a loading state.
     if (!firebaseServices || !firebaseServices.firebaseApp) {
-        return <>{children}</>;
+        return <MainLayout>{children}</MainLayout>;
     }
 
     return (
@@ -26,7 +28,10 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
             auth={firebaseServices.auth}
             firestore={firebaseServices.firestore}
         >
-            {children}
+            <MainLayout>
+                {children}
+            </MainLayout>
+            <FirebaseErrorListener />
         </FirebaseProvider>
     );
 }

@@ -127,3 +127,17 @@ By implementing these changes, the project is more stable, maintainable, and sec
 - **Finding (Informational)**: The default values for the Firebase Remote Config parameter `genkit_model` are not stored within the project's codebase.
 - **Recommendation**: For better transparency and disaster recovery, consider documenting the default production Remote Config values in a project documentation file (e.g., in the `docs` folder).
 - **Status**: **Recommendation Noted**.
+
+## 8. Firebase Provider Architecture Audit
+
+- **Date of Audit**: November 8, 2025
+- **Auditor**: Studio AI Agent
+
+### 8.1. Frontend Architecture
+
+- **Finding (Critical)**: The application was experiencing a recurring `useFirebase must be used within a FirebaseProvider` error. The root cause was an incorrect component architecture where Client Components (`MainLayout`) were attempting to access React context before the client-side provider (`FirebaseClientProvider`) had been initialized. This violated the rules of the Next.js App Router.
+- **Recommendation**: Implement the standard, officially recommended pattern for client-side providers. This involved:
+    1. Creating a single client boundary component (`src/components/providers.tsx`) to manage all client-side contexts.
+    2. Modifying the root `layout.tsx` (a Server Component) to delegate its children to this new `Providers` component.
+    3. Ensuring `MainLayout` and all other client components were rendered as children of `Providers`, thus guaranteeing access to the initialized context.
+- **Status**: **Resolved**.

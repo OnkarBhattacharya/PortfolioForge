@@ -12,22 +12,11 @@ import { UserNav } from "@/components/user-nav";
 import { SidebarNav } from "./sidebar-nav";
 import { Logo } from "./logo";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUser } from "@/firebase";
-import { Loader2 } from "lucide-react";
 import { Footer } from "./footer";
 
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
-  const { isUserLoading } = useUser();
-
-  if (isUserLoading) {
-    return (
-        <div className="flex h-screen w-screen items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
-  }
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
