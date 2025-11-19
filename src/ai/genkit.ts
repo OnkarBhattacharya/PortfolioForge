@@ -10,7 +10,7 @@
 
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { firebase } from '@genkit-ai/firebase/plugin';
+import { firebase } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
 // Statically configure the `ai` instance with all required plugins.

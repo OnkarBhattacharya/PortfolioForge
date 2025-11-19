@@ -3,7 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { importGithubRepositories } from '@/ai/flows/github-importer';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { getAdminApp } from '@/firebase/admin';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+
+function getAdminApp(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
+  }
+  
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountKey) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not set.');
+  }
+
+  return initializeApp({
+    credential: cert(JSON.parse(serviceAccountKey)),
+  });
+}
 
 export async function POST(req: NextRequest) {
   const { username, userId } = await req.json();

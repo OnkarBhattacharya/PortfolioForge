@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
-import { getAdminApp } from '@/firebase/admin';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { z } from 'zod';
 
 const ContactFormSchema = z.object({
@@ -11,9 +11,23 @@ const ContactFormSchema = z.object({
   message: z.string().min(1, "Message is required."),
 });
 
+function getAdminApp(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
+  }
+  
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountKey) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is not set.');
+  }
+
+  return initializeApp({
+    credential: cert(JSON.parse(serviceAccountKey)),
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // Initialize Firebase Admin and Firestore inside the handler
     const adminApp = getAdminApp();
     const db = getFirestore(adminApp);
 
