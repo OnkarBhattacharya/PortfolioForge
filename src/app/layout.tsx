@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
-import { MainLayout } from '@/components/main-layout';
 
 export const metadata: Metadata = {
   title: 'PortfolioForge',
@@ -23,11 +22,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased')}>
-        <Providers>
-          <MainLayout>
-            {children}
-          </MainLayout>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

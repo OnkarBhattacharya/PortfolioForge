@@ -106,5 +106,17 @@ The `firestore.structure` section in `backend.json` maps our entities to specifi
 The `auth` section defines the sign-in methods enabled for the application.
 
 - **Providers**:
-    - `"password"`: Standard email and password authentication.
-    - `"anonymous"`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
+    - `google.com`: Federated sign-in with Google.
+    - `apple.com`: Federated sign-in with Apple.
+    - `anonymous`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
+
+---
+
+## 4. Server-Side Architecture
+
+For operations that require administrative privileges (like creating portfolio items on behalf of a user from an API route), the application uses the **Firebase Admin SDK**.
+
+### `src/firebase/admin.ts`
+- **Purpose**: This file provides a critical function, `getAdminApp()`, which ensures that the Firebase Admin SDK is initialized only **once** per server instance (a singleton pattern). This prevents common errors related to re-initialization in a serverless environment like Next.js.
+- **Authentication**: It securely initializes the Admin SDK using a service account key stored in the `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable.
+- **Usage**: All server-side code (primarily API routes in `src/app/api/`) uses this function to get a trusted Firestore instance for performing database operations that should not be exposed to the client.

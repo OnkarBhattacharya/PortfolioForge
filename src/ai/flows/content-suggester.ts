@@ -1,4 +1,12 @@
 
+'use server';
+/**
+ * @fileOverview An AI flow for improving user-written text content.
+ *
+ * - contentSuggesterFlow - A flow that provides suggestions to improve text.
+ * - ContentSuggesterInputSchema - The input type for the flow.
+ * - ContentSuggesterOutputSchema - The output type for the flow.
+ */
 import { ai, z } from '@/ai/genkit';
 
 export const ContentSuggesterInputSchema = z.object({
@@ -28,6 +36,10 @@ export const contentSuggesterFlow = ai.defineFlow(
     outputSchema: ContentSuggesterOutputSchema,
   },
   async ({ text, contentType }) => {
+    if (!text.trim()) {
+      return { suggestions: [] };
+    }
+    
     const { output } = await ai.generate({
       prompt: `You are an expert copywriter and editor. Your task is to provide a list of suggestions to improve the user's text. The suggestions should be constructive, and a few of them should be complete rewrites in different tones (e.g. more professional, more casual, more impactful). Do not return your own preamble, just the suggestions.
 

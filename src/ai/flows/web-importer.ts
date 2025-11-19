@@ -71,7 +71,7 @@ const webImporterFlow = ai.defineFlow(
     // Parse the HTML and extract meaningful text content
     const root = parse(rawHtml);
     // Remove script and style tags to clean up the content
-    root.querySelectorAll('script, style').forEach(node => node.remove());
+    root.querySelectorAll('script, style, nav, footer, header, aside').forEach(node => node.remove());
     const pageAsText = root.textContent || '';
 
     // Truncate content to a reasonable limit to avoid excessive token usage

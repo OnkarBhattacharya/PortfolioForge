@@ -234,7 +234,8 @@
   },
   "auth": {
     "providers": [
-      "password",
+      "google.com",
+      "apple.com",
       "anonymous"
     ]
   },

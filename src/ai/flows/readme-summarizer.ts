@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
 
     Your output MUST be a single string containing only the summary. Do not include any other text, comments, or code block fences.`,
     config: {
-        temperature: 0.4, // Slightly higher for more creative summaries
+        temperature: 0.4, // Slightly lower for more factual summaries
     }
 });
 

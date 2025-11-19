@@ -50,6 +50,10 @@ const linkedInParserFlow = ai.defineFlow(
     outputSchema: CvDataSchema,
   },
   async ({ profileText }) => {
+    if (!profileText.trim()) {
+        throw new Error("Input profile text is empty. Please paste your LinkedIn profile data.");
+    }
+
     const { output } = await prompt({ profileText });
     if (!output) {
       throw new Error('Failed to parse LinkedIn profile. The model did not return valid data.');
