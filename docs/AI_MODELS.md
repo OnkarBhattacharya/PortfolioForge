@@ -82,7 +82,14 @@ This is the core data aggregation suite of the platform, designed to eliminate t
 - **API Route**: `src/app/api/ai-powered-content-suggestions/route.ts`
 - **Technical Flow**: The prompt has been significantly improved to guide the AI in generating more relevant and higher-quality suggestions for improving user-written content.
 
-### 2. Text Translation
+### 2. AI Theme Generator
+
+- **Purpose**: Allows users to generate a unique color theme for their portfolio by providing a simple text prompt (e.g., "a calming ocean breeze").
+- **Flow File**: `src/ai/flows/theme-generator.ts`
+- **API Route**: `src/app/api/theme-generator/route.ts`
+- **Technical Flow**: This flow takes a user's text prompt and uses the AI model to generate a palette of five distinct, harmonious colors. The prompt is engineered to ensure the model returns the colors in a specific JSON format, which is then used to dynamically style the user's portfolio.
+
+### 3. Text Translation
 
 - **Purpose**: To translate user-provided text into different languages.
 - **Flow File**: `src/ai/flows/translator.ts`

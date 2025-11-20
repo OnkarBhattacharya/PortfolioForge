@@ -10,6 +10,13 @@
 - AI-Powered Content Suggestions: Utilize a tool that offers suggestions for portfolio descriptions and summaries based on parsed data, improving overall presentation.
 - Custom Domain Support: Allow users to connect a custom domain to their portfolio for a professional online presence.
 
+## Technology Stack:
+
+- **Frontend**: Next.js with App Router, React, TypeScript, Tailwind CSS, ShadCN UI
+- **Backend**: Next.js API Routes, Firebase (Authentication, Firestore, Storage), Genkit
+- **AI**: Genkit AI, Google AI (Gemini Pro)
+- **Deployment**: Firebase Hosting
+
 ## Style Guidelines:
 
 - Primary color: Deep Indigo (#3F51B5) to convey professionalism and innovation.
