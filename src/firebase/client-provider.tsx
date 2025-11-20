@@ -7,25 +7,26 @@ import { initializeFirebase } from '@/firebase/index';
 import { MainLayout } from '@/components/main-layout';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
+/**
+ * This is the primary client-side boundary for Firebase.
+ * It ensures that Firebase is initialized only once on the client and
+ * provides the necessary context to all children, including the MainLayout.
+ */
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
+    // Memoize Firebase initialization to ensure it runs only once.
     const firebaseServices = useMemo(() => {
-        // Ensure this only runs on the client
         if (typeof window !== 'undefined') {
             return initializeFirebase();
         }
-        // Return null on the server to avoid trying to initialize Firebase
+        // On the server, we return null. The provider will handle this gracefully.
         return null;
     }, []);
 
-    // During SSR or if Firebase is not yet initialized on the client,
-    // you might want to show a loading state or a skeleton layout.
-    // For simplicity, we render the MainLayout but the Firebase context will be unavailable.
+    // During SSR or before Firebase is initialized, we render nothing.
+    // The browser will wait for the client-side render to show the UI.
+    // This prevents any component from trying to access Firebase context prematurely.
     if (!firebaseServices) {
-        return (
-            <MainLayout>
-                {children}
-            </MainLayout>
-        );
+        return null; 
     }
 
     return (

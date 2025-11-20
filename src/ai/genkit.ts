@@ -10,21 +10,19 @@
 
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { firebase } from '@genkit-ai/firebase';
+import { firebasePlugin } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
 // Statically configure the `ai` instance with all required plugins.
 // This ensures that the plugins are registered once when the module is loaded.
 export const ai = genkit({
   plugins: [
-    firebase(),
+    firebasePlugin(),
     googleAI({
       // You can specify the API version if needed, e.g., 'v1beta'
       // apiVersion: 'v1beta',
     }),
   ],
-  // Log 'warn' and 'error' messages in production. Use 'debug' for development.
-  logLevel: 'warn',
   // Enable native JS structured cloning for performance.
   enableCloning: true,
 });
