@@ -89,7 +89,7 @@ The `firestore.structure` section in `backend.json` maps our entities to specifi
 
 ### `/users/{userId}/portfolioItems/{itemId}`
 - **Schema**: `PortfolioItem`
-- **Description**: This is a **sub-collection** under each user document. It stores all the portfolio items belonging to that specific user. This structure is efficient and secure, as it allows us to query for a single user's items without scanning a global collection.
+- **Description**: This is a **sub-collection** under each user document. It stores all the portfolio items belonging to that specific user. This structure is efficient and secure, as it allows us to query for a single user's items without scanning a global collection. Our AI-powered importers for GitHub and web URLs directly populate this collection.
 
 ### `/users/{userId}/messages/{messageId}`
 - **Schema**: `Message`

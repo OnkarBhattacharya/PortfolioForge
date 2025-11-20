@@ -13,3 +13,6 @@ vpc:
 env:
   - variable: NODE_ENV
     value: "production"
+
+build:
+  run: "npm run build"

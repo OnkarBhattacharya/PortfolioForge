@@ -31,13 +31,6 @@ const nextConfig = {
       },
     ],
   },
-  // The 'allowedDevOrigins' property helps with CORS issues in development.
-  // It is a top-level property in this Next.js version.
-  allowedDevOrigins: isDev
-    ? [
-        'https://6000-firebase-studio-1761648462474.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev',
-      ]
-    : [],
   webpack: (config) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
