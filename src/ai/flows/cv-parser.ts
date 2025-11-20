@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview A multi-modal AI flow for parsing a user's CV (PDF or image).
  *

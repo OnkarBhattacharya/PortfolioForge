@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview An AI flow for parsing raw text from a LinkedIn profile into structured CvData.
  *

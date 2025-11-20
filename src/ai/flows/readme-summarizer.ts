@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview An AI flow for summarizing the content of a GitHub README file.
  *

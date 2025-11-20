@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview An AI flow for translating text into different languages.
  *

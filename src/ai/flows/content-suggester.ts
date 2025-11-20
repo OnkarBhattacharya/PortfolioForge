@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview An AI flow for improving user-written text content.
  *

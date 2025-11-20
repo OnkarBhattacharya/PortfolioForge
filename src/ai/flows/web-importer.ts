@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview A Genkit flow for importing content from a URL into a portfolio item.
  *

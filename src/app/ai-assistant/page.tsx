@@ -22,10 +22,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  generatePortfolioContentSuggestions,
-  PortfolioContentSuggestionsOutput,
-} from "@/ai/flows/ai-powered-content-suggestions";
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles, KeyRound } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,7 +42,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function AiAssistantPage() {
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<PortfolioContentSuggestionsOutput | null>(null);
+  const [suggestions, setSuggestions] = useState<any | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
   const isReadOnly = !user || user.isAnonymous;
@@ -99,7 +95,19 @@ export default function AiAssistantPage() {
     setLoading(true);
     setSuggestions(null);
     try {
-      const result = await generatePortfolioContentSuggestions(values);
+      const response = await fetch("/api/ai/ai-powered-content-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate suggestions");
+      }
+
+      const result = await response.json();
       setSuggestions(result);
     } catch (error) {
       logger.error("Error generating content:", { error });

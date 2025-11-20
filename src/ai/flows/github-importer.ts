@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview A Genkit flow for importing a user's public GitHub repositories.
  * It now includes AI-powered summarization of README files for project descriptions.

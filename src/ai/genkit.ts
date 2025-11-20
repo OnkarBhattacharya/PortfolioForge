@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview Centralized Genkit AI configuration and initialization.
  *
@@ -10,21 +8,21 @@
 
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { firebasePlugin } from '@genkit-ai/firebase';
+import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { z } from 'zod';
+
+// Enable Firebase telemetry for observability.
+enableFirebaseTelemetry();
 
 // Statically configure the `ai` instance with all required plugins.
 // This ensures that the plugins are registered once when the module is loaded.
 export const ai = genkit({
   plugins: [
-    firebasePlugin(),
     googleAI({
       // You can specify the API version if needed, e.g., 'v1beta'
       // apiVersion: 'v1beta',
     }),
   ],
-  // Enable native JS structured cloning for performance.
-  enableCloning: true,
 });
 
 // Re-export Zod for consistent usage in flows.
