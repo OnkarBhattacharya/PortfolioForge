@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '../../components/ui/card';
 import {
   Table,
   TableBody,
@@ -15,9 +15,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+} from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
+import { useCollection, useFirestore, useMemoFirebase } from '../../firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
@@ -72,8 +72,7 @@ export default function AdminDashboardPage() {
               <TableBody>
                 {users?.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>                    <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={user.subscriptionTier === 'pro' ? 'default' : 'secondary'}>
                         {user.subscriptionTier || 'free'}

@@ -125,7 +125,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           } catch (error) {
             logger.error("FirebaseProvider: Anonymous sign-in failed", { error });
             // If anonymous sign-in fails, we stop loading and record the error.
-            setUserAuthState({ user: null, isUserLoading: false, userError: error as Error });
+            const signInError = error instanceof Error ? error : new Error('Anonymous sign-in failed');
+            setUserAuthState({ user: null, isUserLoading: false, userError: signInError });
           }
         }
       },
@@ -158,11 +159,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   );
 };
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (T & {__memo?: boolean}) {
-  const memoized = useMemo(factory, deps);
-  
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as T & {__memo?: boolean}).__memo = true;
-  
-  return memoized;
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  // This hook is a simple wrapper around useMemo to provide a consistent API for memoizing
+  // Firebase-related objects, like query references. This helps prevent re-renders.
+  return useMemo(factory, deps);
 }

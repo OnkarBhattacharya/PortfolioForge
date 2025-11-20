@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useFirestore } from '../../firebase';
 import { doc } from 'firebase/firestore';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
