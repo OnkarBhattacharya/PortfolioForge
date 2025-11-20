@@ -1,10 +1,8 @@
 
-import type { NextConfig } from 'next';
-import type { Configuration } from 'webpack';
-
+/** @type {import('next').NextConfig} */
 const isDev = process.env.NODE_ENV === 'development';
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -40,7 +38,7 @@ const nextConfig: NextConfig = {
         'https://6000-firebase-studio-1761648462474.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev',
       ]
     : [],
-  webpack: (config: Configuration) => {
+  webpack: (config) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
       /Critical dependency: the request of a dependency is an expression/,
@@ -50,4 +48,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
