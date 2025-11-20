@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { serverTimestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getAdminFirestore } from '@/firebase/admin';
+import { logger } from '@/lib/logger';
 
 const ContactFormSchema = z.object({
   userId: z.string().min(1, "User ID is required."),
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: "Your message has been sent successfully!" });
     
   } catch (error: any) {
-    console.error('Error in contact API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    logger.error('Error in contact API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }

@@ -3,16 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { importGithubRepositories } from '@/ai/flows/github-importer';
 import { getAdminFirestore } from '@/firebase/admin';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
-  const { username, userId } = await req.json();
-
-  if (!username || !userId) {
-    return NextResponse.json({ error: 'Username and userId are required' }, { status: 400 });
-  }
-
   try {
     const db = getAdminFirestore();
+    const { username, userId } = await req.json();
+
+    if (!username || !userId) {
+      return NextResponse.json({ error: 'Username and userId are required' }, { status: 400 });
+    }
+    
     const repositories = await importGithubRepositories({ username });
     
     if (repositories.length > 0) {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, importedCount: repositories.length });
     
   } catch (error: any) {
-    console.error('Error in github-importer API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
+    logger.error('Error in github-importer API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

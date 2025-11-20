@@ -4,6 +4,7 @@ import { parseCv } from '@/ai/flows/cv-parser';
 import { getAdminFirestore } from '@/firebase/admin';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
   const db = getAdminFirestore();
@@ -13,18 +14,19 @@ export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<type
 };
 
 export async function POST(req: NextRequest) {
-  const { cvFile, userId } = await req.json();
-
-  if (!cvFile || !userId) {
-    return NextResponse.json({ error: 'cvFile (as data URI) and userId are required' }, { status: 400 });
-  }
-
   try {
+    const { cvFile, userId } = await req.json();
+
+    if (!cvFile || !userId) {
+      return NextResponse.json({ error: 'cvFile (as data URI) and userId are required' }, { status: 400 });
+    }
+
     const parsedData = await parseCv({ cvFile });
     await saveCvDataToFirestore(userId, parsedData);
     return NextResponse.json({ success: true, data: parsedData });
-  } catch (error: any) {
-    console.error('Error in cv-parser API:', error);
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred during CV processing' }, { status: 500 });
+  } catch (error: any)
+   {
+    logger.error('Error in cv-parser API:', { error: error.message, stack: error.stack });
+    return NextResponse.json({ error: 'An unexpected error occurred during CV processing' }, { status: 500 });
   }
 }

@@ -14,10 +14,7 @@
       "**/node_modules/**"
     ],
     "frameworksBackend": {
-      "region": "us-central1",
-      "run": [
-        "npm run start"
-      ]
+      "region": "us-central1"
     }
   }
 }
