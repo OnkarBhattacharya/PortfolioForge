@@ -1,6 +1,7 @@
 import {config} from 'dotenv';
 config();
 
+import '@genkit-ai/firebase/plugin';
 import './flows/ai-powered-content-suggestions.ts';
 import './flows/cv-parser.ts';
 import './flows/github-importer.ts';
