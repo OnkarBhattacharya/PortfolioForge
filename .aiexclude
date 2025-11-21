@@ -1,0 +1,17 @@
+# Exclude build outputs and dependencies
+/node_modules
+/.next/
+/out/
+/build
+
+# Exclude local Firebase configuration
+.firebase/
+
+# Exclude sensitive information
+.env
+.env.local
+
+# Exclude IDE and editor directories
+.idea/
+.vscode/
+.idx/
