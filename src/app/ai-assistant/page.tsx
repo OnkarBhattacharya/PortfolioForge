@@ -4,7 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../components/ui/button";
 import {
   Form,
   FormControl,
@@ -13,23 +13,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../../components/ui/form";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+} from "../../components/ui/card";
+import { Textarea } from "../../components/ui/textarea";
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles, KeyRound } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/firebase";
+import { Skeleton } from "../../components/ui/skeleton";
+import { useToast } from "../../hooks/use-toast";
+import { useUser } from "../../firebase";
 import Link from "next/link";
-import { CvDataSchema } from "@/lib/types";
-import { logger } from "@/lib/logger";
+import { CvDataSchema } from "../../lib/types";
+import { logger } from "../../lib/logger";
 
 const formSchema = z.object({
   profession: z.string().optional(),
