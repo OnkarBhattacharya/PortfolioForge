@@ -1,57 +1,92 @@
-# PortfolioForge: The Intelligent Portfolio Platform
 
-**Build a stunning, AI-powered portfolio in minutes, not hours.** PortfolioForge leverages cutting-edge AI to automate the tedious parts of portfolio creation, allowing you to focus on what matters: showcasing your professional story.
+# PortfolioForge: The Intelligent Portfolio Platform for Every Professional
 
-## Live Demo
+**PortfolioForge** is a dynamic and AI-powered open-source platform that enables users to create, customize, and deploy professional portfolios with ease. This platform is designed for developers, designers, artists, and other professionals who want to showcase their work in a polished and engaging format.
 
-Check out the live demo of PortfolioForge: [https://studio-3849653404-e5627.web.app](https://studio-3849653404-e5627.web.app)
+## Key Features
 
-## Features
+*   **AI-Powered Content Suggestions:** Get intelligent recommendations for your portfolio content.
+*   **AI Theme Generation:** Describe the style you want, and our AI will create a unique theme for you. Try things like "a minimalist theme with a touch of neon" or "a professional theme for a photographer."
+*   **Multiple Data Import Options:** Import your data from various sources like LinkedIn, GitHub, and CV files.
+*   **Customizable Themes:** Choose from a variety of themes to personalize your portfolio.
+*   **Dynamic Portfolio Generation:** Your portfolio is dynamically generated based on your user ID.
 
-| Feature                 | Description                                                                                                                                                                                                                                                                                                                                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Multi-Source AI Data Import** | Instantly populate your portfolio by uploading a CV (PDF or image), pasting raw text from your LinkedIn profile, connecting your GitHub account to import repos (with AI-generated summaries), or importing content from any URL (blog posts, articles).                                                                                                                                     |
-| **AI Content Co-pilot**    | Overcome writer's block with AI-generated suggestions for headlines, summaries, and project descriptions tailored to your profession.                                                                                                                                                                                                                                                         |
-| **AI Theme Generator**     | Generate a unique color theme for your portfolio from a simple text prompt (e.g., "a calming ocean breeze").                                                                                                                                                                                                                                                                                  |
-| **Dynamic Theming**        | Choose from a range of professionally designed, structurally distinct themes to radically change the look and feel of your public portfolio.                                                                                                                                                                                                                                               |
-| **Secure & Professional**  | Custom domain support, a secure contact form on your public portfolio, and a role-based admin panel for platform management.                                                                                                                                                                                                                                                                   |
-| **Built for Compliance**   | Engineered with a security-first mindset, a.                                                                                                                                                                                                                                                                 |
+## Tech Stack
 
-## Technology Stack
+PortfolioForge is built with a modern tech stack that includes:
 
-- **Framework**: Next.js (App Router) with React Server Components.
-- **Backend & Database**: Firebase (Firestore, Authentication, Storage).
-- **Deployment**: Firebase Hosting.
-- **Generative AI**: Google's Genkit framework with Gemini models.
-- **UI & Styling**: ShadCN UI and Tailwind CSS.
-- **Testing**: Vitest, React Testing Library, and Playwright for end-to-end testing.
+*   **[Next.js](https://nextjs.org/):** A React framework for building server-rendered applications.
+*   **[Firebase](https://firebase.google.com/):** A comprehensive platform for building web and mobile applications.
+*   **[Genkit](https://firebase.google.com/docs/genkit):** A generative AI framework for building AI-powered features.
+*   **[Tailwind CSS](https://tailwindcss.com/):** A utility-first CSS framework for rapid UI development.
+*   **[shadcn/ui](https://ui.shadcn.com/):** A collection of re-usable components for building modern UIs.
 
 ## Getting Started
 
-To get a local copy up and running, follow these simple steps.
-
 ### Prerequisites
 
-- Node.js (v18 or later)
-- npm
+*   [Node.js](https://nodejs.org/en) (v20 or later)
+*   [pnpm](https://pnpm.io/)
 
 ### Installation
 
-1.  Fork the repository.
-2.  Clone the fork:
-    ```sh
-    git clone https://github.com/your_username/PortfolioForge.git
-    ```
-3.  Install NPM packages:
-    ```sh
-    npm install
-    ```
-4.  Set up your environment variables by creating a `.env.local` file and adding the necessary Firebase configuration.
-5.  Run the development server:
-    ```sh
-    npm run dev
+1.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/your-username/portfolioforge.git
     ```
 
-## License
+2.  Install the dependencies:
 
-Distributed under the MIT License. See `LICENSE` for more information.
+    ```bash
+    pnpm install
+    ```
+
+3.  Set up your environment variables. Create a `.env.local` file in the root of your project and add the following:
+
+    ```bash
+    NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-auth-domain"
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+    NEXT_PUBLIC_FIREBASE_APP_ID="your-app-id"
+    ```
+
+    You can find these values in your Firebase project settings.
+
+### Running the Development Server
+
+```bash
+pnpm dev
+```
+
+## Deployment
+
+PortfolioForge can be deployed to any platform that supports Next.js applications. For easy deployment, we recommend using [Vercel](httpshttps://vercel.com/) or [Firebase App Hosting](https://firebase.google.com/docs/app-hosting).
+
+### Deploying with Firebase App Hosting
+
+1.  Install the Firebase CLI:
+
+    ```bash
+    npm install -g firebase-tools
+    ```
+
+2.  Log in to Firebase:
+
+    ```bash
+    firebase login
+    ```
+
+3.  Initialize Firebase in your project:
+
+    ```bash
+    firebase init
+    ```
+
+4.  Deploy your application:
+
+    ```bash
+    firebase deploy --only hosting
+    ```
