@@ -27,6 +27,7 @@ export type UserProfile = {
   githubUrl?: string;
   themeId?: string;
   customTheme?: ThemeConfig;
+  subscriptionTier?: 'free' | 'pro' | 'studio';
 } & Partial<CvData>;
 
 export type PortfolioItem = {

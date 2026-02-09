@@ -1,5 +1,6 @@
 import { initializeApp, getApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getAuth, Auth } from 'firebase-admin/auth';
 
 const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
@@ -32,4 +33,14 @@ function getAdminApp(): App {
 export function getAdminFirestore(): Firestore {
     const app = getAdminApp();
     return getFirestore(app);
+}
+
+/**
+ * A robust singleton for the Admin Auth instance.
+ *
+ * @returns {Auth} The initialized Admin Auth instance.
+ */
+export function getAdminAuth(): Auth {
+    const app = getAdminApp();
+    return getAuth(app);
 }

@@ -14,9 +14,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URL and userId are required' }, { status: 400 });
     }
 
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data() || {};
+    const subscriptionTier = userData.subscriptionTier || 'free';
+
+    const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
+    const existingItems = await portfolioItemsRef.get();
+    const existingCount = existingItems.size;
+    const maxFreeItems = 3;
+
+    if (subscriptionTier === 'free' && existingCount >= maxFreeItems) {
+      return NextResponse.json({ error: 'Free plan limit reached.' }, { status: 403 });
+    }
+
     const importData = await importFromUrl({ url });
         
-    const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
     const newItemId = uuidv4();
     const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
 
@@ -29,6 +41,7 @@ export async function POST(req: NextRequest) {
         itemUrl: url,
         tags: importData.tags,
         imageId,
+        itemIndex: existingCount,
     });
     
     return NextResponse.json({ success: true, name: importData.name });

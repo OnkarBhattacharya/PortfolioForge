@@ -16,14 +16,16 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import Link from "next/link";
-import { CvData } from "@/lib/types";
 import { logger } from "@/lib/logger";
+import { collection, doc, query } from "firebase/firestore";
 
 export default function ImportDataPage() {
   const { user } = useUser();
   const isReadOnly = !user || user.isAnonymous;
+  const firestore = useFirestore();
+  const maxFreeItems = 3;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -43,6 +45,24 @@ export default function ImportDataPage() {
 
 
   const { toast } = useToast();
+  
+  const itemsQuery = useMemoFirebase(() => {
+    if (isReadOnly || !user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'portfolioItems'));
+  }, [firestore, user, isReadOnly]);
+
+  const { data: items } = useCollection<{ id: string }>(itemsQuery);
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (isReadOnly || !user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user, isReadOnly]);
+
+  const { data: userProfile } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
+
+  const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
+  const itemCount = items?.length || 0;
+  const isFreeLimitReached = !isPro && !isReadOnly && itemCount >= maxFreeItems;
 
   useEffect(() => {
     if (localStorage.getItem("cvUploadSuccess") === "true") {
@@ -185,6 +205,14 @@ export default function ImportDataPage() {
       });
       return;
     }
+    if (isFreeLimitReached) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: "Free plans are limited to 3 portfolio items. Upgrade to import more projects.",
+      });
+      return;
+    }
     if (!githubUsername) {
       toast({
         variant: "destructive",
@@ -232,6 +260,14 @@ export default function ImportDataPage() {
         variant: "destructive",
         title: "Authentication Required",
         description: "Please log in or sign up to import from a URL.",
+      });
+      return;
+    }
+    if (isFreeLimitReached) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: "Free plans are limited to 3 portfolio items. Upgrade to import more projects.",
       });
       return;
     }
@@ -298,6 +334,25 @@ export default function ImportDataPage() {
                     </CardDescription>
                 </div>
             </CardHeader>
+        </Card>
+      )}
+      
+      {isFreeLimitReached && (
+        <Card className="border-primary/40 bg-primary/5">
+            <CardHeader className="flex flex-row items-center gap-4">
+                <KeyRound className="h-8 w-8 text-primary" />
+                <div>
+                    <CardTitle className="font-headline">Free plan limit reached</CardTitle>
+                    <CardDescription>
+                        Upgrade to import more portfolio items from GitHub or URLs.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/billing">Upgrade to Pro</Link>
+              </Button>
+            </CardContent>
         </Card>
       )}
 
@@ -370,7 +425,7 @@ export default function ImportDataPage() {
           <CardContent className="space-y-4">
             <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
               <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
-              <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
+            <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
                 {isUploading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -458,7 +513,7 @@ export default function ImportDataPage() {
               <DialogTrigger asChild>
                 <Button
                   className="w-full bg-foreground text-background hover:bg-foreground/90"
-                  disabled={isReadOnly}
+                  disabled={isReadOnly || isFreeLimitReached}
                 >
                   <Github className="mr-2 h-4 w-4" /> Import from GitHub
                 </Button>
@@ -513,7 +568,7 @@ export default function ImportDataPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  disabled={isReadOnly}
+                  disabled={isReadOnly || isFreeLimitReached}
                 >
                   <Link2 className="mr-2 h-4 w-4" /> Add via URL
                 </Button>

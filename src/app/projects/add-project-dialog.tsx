@@ -43,7 +43,17 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function AddPortfolioItemDialog({ children }: { children: React.ReactNode }) {
+export default function AddPortfolioItemDialog({
+  children,
+  canAdd = true,
+  limitMessage,
+  nextIndex,
+}: {
+  children: React.ReactNode;
+  canAdd?: boolean;
+  limitMessage?: string;
+  nextIndex?: number;
+}) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -71,6 +81,12 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
         title: "Authentication Required",
         description: "Please log in or sign up to add a portfolio item.",
       });
+    } else if (!canAdd) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: limitMessage || "Free plans are limited to 3 portfolio items. Upgrade to add more.",
+      });
     } else {
         setOpen(true);
     }
@@ -78,6 +94,14 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
 
   async function onSubmit(values: FormValues) {
     if (!firestore || !user || user.isAnonymous) return;
+    if (!canAdd) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: limitMessage || "Free plans are limited to 3 portfolio items. Upgrade to add more.",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     const itemsCol = collection(firestore, 'users', user.uid, 'portfolioItems');
@@ -95,6 +119,7 @@ export default function AddPortfolioItemDialog({ children }: { children: React.R
         tags: tagsArray,
         userProfileId: user.uid,
         imageId,
+        itemIndex: typeof nextIndex === 'number' ? nextIndex : 0,
     });
 
     toast({

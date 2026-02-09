@@ -1,9 +1,9 @@
-
+﻿
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
-import { Github, Linkedin, Mail, Menu, Phone, Twitter, X } from 'lucide-react';
+import { Github, Linkedin, Mail, Menu, Phone, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -18,6 +18,7 @@ interface StylishPortfolioThemeProps {
 
 export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfolioThemeProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isPro = profile.subscriptionTier === 'pro' || profile.subscriptionTier === 'studio';
 
   const heroImage = getPlaceholderImage('project-4');
 
@@ -225,9 +226,12 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                     {profile.githubUrl && <a href={profile.githubUrl} className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"><Github /></a>}
                 </div>
                 <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} {profile.fullName || 'Your Name'}. All Rights Reserved.</p>
+                {!isPro && (
+                  <p className="text-xs text-muted-foreground mt-3">Powered by PortfolioForge</p>
+                )}
                  <div className="text-xs text-muted-foreground mt-4">
                     <Link href="/privacy-policy" className="hover:text-primary">Privacy Policy</Link>
-                    <span className="mx-2">�</span>
+                    <span className="mx-2">·</span>
                     <Link href="/terms-and-conditions" className="hover:text-primary">Terms of Use</Link>
                 </div>
             </div>
@@ -236,3 +240,6 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
     </div>
   );
 }
+
+
+

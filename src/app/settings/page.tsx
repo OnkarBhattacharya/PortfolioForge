@@ -44,6 +44,7 @@ type UserProfile = {
     customDomain?: string;
     customDomainStatus?: 'pending' | 'active' | 'error';
     customTheme?: ThemeConfig;
+    subscriptionTier?: 'free' | 'pro' | 'studio';
 };
 
 const convertThemeConfigToTheme = (config: ThemeConfig): Theme => {
@@ -108,12 +109,20 @@ export default function SettingsPage() {
     return themes && themes.length > 0 ? themes : staticThemes;
   }, [themes]);
 
-  const handleSelectTheme = (themeId: string) => {
+  const handleSelectTheme = (themeId: string, isPremium: boolean) => {
     if (isReadOnly) {
       toast({
         variant: "destructive",
         title: "Authentication Required",
         description: "Please log in or sign up to change your theme.",
+      });
+      return;
+    }
+    if (isPremium && !isPro) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: "Premium themes are available on the Pro plan.",
       });
       return;
     }
@@ -209,6 +218,7 @@ export default function SettingsPage() {
   };
 
   const isLoading = areThemesLoading || isUserLoading;
+  const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
@@ -251,13 +261,21 @@ export default function SettingsPage() {
                 placeholder="your-domain.com" 
                 value={domainName}
                 onChange={(e) => setDomainName(e.target.value)}
-                disabled={isReadOnly || !!userProfile?.customDomain}
+                disabled={isReadOnly || !!userProfile?.customDomain || !isPro}
               />
-              <Button onClick={handleConnectDomain} disabled={isReadOnly || isConnectingDomain || !!userProfile?.customDomain}>
+              <Button onClick={handleConnectDomain} disabled={isReadOnly || isConnectingDomain || !!userProfile?.customDomain || !isPro}>
                 {isConnectingDomain && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Connect
               </Button>
             </div>
+            {!isPro && !isReadOnly && (
+              <Alert className="mt-4">
+                <AlertTitle className="font-headline">Upgrade required</AlertTitle>
+                <AlertDescription>
+                  Custom domains are available on the Pro plan. Upgrade to connect your own domain.
+                </AlertDescription>
+              </Alert>
+            )}
             {userProfile?.customDomainStatus === 'pending' && (
                 <Alert className="mt-4">
                     <AlertTitle className="font-headline">Verify Your Domain</AlertTitle>
@@ -328,17 +346,25 @@ export default function SettingsPage() {
                   placeholder="e.g., A dark, futuristic theme with glowing blue accents..."
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  disabled={isReadOnly || isGeneratingTheme}
+                  disabled={isReadOnly || isGeneratingTheme || !isPro}
               />
-              <Button onClick={handleGenerateTheme} disabled={isReadOnly || !aiPrompt || isGeneratingTheme}>
+              <Button onClick={handleGenerateTheme} disabled={isReadOnly || !aiPrompt || isGeneratingTheme || !isPro}>
                   {isGeneratingTheme ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                   Generate Theme
               </Button>
+              {!isPro && !isReadOnly && (
+                <Alert>
+                  <AlertTitle className="font-headline">Premium feature</AlertTitle>
+                  <AlertDescription>
+                    AI Theme Generator is available on the Pro plan. Upgrade to unlock it.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {generatedTheme && (
                   <div className="space-y-4 rounded-lg border p-4">
                       <h3 className="font-headline text-lg">Generated Theme Preview</h3>
-                      <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} />
+                      <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} showBranding={!isPro} />
                   </div>
               )}
           </CardContent>
@@ -365,7 +391,7 @@ export default function SettingsPage() {
                     <Card 
                         className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === 'custom' ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
                     >
-                        <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} />
+                      <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} showBranding={!isPro} />
                         <div className="p-4">
                         <div className="font-bold text-lg">Your AI Theme</div>
                         <p className="text-sm text-muted-foreground h-10">The custom theme generated by AI.</p>
@@ -387,11 +413,13 @@ export default function SettingsPage() {
                     </div>
                 ))
                 ) : (
-                    displayedThemes.map((theme) => (
-                        <div key={theme.id} className="relative" onClick={() => handleSelectTheme(theme.id)}>
+                    displayedThemes.map((theme) => {
+                        const isLocked = theme.isPremium && !isPro;
+                        return (
+                        <div key={theme.id} className="relative" onClick={() => handleSelectTheme(theme.id, theme.isPremium)}>
                             <DialogTrigger asChild onClick={() => setPreviewTheme(theme)}>
                                 <Card 
-                                    className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
+                                    className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'} ${isLocked ? 'opacity-60' : ''}`}
                                 >
                                     <Image
                                         src={theme.previewImageUrl}
@@ -406,13 +434,18 @@ export default function SettingsPage() {
                                     </div>
                                 </Card>
                             </DialogTrigger>
+                            {isLocked && (
+                              <div className="absolute inset-0 flex items-start justify-end p-3 pointer-events-none">
+                                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Pro</span>
+                              </div>
+                            )}
                             {selectedThemeId === theme.id && (
                                 <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                     <Check className="h-4 w-4" />
                                 </div>
                                 )}
                         </div>
-                    ))
+                    )})
                 )}
             </CardContent>
             <CardFooter>
@@ -431,7 +464,7 @@ export default function SettingsPage() {
                             <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-auto rounded-lg border">
-                            <ThemePreview theme={previewTheme} />
+                            <ThemePreview theme={previewTheme} showBranding={!isPro} />
                         </div>
                     </>
                 )}

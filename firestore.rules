@@ -46,11 +46,30 @@ service cloud.firestore {
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
+      function isPro(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data.subscriptionTier in ['pro', 'studio'];
+      }
+      function isPremiumTheme(themeId) {
+        return themeId == 'custom'
+          || (themeId is string && get(/databases/$(database)/documents/themes/$(themeId)).data.isPremium == true);
+      }
+      function premiumFieldsUnchanged() {
+        return request.resource.data.customDomain == resource.data.customDomain
+          && request.resource.data.customDomainStatus == resource.data.customDomainStatus
+          && request.resource.data.customTheme == resource.data.customTheme;
+      }
       allow get: if isOwner(userId);
       // Allow an admin user to list all users for the admin dashboard.
       allow list: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow create: if isOwner(userId)
+        && request.resource.data.id == userId
+        && (!isPremiumTheme(request.resource.data.themeId))
+        && request.resource.data.customDomain == null
+        && request.resource.data.customTheme == null;
+      allow update: if isExistingOwner(userId)
+        && request.resource.data.id == resource.data.id
+        && (isPro(userId) || premiumFieldsUnchanged())
+        && (isPro(userId) || !isPremiumTheme(request.resource.data.themeId));
       allow delete: if isExistingOwner(userId);
     }
 
@@ -74,9 +93,14 @@ service cloud.firestore {
        function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
+      function isPro(userId) {
+        return get(/databases/$(database)/documents/users/$(userId)).data.subscriptionTier in ['pro', 'studio'];
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userProfileId == userId;
+      allow create: if isOwner(userId)
+        && request.resource.data.userProfileId == userId
+        && (isPro(userId) || (request.resource.data.itemIndex is int && request.resource.data.itemIndex < 3));
       allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
       allow delete: if isExistingOwner(userId);
     }

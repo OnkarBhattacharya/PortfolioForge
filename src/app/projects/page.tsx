@@ -11,12 +11,12 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle, KeyRound, ExternalLink, Sparkles, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc } from 'firebase/firestore';
 import AddPortfolioItemDialog from './add-project-dialog';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -30,6 +30,7 @@ type PortfolioItem = {
   tags: string[];
   itemUrl?: string;
   imageId: string;
+  itemIndex?: number;
 };
 
 const sampleItems: PortfolioItem[] = [
@@ -63,6 +64,7 @@ export default function PortfolioItemsPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
+  const maxFreeItems = 3;
 
   const itemsQuery = useMemoFirebase(() => {
     if (isReadOnly || !user || !firestore) return null;
@@ -72,6 +74,13 @@ export default function PortfolioItemsPage() {
   }, [firestore, user, isReadOnly]);
 
   const { data: firestoreItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (isReadOnly || !user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user, isReadOnly]);
+
+  const { data: userProfile } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
 
   const isLoading = isUserLoading || areItemsLoading;
 
@@ -82,6 +91,9 @@ export default function PortfolioItemsPage() {
     return firestoreItems || [];
   }, [firestoreItems, isReadOnly]);
 
+  const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
+  const isFreeLimitReached = !isPro && !isReadOnly && allItems.length >= maxFreeItems;
+  const nextIndex = allItems.length;
 
   const totalItems = allItems?.length || 0;
 
@@ -108,8 +120,12 @@ export default function PortfolioItemsPage() {
                 <Sparkles className="mr-2 h-4 w-4" /> AI Assistant
               </Link>
             </Button>
-            <AddPortfolioItemDialog>
-              <Button disabled={isReadOnly}>
+            <AddPortfolioItemDialog
+              canAdd={!isFreeLimitReached}
+              limitMessage="Free plans are limited to 3 portfolio items. Upgrade to add more."
+              nextIndex={nextIndex}
+            >
+              <Button disabled={isReadOnly || isFreeLimitReached}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Item
               </Button>
             </AddPortfolioItemDialog>
@@ -117,7 +133,7 @@ export default function PortfolioItemsPage() {
         </div>
       </div>
 
-       {isReadOnly && (
+      {isReadOnly && (
         <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
             <CardHeader className="flex flex-row items-center gap-4">
                 <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
@@ -128,6 +144,25 @@ export default function PortfolioItemsPage() {
                     </CardDescription>
                 </div>
             </CardHeader>
+        </Card>
+      )}
+      
+      {isFreeLimitReached && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <KeyRound className="h-8 w-8 text-primary" />
+            <div>
+              <CardTitle className="font-headline">Free plan limit reached</CardTitle>
+              <CardDescription>
+                Upgrade to add more portfolio items and unlock premium themes.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/billing" className={cn(buttonVariants({ variant: 'default' }), 'w-full sm:w-auto')}>
+              Upgrade to Pro
+            </Link>
+          </CardFooter>
         </Card>
       )}
 
@@ -174,7 +209,11 @@ export default function PortfolioItemsPage() {
                 <h3 className="text-2xl font-bold tracking-tight">You have no portfolio items</h3>
                 <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <AddPortfolioItemDialog>
+                  <AddPortfolioItemDialog
+                    canAdd={!isFreeLimitReached}
+                    limitMessage="Free plans are limited to 3 portfolio items. Upgrade to add more."
+                    nextIndex={nextIndex}
+                  >
                       <Button>
                           <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                       </Button>

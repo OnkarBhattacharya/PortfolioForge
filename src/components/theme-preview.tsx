@@ -29,6 +29,7 @@ type Theme = {
 
 interface ThemePreviewProps {
     theme: Theme;
+    showBranding?: boolean;
 }
 
 const loremIpsum = {
@@ -87,7 +88,7 @@ const loremIpsum = {
 }
 
 
-export function ThemePreview({ theme }: ThemePreviewProps) {
+export function ThemePreview({ theme, showBranding = true }: ThemePreviewProps) {
 
   const customStyles = {
     '--background': theme.background,
@@ -253,6 +254,13 @@ export function ThemePreview({ theme }: ThemePreviewProps) {
             ))}
           </div>
         </section>
+        <div className="container mx-auto px-4 py-6">
+          {showBranding && (
+            <div className="mt-8 rounded-xl border border-border/50 bg-background/80 px-4 py-3 text-center text-xs text-muted-foreground">
+              Powered by PortfolioForge
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

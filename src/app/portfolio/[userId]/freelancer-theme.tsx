@@ -37,6 +37,7 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
   const midPoint = Math.ceil(summarySentences.length / 2);
   const summaryLeft = summarySentences.slice(0, midPoint).join(' ');
   const summaryRight = summarySentences.slice(midPoint).join(' ');
+  const isPro = profile.subscriptionTier === 'pro' || profile.subscriptionTier === 'studio';
 
   return (
     <div className="min-h-screen bg-background font-body text-foreground" style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}>
@@ -153,15 +154,21 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
                   {profile.email && <a href={`mailto:${profile.email}`} className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white hover:bg-white hover:text-foreground transition-colors"><Mail /></a>}
               </div>
             </div>
-            <div>
-              <h4 className="mb-4 font-headline text-2xl font-bold uppercase">About PortfolioForge</h4>
-              <p className="font-light leading-relaxed">PortfolioForge is an AI-powered portfolio builder for modern professionals.</p>
-            </div>
+            {!isPro && (
+              <div>
+                <h4 className="mb-4 font-headline text-2xl font-bold uppercase">About PortfolioForge</h4>
+                <p className="font-light leading-relaxed">PortfolioForge is an AI-powered portfolio builder for modern professionals.</p>
+              </div>
+            )}
           </div>
         </div>
         <div className="py-6" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
             <div className="container mx-auto px-4 text-center">
-                <small>Copyright &copy; PortfolioForge {new Date().getFullYear()}</small>
+                <small>
+                  {isPro
+                    ? `Copyright © ${profile.fullName || 'Your Name'} ${new Date().getFullYear()}`
+                    : `Copyright © PortfolioForge ${new Date().getFullYear()}`}
+                </small>
             </div>
         </div>
       </footer>

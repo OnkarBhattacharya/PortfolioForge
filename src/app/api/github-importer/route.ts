@@ -14,13 +14,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username and userId are required' }, { status: 400 });
     }
     
+    const userDoc = await db.collection('users').doc(userId).get();
+    const userData = userDoc.data() || {};
+    const subscriptionTier = userData.subscriptionTier || 'free';
+
+    const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
+    const existingItems = await portfolioItemsRef.get();
+    const existingCount = existingItems.size;
+    const maxFreeItems = 3;
+
+    if (subscriptionTier === 'free' && existingCount >= maxFreeItems) {
+      return NextResponse.json({ error: 'Free plan limit reached.' }, { status: 403 });
+    }
+
     const repositories = await importGithubRepositories({ username });
+    const remainingSlots = subscriptionTier === 'free'
+      ? Math.max(0, maxFreeItems - existingCount)
+      : repositories.length;
+    const allowedRepos = subscriptionTier === 'free'
+      ? repositories.slice(0, remainingSlots)
+      : repositories;
     
-    if (repositories.length > 0) {
-      const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
+    if (allowedRepos.length > 0) {
       const batch = db.batch();
 
-      repositories.forEach((project) => {
+      allowedRepos.forEach((project, index) => {
         const newItemId = uuidv4();
         const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
         const tags = project.language ? [project.language] : [];
@@ -34,13 +52,14 @@ export async function POST(req: NextRequest) {
           itemUrl: project.url,
           tags: tags,
           imageId,
+          itemIndex: existingCount + index,
         });
       });
 
       await batch.commit();
     }
     
-    return NextResponse.json({ success: true, importedCount: repositories.length });
+    return NextResponse.json({ success: true, importedCount: allowedRepos.length });
     
   } catch (error: any) {
     logger.error('Error in github-importer API:', { error: error.message, stack: error.stack });

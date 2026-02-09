@@ -1,10 +1,10 @@
-
+﻿
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
-import { Briefcase, Github, GraduationCap, Linkedin, Mail, Menu, Plus, X, Sparkles } from 'lucide-react';
+import { Briefcase, Github, GraduationCap, Linkedin, Menu, Plus, X, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -19,6 +19,7 @@ interface AgencyThemeProps {
 
 export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isPro = profile.subscriptionTier === 'pro' || profile.subscriptionTier === 'studio';
 
   const heroImage = getPlaceholderImage('project-4');
 
@@ -213,7 +214,7 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                     </div>
                     <div className="text-sm text-muted-foreground mt-4 md:mt-0">
                         <Link href="/privacy-policy" className="hover:text-primary">Privacy Policy</Link>
-                        <span className="mx-2">�</span>
+                        <span className="mx-2">·</span>
                         <Link href="/terms-and-conditions" className="hover:text-primary">Terms of Use</Link>
                     </div>
                 </div>
@@ -223,3 +224,6 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
     </div>
   );
 }
+
+
+
