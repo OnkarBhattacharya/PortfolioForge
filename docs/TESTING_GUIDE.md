@@ -80,3 +80,11 @@ vi.mock('@/firebase', () => ({
 ## Continuous Integration (CI)
 
 We use GitHub Actions to run all tests automatically on every push and pull request. This ensures that no new code is merged unless it passes all tests. The CI configuration is located in `.github/workflows/ci.yml`.
+
+---
+
+## Current Testing Status
+
+- Unit/frontend tests are defined via Vitest but not currently executed in this branch.
+- Playwright E2E suite is configured and ready; run `npm run test:e2e` after installing browsers with `npx playwright install`.
+- No automated contract/performance suites are running yet; placeholders describe future work.

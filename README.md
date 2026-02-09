@@ -1,92 +1,59 @@
 
 # PortfolioForge: The Intelligent Portfolio Platform for Every Professional
 
-**PortfolioForge** is a dynamic and AI-powered open-source platform that enables users to create, customize, and deploy professional portfolios with ease. This platform is designed for developers, designers, artists, and other professionals who want to showcase their work in a polished and engaging format.
+PortfolioForge helps professionals launch an AI-native portfolio in minutes. Users import CVs, LinkedIn text, GitHub repos, or any URL, finetune the narrative with AI content suggestions and theme generators, and publish with premium themes on custom domains. The product now ships:
 
-## Key Features
+* Public landing + pricing pages with clear CTAs.
+* Dashboard, projects, billing, and AI flows inside an app shell.
+* Stripe-powered Pro/Studio plans plus gating on premium themes, custom domains, and unlimited portfolio items.
+* Stripe Checkout, Billing Portal, and webhook listeners that update Firestore subscription metadata.
 
-*   **AI-Powered Content Suggestions:** Get intelligent recommendations for your portfolio content.
-*   **AI Theme Generation:** Describe the style you want, and our AI will create a unique theme for you. Try things like "a minimalist theme with a touch of neon" or "a professional theme for a photographer."
-*   **Multiple Data Import Options:** Import your data from various sources like LinkedIn, GitHub, and CV files.
-*   **Customizable Themes:** Choose from a variety of themes to personalize your portfolio.
-*   **Dynamic Portfolio Generation:** Your portfolio is dynamically generated based on your user ID.
+## Tech Highlights
 
-## Tech Stack
+* **Next.js 15 (App Router)** powers the public landing, dashboard, and API routes.
+* **Firebase (Auth, Firestore, Storage, App Hosting)** is the backend and data store.
+* **Genkit + Google AI** provide all the AI assistants (content suggestions, theme generator, CV/LinkedIn parsers).
+* **ShadCN UI + Tailwind CSS** deliver a cohesive, responsive UI.
+* **Stripe** handles monetization via Checkout / Portal + Firestore sync through webhooks.
 
-PortfolioForge is built with a modern tech stack that includes:
+## Setup
 
-*   **[Next.js](https://nextjs.org/):** A React framework for building server-rendered applications.
-*   **[Firebase](https://firebase.google.com/):** A comprehensive platform for building web and mobile applications.
-*   **[Genkit](https://firebase.google.com/docs/genkit):** A generative AI framework for building AI-powered features.
-*   **[Tailwind CSS](https://tailwindcss.com/):** A utility-first CSS framework for rapid UI development.
-*   **[shadcn/ui](https://ui.shadcn.com/):** A collection of re-usable components for building modern UIs.
+1. Clone the repo:
 
-## Getting Started
+   ```bash
+   git clone https://github.com/your-username/portfolioforge.git
+   ```
 
-### Prerequisites
+2. Install dependencies:
 
-*   [Node.js](https://nodejs.org/en) (v20 or later)
-*   [pnpm](https://pnpm.io/)
+   ```bash
+   pnpm install
+   ```
 
-### Installation
+3. Copy `.env.example` to `.env.local` and fill in the Firebase + Stripe credentials:
 
-1.  Clone the repository:
+   ```bash
+   cp .env.example .env.local
+   ```
 
-    ```bash
-    git clone https://github.com/your-username/portfolioforge.git
-    ```
+4. Start the dev server:
 
-2.  Install the dependencies:
-
-    ```bash
-    pnpm install
-    ```
-
-3.  Set up your environment variables. Create a `.env.local` file in the root of your project and add the following:
-
-    ```bash
-    NEXT_PUBLIC_FIREBASE_API_KEY="your-api-key"
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your-auth-domain"
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID="your-project-id"
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your-storage-bucket"
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
-    NEXT_PUBLIC_FIREBASE_APP_ID="your-app-id"
-    ```
-
-    You can find these values in your Firebase project settings.
-
-### Running the Development Server
-
-```bash
-pnpm dev
-```
+   ```bash
+   pnpm dev
+   ```
 
 ## Deployment
 
-PortfolioForge can be deployed to any platform that supports Next.js applications. For easy deployment, we recommend using [Vercel](httpshttps://vercel.com/) or [Firebase App Hosting](https://firebase.google.com/docs/app-hosting).
+1. Run predeploy checks:
 
-### Deploying with Firebase App Hosting
+   ```bash
+   npm run predeploy
+   ```
 
-1.  Install the Firebase CLI:
+2. Deploy:
 
-    ```bash
-    npm install -g firebase-tools
-    ```
+   ```bash
+   npm run deploy:prod
+   ```
 
-2.  Log in to Firebase:
-
-    ```bash
-    firebase login
-    ```
-
-3.  Initialize Firebase in your project:
-
-    ```bash
-    firebase init
-    ```
-
-4.  Deploy your application:
-
-    ```bash
-    firebase deploy --only hosting
-    ```
+Remember to populate the Firebase environment with the same keys and configure the Stripe webhook URL (`https://<your-app>/api/stripe/webhook`).

@@ -246,3 +246,11 @@ The critical security and production-readiness issues identified in the initial 
 While further improvements like a full CI/CD pipeline and multi-project environment separation are recommended for long-term operational maturity, the most urgent risks have been addressed.
 
 **Production Readiness Score: 9.5/10**
+
+---
+
+## Post-Audit Status
+
+- **Stripe Monetization:** Billing UI now calls `/api/stripe/checkout` and `/api/stripe/portal`; server routes verify Firebase ID tokens and sync subscription tier/status with Firestore via webhook.
+- **Firestore Rules:** Tightened to prevent free-plan users from selecting premium themes or custom domains and to cap portfolio items at three unless upgraded.
+- **AI Importers:** GitHub and URL import routes check the subscription tier before committing new items to maintain quota enforcement.

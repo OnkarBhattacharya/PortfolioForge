@@ -53,3 +53,12 @@ PortfolioForge is more than just a personal project; it is a significant contrib
 3.  **Innovation in AI Application:** It moves beyond simple chatbot implementations to demonstrate how Generative AI can be deeply integrated into a product to solve practical, user-centric problems, from data extraction to creative design.
 
 My role as the sole architect and developer of this platform showcases a high level of technical leadership, a commitment to quality, and a forward-thinking approach to product development that aligns perfectly with the spirit of the UK Global Talent Visa.
+
+---
+
+## Current Status
+
+- Public landing/pricing pages with a free tier and premium positioning.
+- App shell (dashboard, projects, billing, settings) with Stripe Checkout/Portal and webhook handling.
+- Free plan capped at three portfolio items; Pro/Studio unlock premium themes, custom domains, AI-generated themes, and unlimited items with branding removal.
+- Firestore rules and API guardrail enforce ownership, premium gating, and Stripe-synced subscription metadata.

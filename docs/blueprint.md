@@ -2,13 +2,14 @@
 
 ## Core Features:
 
-- CV Upload & Parsing: Allow users to upload their CV in **PDF or image format** and have AI parse the content to pre-fill sections of the portfolio.
-- LinkedIn Data Import: Enable users to import data by **pasting the raw text from their LinkedIn profile** to populate relevant sections.
-- GitHub Project Integration: Automatically fetch and display a user's public GitHub repositories, including descriptions and links.
-- Web Content Importer: Create a portfolio item from any public URL (e.g., a blog post, an article, or a project website) using AI to generate a title, summary, and tags.
-- Theme Selection & Customization: Provide a selection of professionally designed themes that can be customized. Includes an **AI Theme Generator** to create unique styles from a text prompt.
-- AI-Powered Content Suggestions: Utilize a tool that offers suggestions for portfolio descriptions and summaries based on parsed data, improving overall presentation.
-- Custom Domain Support: Allow users to connect a custom domain to their portfolio for a professional online presence.
+- CV Upload & Parsing: Upload CVs (PDF/image) and have AI produce structured data. Supports linked summary extraction and skill detection.
+- LinkedIn Import: Paste LinkedIn raw text; AI infers summary, experience, education, and profession.
+- GitHub Project Import: Fetch public repositories, generate README summaries, and seed portfolio items automatically.
+- URL Importer: Crawl any public URL, clean the HTML, and create a portfolio entry with AI-crafted tags/descriptions.
+- Theme System: Choose premium/free themes, generate AI themes, and preview/remove PortfolioForge branding when unlocked.
+- AI Content Assistant: Refine headlines and summaries with Genkit-powered prompts seeded by imported data.
+- Premium Plans: Free tier limited to 3 items; Pro/Studio unlock premium themes, custom domains, unlimited items, and remove branding.
+- Monetization Stack: Stripe Checkout + Billing Portal + webhook sync with Firestore. Free plan gating enforced client-side & via rules.
 
 ## Technology Stack:
 
@@ -27,3 +28,10 @@
 - Use a consistent set of minimalistic icons to represent skills, technologies, and project categories.
 - Employ a responsive, grid-based layout that adapts seamlessly to different screen sizes and devices.
 - Incorporate subtle transitions and animations to enhance user engagement and provide feedback on interactions.
+
+## Current Status
+
+- Public landing, pricing, and signup pages detail the product story and drive upgrades.
+- Dashboard, projects, billing, and settings live inside the productive app shell.
+- AI importers, suggestions, and theme generation are live with data-gating tied to the active plan.
+- Stripe Checkout/Portal/webhook and Firestore rules enforce monetization commitments.

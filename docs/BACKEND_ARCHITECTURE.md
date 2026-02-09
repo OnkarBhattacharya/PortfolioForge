@@ -124,3 +124,11 @@ For operations that require administrative privileges (like creating portfolio i
 ### Firebase Storage
 - **Purpose**: User-uploaded content, such as images for portfolio items, is stored in Firebase Storage.
 - **Security**: Access is controlled by `storage.rules`, which ensures that users can only write to their own designated storage paths and enforces file size and type restrictions.
+
+---
+
+## Recent Enhancements
+
+- **Stripe Monetization**: Added server routes for Checkout, Billing Portal, and webhook handling. Firestore now stores Stripe customer IDs and subscription metadata for Pro/Studio plans.
+- **Firestorm Rules Tightening**: Rules now enforce premium-theme selection, custom domain writes, and free-tier item limits via `itemIndex`. Public themes remain readable, but premium ones require Pro/Studio documents.
+- **AI Flow Safeguards**: Import endpoints check subscription tiers before writing new portfolio items, preventing free-plan overage in GitHub/URL imports.
