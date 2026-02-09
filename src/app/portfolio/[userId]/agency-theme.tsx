@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
-import { Briefcase, Github, GraduationCap, Linkedin, Mail, Menu, Plus, Twitter, X } from 'lucide-react';
+import { Briefcase, Github, GraduationCap, Linkedin, Mail, Menu, Plus, X, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -69,13 +69,22 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
             }}>
-            <div className="absolute inset-0 bg-black/50"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
             <div className="relative container mx-auto px-4 z-10">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs uppercase tracking-widest">
+                    <Sparkles className="h-3 w-3" />
+                    Creative Studio
+                </div>
                 <h2 className="font-headline text-3xl md:text-4xl italic mb-4">Welcome To Our Studio!</h2>
                 <h1 className="text-5xl md:text-7xl font-extrabold uppercase mb-8">{profile.profession || "It's Nice To Meet You"}</h1>
                 <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/80 rounded-full px-8 py-6 text-lg uppercase font-bold tracking-wider">
                     <a href="#portfolio">Tell Me More</a>
                 </Button>
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-white/80">
+                    <span>Clients across 12 industries</span>
+                    <span>Based in {profile?.personalInfo?.location || 'Global'}</span>
+                    <span>Available for new projects</span>
+                </div>
             </div>
         </header>
 
@@ -87,12 +96,12 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                     <p className="text-muted-foreground text-lg italic mb-12">What I can offer.</p>
                     <div className="grid md:grid-cols-3 gap-12">
                         {(profile.skills?.slice(0, 3) || ['Web Design', 'Development', 'SEO']).map((skill, index) => (
-                            <div key={index} className="flex flex-col items-center">
-                                <div className="flex items-center justify-center h-24 w-24 rounded-full border-4 border-primary mb-4" style={{borderColor: `hsl(${theme.primary})`}}>
+                            <div key={index} className="flex flex-col items-center rounded-2xl border border-border/60 bg-background p-8 shadow-sm">
+                                <div className="flex items-center justify-center h-20 w-20 rounded-full border-4 border-primary mb-4" style={{borderColor: `hsl(${theme.primary})`}}>
                                     <Briefcase className="h-12 w-12 text-primary" style={{color: `hsl(${theme.primary})`}} />
                                 </div>
                                 <h3 className="text-2xl font-bold mb-2">{skill}</h3>
-                                <p className="text-muted-foreground">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Minima maxime quam architecto quo inventore harum ex magni, dicta impedit.</p>
+                                <p className="text-muted-foreground">Strategy-first delivery with premium design, clear UX, and measurable outcomes.</p>
                             </div>
                         ))}
                     </div>
@@ -129,6 +138,9 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                             );
                         })}
                     </div>
+                    {(!items || items.length === 0) && (
+                        <p className="text-muted-foreground mt-8">This portfolio doesn't have any items yet.</p>
+                    )}
                 </div>
             </section>
 
@@ -172,6 +184,9 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                                 </div>
                             </div>
                         ))}
+                        {(!profile.experience || profile.experience.length === 0) && (!profile.education || profile.education.length === 0) && (
+                            <p className="text-muted-foreground">Experience and education details will appear here once added.</p>
+                        )}
                     </div>
                 </div>
             </section>
@@ -198,7 +213,7 @@ export function AgencyTheme({ profile, items, theme }: AgencyThemeProps) {
                     </div>
                     <div className="text-sm text-muted-foreground mt-4 md:mt-0">
                         <Link href="/privacy-policy" className="hover:text-primary">Privacy Policy</Link>
-                        <span className="mx-2">Â·</span>
+                        <span className="mx-2">·</span>
                         <Link href="/terms-and-conditions" className="hover:text-primary">Terms of Use</Link>
                     </div>
                 </div>

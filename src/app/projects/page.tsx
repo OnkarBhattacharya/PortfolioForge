@@ -14,7 +14,7 @@ import Image from 'next/image';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, KeyRound, ExternalLink } from 'lucide-react';
+import { Loader2, PlusCircle, KeyRound, ExternalLink, Sparkles, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { collection, query } from 'firebase/firestore';
 import AddPortfolioItemDialog from './add-project-dialog';
@@ -83,17 +83,38 @@ export default function PortfolioItemsPage() {
   }, [firestoreItems, isReadOnly]);
 
 
+  const totalItems = allItems?.length || 0;
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-headline text-3xl font-bold tracking-tighter">
-          My Portfolio
-        </h1>
-        <AddPortfolioItemDialog>
-          <Button disabled={isReadOnly}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-          </Button>
-        </AddPortfolioItemDialog>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="font-headline text-3xl font-bold tracking-tighter">
+              My Portfolio
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Curate your best work and publish case-study quality projects.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/import-data">
+                <UploadCloud className="mr-2 h-4 w-4" /> Import data
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/ai-assistant">
+                <Sparkles className="mr-2 h-4 w-4" /> AI Assistant
+              </Link>
+            </Button>
+            <AddPortfolioItemDialog>
+              <Button disabled={isReadOnly}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+              </Button>
+            </AddPortfolioItemDialog>
+          </div>
+        </div>
       </div>
 
        {isReadOnly && (
@@ -109,6 +130,31 @@ export default function PortfolioItemsPage() {
             </CardHeader>
         </Card>
       )}
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Total items</p>
+            <p className="text-2xl font-semibold">{totalItems}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Portfolio status</p>
+            <p className="text-2xl font-semibold">
+              {totalItems > 0 ? 'Active' : 'Draft'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground">Next step</p>
+            <p className="text-2xl font-semibold">
+              {totalItems > 2 ? 'Publish' : 'Add items'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {isLoading && !isReadOnly && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -127,11 +173,18 @@ export default function PortfolioItemsPage() {
             <div className="flex flex-col items-center gap-1 text-center">
                 <h3 className="text-2xl font-bold tracking-tight">You have no portfolio items</h3>
                 <p className="text-sm text-muted-foreground">Get started by adding your first item.</p>
-                <AddPortfolioItemDialog>
-                    <Button className="mt-4">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                    </Button>
-                </AddPortfolioItemDialog>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <AddPortfolioItemDialog>
+                      <Button>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+                      </Button>
+                  </AddPortfolioItemDialog>
+                  <Button asChild variant="outline">
+                    <Link href="/import-data">
+                      <UploadCloud className="mr-2 h-4 w-4" /> Import data
+                    </Link>
+                  </Button>
+                </div>
             </div>
         </div>
       )}

@@ -1,305 +1,247 @@
-
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import {
-  ArrowUpRight,
-  CheckCircle,
-  Circle,
-  KeyRound,
-} from 'lucide-react';
-import Image from 'next/image';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
-import { useEffect, useState } from 'react';
-import { useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, doc } from 'firebase/firestore';
+import { ArrowRight, CheckCircle2, Sparkles, Star } from 'lucide-react';
 
-
-type PortfolioItem = {
-  id: string;
-  name: string;
-  description: string;
-  tags: string[];
-  imageId: string;
-};
-
-const sampleItems: PortfolioItem[] = [
-    {
-        id: 'sample-1',
-        name: 'Corporate Rebranding Campaign',
-        description: 'A full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.',
-        tags: ['Branding', 'Marketing', 'Design'],
-        imageId: 'project-5',
-    },
-    {
-        id: 'sample-2',
-        name: 'Data-driven SEO Strategy',
-        description: 'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
-        tags: ['SEO', 'Analytics', 'Content Strategy'],
-        imageId: 'project-2',
-    },
-    {
-        id: 'sample-3',
-        name: 'Mobile App UI/UX',
-        description: 'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
-        tags: ['UI/UX', 'Figma', 'Mobile Design'],
-        imageId: 'project-3',
-    }
+const highlights = [
+  'AI-powered CV and LinkedIn parsing',
+  'One-click GitHub project import',
+  'Professional themes with custom branding',
+  'Public portfolio with your own domain',
 ];
 
-export default function DashboardPage() {
-  const [cvUploaded, setCvUploaded] = useState(false);
-  const [linkedInImported, setLinkedInImported] = useState(false);
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const isReadOnly = !user || user.isAnonymous;
+const steps = [
+  {
+    title: 'Import your data',
+    description: 'Upload a CV, paste LinkedIn text, or pull GitHub repos.',
+  },
+  {
+    title: 'Refine with AI',
+    description: 'Generate summaries and polish your story in minutes.',
+  },
+  {
+    title: 'Publish instantly',
+    description: 'Launch a clean, shareable portfolio on a custom domain.',
+  },
+];
 
-  const itemsQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'portfolioItems'), limit(3));
-  }, [user, firestore, isReadOnly]);
+const testimonials = [
+  {
+    quote:
+      'I had a live portfolio in under 20 minutes. The AI summary reads like I hired a copywriter.',
+    name: 'A. Patel',
+    role: 'Product Designer',
+  },
+  {
+    quote:
+      'The GitHub import saved me hours. It turns repos into client-ready case studies.',
+    name: 'J. Nguyen',
+    role: 'Full-Stack Engineer',
+  },
+  {
+    quote:
+      'The themes look expensive, and the editing flow is clean. I finally like sharing my portfolio.',
+    name: 'M. Rivera',
+    role: 'Marketing Lead',
+  },
+];
 
-  const { data: dbItems, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
-  
-  const userProfileQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore, isReadOnly]);
-
-  const { data: userProfile } = useDoc(userProfileQuery);
-
-  const recentItems = isReadOnly ? sampleItems : dbItems;
-
-
-  useEffect(() => {
-    if (isReadOnly) return;
-    
-    const checkLocalStorage = () => {
-      const cvStatus = localStorage.getItem('cvUploadSuccess');
-      if (cvStatus === 'true') {
-        setCvUploaded(true);
-      }
-      const liStatus = localStorage.getItem('linkedInSuccess');
-      if (liStatus === 'true') {
-        setLinkedInImported(true);
-      }
-    };
-
-    checkLocalStorage();
-
-    // Listen for custom events that might be dispatched from other pages on success
-    window.addEventListener('storage', checkLocalStorage);
-    window.addEventListener('profileUpdate', checkLocalStorage);
-
-    return () => {
-      window.removeEventListener('storage', checkLocalStorage);
-      window.removeEventListener('profileUpdate', checkLocalStorage);
-    };
-  }, [isReadOnly]);
-
-  const liveSiteUrl = user && !user.isAnonymous ? `/portfolio/${user.uid}` : `/login`;
-
+export default function LandingPage() {
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-headline text-3xl font-bold tracking-tighter">
-          Dashboard
-        </h1>
-      </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_hsl(var(--primary))_0%,_transparent_55%)] opacity-20" />
+        <div className="absolute -top-20 right-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,_hsl(var(--accent))_0%,_transparent_65%)] opacity-30 blur-2xl animate-[float-slow_8s_ease-in-out_infinite]" />
+        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,_hsl(var(--primary))_0%,_transparent_60%)] opacity-20 blur-3xl animate-[float-slow_10s_ease-in-out_infinite]" />
 
-       {isReadOnly && (
-        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
-            <CardHeader className="flex flex-row items-center gap-4">
-                <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
-                <div>
-                    <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
-                    <CardDescription className="text-yellow-700 dark:text-yellow-400">
-                        You are in read-only mode. <Link href="/login" className="font-bold underline">Log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to start building your portfolio.
-                    </CardDescription>
-                </div>
-            </CardHeader>
-        </Card>
-      )}
-
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="flex flex-col lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">
-              Welcome to PortfolioForge
-            </CardTitle>
-            <CardDescription>
-              Let&apos;s build your standout professional portfolio. Follow the steps
-              below to get started.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <p className="text-sm text-muted-foreground">
-              This platform helps you seamlessly import your data
-              to create a professional portfolio. Use our AI Assistant to
-              perfect your story.
-            </p>
-          </CardContent>
-          <CardContent>
+        <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+          <Link href="/" className="font-headline text-xl font-semibold tracking-tight">
+            PortfolioForge
+          </Link>
+          <nav className="flex items-center gap-3 text-sm">
+            <Link href="/pricing" className="text-muted-foreground hover:text-foreground">
+              Pricing
+            </Link>
+            <Link href="/login" className="text-muted-foreground hover:text-foreground">
+              Log in
+            </Link>
             <Button asChild>
-              <Link href="/import-data">
-                Import Your Data
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Link>
+              <Link href="/signup">Get started</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </nav>
+        </header>
 
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="font-headline">Profile Status</CardTitle>
-            <CardDescription>
-              Complete these steps to enrich your portfolio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-4 text-sm font-medium">
-              <li className="flex items-center">
-                {isReadOnly ? (
-                    <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
-                ) : (
-                    <CheckCircle className="mr-3 h-5 w-5 text-green-500" />
-                )}
-                <span>Account Created</span>
-              </li>
-              <li className="flex items-center">
-                {cvUploaded && !isReadOnly ? (
-                  <CheckCircle className="mr-3 h-5 w-5 text-green-500" />
-                ) : (
-                  <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
-                )}
-                <span>CV Uploaded</span>
-              </li>
-              <li className="flex items-center">
-                {linkedInImported && !isReadOnly ? (
-                  <CheckCircle className="mr-3 h-5 w-5 text-green-500" />
-                ) : (
-                  <Circle className="mr-3 h-5 w-5 text-muted-foreground" />
-                )}
-                <span>LinkedIn Imported</span>
-              </li>
-               <li className="flex items-center text-muted-foreground/80">
-                <Circle className="mr-3 h-5 w-5" />
-                <span>External Links Added</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="font-headline">Quick Links</CardTitle>
-            <CardDescription>
-              Jump to any section to manage your portfolio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Button variant="outline" asChild>
-              <Link href="/projects"><span className="truncate">View Portfolio</span></Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/ai-assistant"><span className="truncate">AI Assistant</span></Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/settings"><span className="truncate">Settings</span></Link>
-            </Button>
-            <Button asChild className="bg-accent text-accent-foreground">
-              <Link href={liveSiteUrl}><span className="truncate">View Live Site</span></Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {userProfile?.skills && userProfile.skills.length > 0 && (
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Your Top Skills</CardTitle>
-              <CardDescription>
-                These are the top skills identified from your profile.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {userProfile.skills.map((skill: string) => (
-                  <Badge key={skill} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
+        <section className="mx-auto flex w-full max-w-6xl flex-col items-start gap-8 px-6 pb-20 pt-10 md:pt-16">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs text-primary animate-[fade-up_0.6s_ease-out]">
+            <Sparkles className="h-4 w-4" />
+            AI-native portfolio builder
+          </div>
+          <div className="grid w-full gap-8 md:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-6 animate-[fade-up_0.8s_ease-out]">
+              <h1 className="font-headline text-4xl font-bold tracking-tight md:text-6xl">
+                Launch a portfolio that feels premium — in a single afternoon.
+              </h1>
+              <p className="max-w-xl text-base text-muted-foreground md:text-lg">
+                Import your CV, LinkedIn, and GitHub in minutes. Let AI craft
+                clean, persuasive narratives. Publish a portfolio clients
+                actually want to read.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button asChild size="lg" className="gap-2">
+                  <Link href="/signup">
+                    Start free <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="lg" asChild>
+                  <Link href="/pricing">Compare plans</Link>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Recent Portfolio Items</CardTitle>
-            <CardDescription>
-              A glimpse of your latest work. Add more from the portfolio page.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentItems?.map((item) => {
-              const image = getPlaceholderImage(item.imageId);
-              return (
-                <Card key={item.id} className="overflow-hidden">
-                  {image && (
-                    <Image
-                      src={image.imageUrl}
-                      alt={item.name}
-                      width={600}
-                      height={400}
-                      data-ai-hint={image.imageHint}
-                      className="aspect-video w-full object-cover"
-                    />
-                  )}
-                  <CardHeader>
-                    <CardTitle className="font-headline text-lg">
-                      {item.name}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {item.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {item.tags?.map((tag: any) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
-                      ))}
+              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  No credit card required
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  Publish in under 30 minutes
+                </span>
+              </div>
+            </div>
+            <div className="relative h-full animate-[fade-up_1s_ease-out]">
+              <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-6 shadow-xl backdrop-blur">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-primary/10 text-primary">Live Preview</Badge>
+                  <span className="text-xs text-muted-foreground">Updated today</span>
+                </div>
+                <div className="mt-6 space-y-4">
+                  <div className="h-3 w-24 rounded-full bg-muted" />
+                  <div className="h-6 w-3/4 rounded-full bg-foreground/80" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded-full bg-muted" />
+                    <div className="h-3 w-5/6 rounded-full bg-muted" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-3">
+                      <p className="text-xs text-muted-foreground">Projects</p>
+                      <p className="text-lg font-semibold">12</p>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-             {!areItemsLoading && (!recentItems || recentItems.length === 0) && (
-                <Card className="md:col-span-2 lg:col-span-3">
-                    <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                        <h3 className="text-xl font-bold">No portfolio items yet!</h3>
-                        <p className="text-muted-foreground">Add your first item from the 'Portfolio' page to see it here.</p>
-                    </CardContent>
-                </Card>
-             )}
-          </CardContent>
-        </Card>
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-3">
+                      <p className="text-xs text-muted-foreground">Views</p>
+                      <p className="text-lg font-semibold">3.4k</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/60 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 p-4">
+                    <p className="text-xs text-muted-foreground">AI Summary</p>
+                    <p className="text-sm font-medium">
+                      “Product designer with a track record of shipping data-rich
+                      experiences across fintech and health.”
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -bottom-6 -right-6 hidden w-40 rounded-2xl border border-border/60 bg-background/90 p-4 shadow-lg md:block">
+                <p className="text-xs text-muted-foreground">Premium Themes</p>
+                <div className="mt-2 flex items-center gap-1 text-sm font-semibold text-foreground">
+                  <Star className="h-4 w-4 text-accent" />
+                  18 ready to go
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-16">
+        <div className="grid gap-6 rounded-3xl border border-border/60 bg-card/60 p-8 md:grid-cols-2">
+          <div className="space-y-4">
+            <h2 className="font-headline text-2xl font-semibold">
+              Everything you need to impress recruiters and clients.
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              PortfolioForge blends automation with tasteful design so your work
+              stands out without hours of fiddling.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {highlights.map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm"
+              >
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-16">
+        <div className="grid gap-8 md:grid-cols-3">
+          {steps.map((step, index) => (
+            <div
+              key={step.title}
+              className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm"
+            >
+              <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                0{index + 1}
+              </div>
+              <h3 className="font-headline text-lg font-semibold">{step.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-20">
+        <div className="grid gap-6 md:grid-cols-3">
+          {testimonials.map((item) => (
+            <div
+              key={item.name}
+              className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/90 p-6"
+            >
+              <div className="flex gap-1 text-accent">
+                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4" />
+                <Star className="h-4 w-4" />
+              </div>
+              <p className="text-sm text-foreground">{item.quote}</p>
+              <div>
+                <p className="text-sm font-semibold">{item.name}</p>
+                <p className="text-xs text-muted-foreground">{item.role}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-24">
+        <div className="rounded-3xl border border-border/60 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-8 md:p-12">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl space-y-3">
+              <h2 className="font-headline text-3xl font-semibold">
+                Ready to publish something you&apos;re proud of?
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Start free, import your data, and decide when you&apos;re ready to
+                upgrade. Your portfolio goes live the moment you hit publish.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button asChild size="lg">
+                <Link href="/signup">Start free</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/pricing">View pricing</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

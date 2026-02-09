@@ -44,7 +44,7 @@ export default function AdminLayout({
           <p className="text-muted-foreground">
             You do not have permission to view this page.
           </p>
-          <Link href="/" className="text-primary underline">
+          <Link href="/dashboard" className="text-primary underline">
             Return to Dashboard
           </Link>
         </div>

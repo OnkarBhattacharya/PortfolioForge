@@ -212,10 +212,13 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
-      <div className="flex items-center">
+      <div className="flex flex-col gap-2">
         <h1 className="font-headline text-3xl font-bold tracking-tighter">
           Settings
         </h1>
+        <p className="text-sm text-muted-foreground">
+          Control your portfolio appearance, domains, and AI theme generation.
+        </p>
       </div>
 
        {isReadOnly && (
@@ -232,7 +235,7 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Custom Domain</CardTitle>
@@ -294,6 +297,25 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="font-headline">Upgrade for more</CardTitle>
+            <CardDescription>
+              Custom domains and premium themes are part of the Pro plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>Remove PortfolioForge branding.</p>
+            <p>Unlock premium theme templates.</p>
+            <p>Publish unlimited portfolio items.</p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/billing">View billing</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
               <CardTitle className="font-headline">AI Theme Generator</CardTitle>

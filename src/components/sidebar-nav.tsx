@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutGrid },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/import-data", label: "Import Data", icon: UploadCloud },
   { href: "/projects", label: "Portfolio Items", icon: CodeXml },
   { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },

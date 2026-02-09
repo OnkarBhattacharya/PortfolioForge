@@ -15,9 +15,9 @@ export function Footer() {
                 <div>
                     <h3 className="font-headline font-semibold text-foreground mb-4">Quick Links</h3>
                     <ul className="space-y-2 text-sm">
-                        <li><Link href="#" className="hover:underline hover:text-primary">About Us</Link></li>
-                        <li><Link href="#" className="hover:underline hover:text-primary">Contact Us</Link></li>
-                        <li><Link href="#" className="hover:underline hover:text-primary">Features</Link></li>
+                        <li><Link href="/pricing" className="hover:underline hover:text-primary">Pricing</Link></li>
+                        <li><Link href="/dashboard" className="hover:underline hover:text-primary">Dashboard</Link></li>
+                        <li><Link href="/projects" className="hover:underline hover:text-primary">Portfolio Items</Link></li>
                         <li><Link href="/login" className="hover:underline hover:text-primary">Login</Link></li>
                     </ul>
                 </div>
@@ -38,9 +38,6 @@ export function Footer() {
                 </div>
                 <p className="text-center md:text-right">&copy; {new Date().getFullYear()} PortfolioForge. All Rights Reserved.</p>
             </div>
-             <p className="text-xs text-center mt-4">
-                Disclaimer: This site is a project and should be treated as such. The content is for demonstration purposes only.
-            </p>
         </div>
       </footer>
   );

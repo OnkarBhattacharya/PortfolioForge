@@ -23,7 +23,7 @@ import {
 } from "../../components/ui/card";
 import { Textarea } from "../../components/ui/textarea";
 import { useEffect, useState } from "react";
-import { Loader2, Sparkles, KeyRound } from "lucide-react";
+import { Loader2, Sparkles, KeyRound, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useToast } from "../../hooks/use-toast";
 import { useUser } from "../../firebase";
@@ -43,6 +43,8 @@ type FormValues = z.infer<typeof formSchema>;
 export default function AiAssistantPage() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any | null>(null);
+  const [hasCvData, setHasCvData] = useState(false);
+  const [hasProfession, setHasProfession] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const isReadOnly = !user || user.isAnonymous;
@@ -67,6 +69,11 @@ export default function AiAssistantPage() {
                 if (cvData.profession) {
                     form.setValue("profession", cvData.profession);
                 }
+                setHasCvData(true);
+                setHasProfession(!!cvData.profession);
+            } else {
+                setHasCvData(false);
+                setHasProfession(false);
             }
         } catch (error) {
             logger.error("Failed to parse CV data from local storage", { error });
@@ -123,10 +130,13 @@ export default function AiAssistantPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
-      <div className="flex items-center">
+      <div className="flex flex-col gap-2">
         <h1 className="font-headline text-3xl font-bold tracking-tighter">
           AI Content Assistant
         </h1>
+        <p className="text-sm text-muted-foreground">
+          Turn raw data into a polished headline and summary in seconds.
+        </p>
       </div>
 
        {isReadOnly && (
@@ -143,8 +153,9 @@ export default function AiAssistantPage() {
         </Card>
       )}
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6">
+          <Card>
           <CardHeader>
             <CardTitle className="font-headline">Your Professional Data</CardTitle>
             <CardDescription>
@@ -154,6 +165,22 @@ export default function AiAssistantPage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid gap-3 rounded-lg border bg-background p-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">CV data detected</span>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <CheckCircle2 className={`h-4 w-4 ${hasCvData ? "text-green-500" : "text-muted-foreground"}`} />
+                      {hasCvData ? "Yes" : "No"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Profession detected</span>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <CheckCircle2 className={`h-4 w-4 ${hasProfession ? "text-green-500" : "text-muted-foreground"}`} />
+                      {hasProfession ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </div>
                 <FormField
                   control={form.control}
                   name="profession"
@@ -163,7 +190,7 @@ export default function AiAssistantPage() {
                       <FormControl>
                         <Textarea
                           placeholder="e.g., Software Engineer, Graphic Designer, Marketing Manager"
-                          className="min-h-[30px]"
+                          className="min-h-[60px]"
                           {...field}
                         />
                       </FormControl>
@@ -205,8 +232,26 @@ export default function AiAssistantPage() {
               </form>
             </Form>
           </CardContent>
-        </Card>
-        
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline text-lg">Need more data?</CardTitle>
+              <CardDescription>
+                Import a CV or LinkedIn profile for richer AI results.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button asChild variant="outline">
+                <Link href="/import-data">Import data now</Link>
+              </Button>
+              <Button asChild variant="ghost">
+                <Link href="/projects">Review portfolio items</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="space-y-8">
           <Card>
             <CardHeader>
@@ -244,6 +289,21 @@ export default function AiAssistantPage() {
               ) : (
                 suggestions?.suggestedSummary || <p className="text-muted-foreground">Suggestions will appear here...</p>
               )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline text-lg">How to use these</CardTitle>
+              <CardDescription>
+                Copy the sections into your profile summary and portfolio hero.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>Use the description as a headline on your portfolio.</p>
+              <p>Use the summary as your bio and in your About section.</p>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/settings">Update profile settings</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

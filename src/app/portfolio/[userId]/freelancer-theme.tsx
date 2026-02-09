@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
-import { Globe, Github, Linkedin, Mail, Plus } from 'lucide-react';
+import { Globe, Github, Linkedin, Mail, Plus, Sparkles, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import type { UserProfile, PortfolioItem } from './page';
 import { ContactForm } from './contact-form';
@@ -42,8 +42,14 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
     <div className="min-h-screen bg-background font-body text-foreground" style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}>
       
       {/* Masthead */}
-      <header className="text-center text-white" style={{ backgroundColor: `hsl(${theme.primary})` }}>
-        <div className="container mx-auto flex flex-col items-center px-4 py-24">
+      <header className="relative overflow-hidden text-white" style={{ backgroundColor: `hsl(${theme.primary})` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.25)_0%,_transparent_55%)]" />
+        <div className="absolute -top-16 right-0 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="container mx-auto flex flex-col items-center px-4 py-24 text-center relative">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs uppercase tracking-widest">
+            <Sparkles className="h-3 w-3" />
+            Portfolio
+          </div>
           <Avatar className="mx-auto h-40 w-40 mb-8 border-4 border-white shadow-lg">
             <AvatarImage src={`https://picsum.photos/seed/${profile.id}/200/200`} />
             <AvatarFallback>{profile.fullName?.charAt(0) || 'U'}</AvatarFallback>
@@ -51,6 +57,10 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
           <h1 className="font-headline text-5xl md:text-6xl font-bold uppercase">{profile?.personalInfo?.name || profile.fullName || 'User Name'}</h1>
           <StarDivider className="my-6 text-white" />
           <p className="text-xl md:text-2xl font-light">{profile?.profession || 'A Passionate Professional'}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-white/80">
+            <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {profile?.personalInfo?.location || 'Planet Earth'}</span>
+            <span>Open to new projects</span>
+          </div>
         </div>
       </header>
       
@@ -71,12 +81,16 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
                         alt={item.name}
                         width={600}
                         height={400}
-                        className="aspect-video w-full rounded-lg object-cover"
+                        className="aspect-video w-full rounded-lg object-cover shadow-md transition-transform duration-300 group-hover:scale-[1.02]"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary opacity-0 transition-opacity duration-300 group-hover:opacity-90">
                         <Plus className="h-16 w-16 text-white" />
                       </div>
                     </a>
+                    <div className="mt-4">
+                      <h3 className="font-headline text-xl">{item.name}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                    </div>
                   </div>
                 );
               })}
@@ -141,7 +155,7 @@ export function FreelancerTheme({ profile, items, theme }: FreelancerThemeProps)
             </div>
             <div>
               <h4 className="mb-4 font-headline text-2xl font-bold uppercase">About PortfolioForge</h4>
-              <p className="font-light leading-relaxed">PortfolioForge is a free to use, AI-powered portfolio builder created by Google Studio.</p>
+              <p className="font-light leading-relaxed">PortfolioForge is an AI-powered portfolio builder for modern professionals.</p>
             </div>
           </div>
         </div>

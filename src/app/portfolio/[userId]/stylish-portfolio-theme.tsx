@@ -77,13 +77,26 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
             }}>
-            <div className="absolute inset-0 bg-background/20"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background/60"></div>
             <div className="relative container mx-auto px-4 z-10">
                 <h1 className="text-5xl md:text-7xl font-extrabold mb-4">{profile.fullName || 'PortfolioForge'}</h1>
-                <h3 className="text-2xl md:text-3xl italic mb-8">{profile.profession || 'A Perfect Portfolio'}</h3>
-                <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/80 rounded-full px-8 py-6 text-lg font-bold tracking-wider">
-                    <a href="#about">Find Out More</a>
-                </Button>
+                <h3 className="text-2xl md:text-3xl italic mb-6">{profile.profession || 'A Perfect Portfolio'}</h3>
+                <p className="mx-auto mb-8 max-w-2xl text-sm md:text-base text-muted-foreground">
+                    A curated portfolio of impactful work, product strategy, and premium experiences.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                    <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/80 rounded-full px-8 py-6 text-lg font-bold tracking-wider">
+                        <a href="#about">Find Out More</a>
+                    </Button>
+                    <Button asChild size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg font-bold tracking-wider">
+                        <a href="#portfolio">View Work</a>
+                    </Button>
+                </div>
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+                    <span>Featured in product launches</span>
+                    <span>Based in {profile.personalInfo?.location || 'Global'}</span>
+                    <span>Open for collaborations</span>
+                </div>
             </div>
         </header>
 
@@ -106,12 +119,12 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                     <h2 className="text-4xl font-bold mb-12">What I Offer</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
                         {(profile.skills?.slice(0, 4) || ['Responsive Design', 'Web Development', 'UI/UX', 'SEO']).map((skill, index) => (
-                            <div key={index} className="flex flex-col items-center">
-                                <div className="flex items-center justify-center h-24 w-24 rounded-full bg-background text-primary mb-4">
+                            <div key={index} className="flex flex-col items-center rounded-3xl bg-background/10 p-6">
+                                <div className="flex items-center justify-center h-20 w-20 rounded-full bg-background text-primary mb-4">
                                     <Phone className="h-10 w-10" />
                                 </div>
                                 <h3 className="text-2xl font-bold mb-2">{skill}</h3>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                                <p className="text-sm text-primary-foreground/80">Premium delivery with a focus on clarity, performance, and polish.</p>
                             </div>
                         ))}
                     </div>
@@ -160,9 +173,27 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                 </div>
             </section>
 
-             {/* Map */}
-            <section className="h-[500px] w-full bg-gray-300 flex items-center justify-center">
-                <p className="text-gray-500">Map Placeholder</p>
+            {/* Highlight Section */}
+            <section className="py-20 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="grid gap-8 lg:grid-cols-3">
+                        <div className="rounded-3xl border border-border/60 bg-background p-6">
+                            <h4 className="text-sm font-bold uppercase text-primary mb-2">Client Wins</h4>
+                            <p className="text-lg font-semibold">+120% conversion lift</p>
+                            <p className="text-sm text-muted-foreground mt-2">Optimized onboarding and feature discovery for a fintech launch.</p>
+                        </div>
+                        <div className="rounded-3xl border border-border/60 bg-background p-6">
+                            <h4 className="text-sm font-bold uppercase text-primary mb-2">Featured Work</h4>
+                            <p className="text-lg font-semibold">Global SaaS redesign</p>
+                            <p className="text-sm text-muted-foreground mt-2">Scaled a design system across 10+ product teams.</p>
+                        </div>
+                        <div className="rounded-3xl border border-border/60 bg-background p-6">
+                            <h4 className="text-sm font-bold uppercase text-primary mb-2">Availability</h4>
+                            <p className="text-lg font-semibold">Now booking Q2</p>
+                            <p className="text-sm text-muted-foreground mt-2">Open to select freelance and advisory engagements.</p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             {/* Contact Section */}
@@ -196,7 +227,7 @@ export function StylishPortfolioTheme({ profile, items, theme }: StylishPortfoli
                 <p className="text-muted-foreground text-sm">&copy; {new Date().getFullYear()} {profile.fullName || 'Your Name'}. All Rights Reserved.</p>
                  <div className="text-xs text-muted-foreground mt-4">
                     <Link href="/privacy-policy" className="hover:text-primary">Privacy Policy</Link>
-                    <span className="mx-2">Â·</span>
+                    <span className="mx-2">·</span>
                     <Link href="/terms-and-conditions" className="hover:text-primary">Terms of Use</Link>
                 </div>
             </div>

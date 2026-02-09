@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound, Loader2 } from "lucide-react";
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound, Loader2, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,7 @@ export default function ImportDataPage() {
 
   const [importUrl, setImportUrl] = useState('');
   const [isImportingUrl, setIsImportingUrl] = useState(false);
+  const [importUrlSuccess, setImportUrlSuccess] = useState(false);
 
 
   const { toast } = useToast();
@@ -263,6 +264,7 @@ export default function ImportDataPage() {
         title: "AI-Powered Import Successful",
         description: `"${result.name}" has been added to your portfolio.`,
       });
+      setImportUrlSuccess(true);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -276,10 +278,13 @@ export default function ImportDataPage() {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">
-      <div className="flex items-center">
+      <div className="flex flex-col gap-2">
         <h1 className="font-headline text-3xl font-bold tracking-tighter">
           Import Data
         </h1>
+        <p className="text-sm text-muted-foreground">
+          Bring everything into one place. The more you import, the stronger your portfolio becomes.
+        </p>
       </div>
       
       {isReadOnly && (
@@ -296,7 +301,59 @@ export default function ImportDataPage() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-4">
+        <Card className="lg:col-span-4">
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="font-headline text-xl">Your import checklist</CardTitle>
+              <CardDescription>
+                Aim for at least two sources to generate stronger AI summaries.
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" className="w-full md:w-auto">
+              <Link href="/ai-assistant">
+                <Sparkles className="mr-2 h-4 w-4" /> Open AI Assistant
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border bg-background p-4">
+              <p className="text-sm font-semibold">CV or Resume</p>
+              <p className="text-xs text-muted-foreground">Best for summary and experience</p>
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                {cvUploadSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                <span>{cvUploadSuccess ? 'Imported' : 'Pending'}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-background p-4">
+              <p className="text-sm font-semibold">LinkedIn</p>
+              <p className="text-xs text-muted-foreground">Great for credibility and keywords</p>
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                {linkedInSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                <span>{linkedInSuccess ? 'Imported' : 'Pending'}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-background p-4">
+              <p className="text-sm font-semibold">GitHub</p>
+              <p className="text-xs text-muted-foreground">Turns repos into projects</p>
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                {githubSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                <span>{githubSuccess ? 'Imported' : 'Pending'}</span>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-background p-4">
+              <p className="text-sm font-semibold">Public URL</p>
+              <p className="text-xs text-muted-foreground">Capture articles or case studies</p>
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                {importUrlSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                <span>{importUrlSuccess ? 'Imported' : 'Pending'}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="lg:col-span-3 grid gap-6 md:grid-cols-2">
+          <Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="space-y-1.5">
@@ -328,8 +385,8 @@ export default function ImportDataPage() {
           </CardContent>
         </Card>
 
-        <Dialog>
-          <Card>
+          <Dialog>
+            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1.5">
                 <CardTitle className="font-headline flex items-center gap-2">
@@ -352,8 +409,8 @@ export default function ImportDataPage() {
                 Paste your profile data to have our AI structure and import it.
               </p>
             </CardContent>
-          </Card>
-          <DialogContent>
+            </Card>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>AI-Powered LinkedIn Import</DialogTitle>
               <DialogDescription>
@@ -380,11 +437,11 @@ export default function ImportDataPage() {
                 </Button>
               </DialogClose>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
 
-         <Dialog>
-          <Card>
+          <Dialog>
+            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1.5">
                 <CardTitle className="font-headline flex items-center gap-2">
@@ -410,8 +467,8 @@ export default function ImportDataPage() {
                 Automatically fetch and display your public repositories.
               </p>
             </CardContent>
-          </Card>
-          <DialogContent>
+            </Card>
+            <DialogContent>
              <DialogHeader>
               <DialogTitle>Import from GitHub</DialogTitle>
               <DialogDescription>
@@ -437,11 +494,11 @@ export default function ImportDataPage() {
                 </Button>
               </DialogClose>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
 
-        <Dialog>
-          <Card>
+          <Dialog>
+            <Card>
             <CardHeader>
               <CardTitle className="font-headline flex items-center gap-2">
                 <Link2 className="h-6 w-6 text-accent" />
@@ -465,8 +522,8 @@ export default function ImportDataPage() {
                 Our AI will create a portfolio item from any link.
               </p>
             </CardContent>
-          </Card>
-          <DialogContent>
+            </Card>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>AI-Powered URL Import</DialogTitle>
               <DialogDescription>
@@ -492,9 +549,35 @@ export default function ImportDataPage() {
                 </Button>
               </DialogClose>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
 
+        <Card className="lg:col-span-1 h-fit">
+          <CardHeader>
+            <CardTitle className="font-headline text-lg">Recommended order</CardTitle>
+            <CardDescription>
+              Start with your CV, then LinkedIn, then projects.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              CV upload to capture summary + experience
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              LinkedIn for keywords and credibility
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              GitHub and URL imports for projects
+            </div>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/projects">Review portfolio items</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

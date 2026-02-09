@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
-import { Check, CheckCircle, KeyRound, Loader2, X } from 'lucide-react';
+import { Check, CheckCircle, KeyRound, Loader2, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
 import {
@@ -147,10 +147,13 @@ export default function BillingPage() {
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6">
-      <div className="flex items-center">
+      <div className="flex flex-col gap-2">
         <h1 className="font-headline text-3xl font-bold tracking-tighter">
           Billing & Subscription
         </h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your plan, payment method, and invoices in one place.
+        </p>
       </div>
 
       {isReadOnly && (
@@ -229,7 +232,10 @@ export default function BillingPage() {
               </CardFooter>
             </Card>
 
-            <Card className={currentTier === 'pro' ? 'border-primary' : ''}>
+            <Card className={`relative ${currentTier === 'pro' ? 'border-primary' : ''}`}>
+              <div className="absolute right-4 top-4 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                Most popular
+              </div>
               <CardHeader>
                 <CardTitle className="font-headline">{Tiers.pro.name}</CardTitle>
                 <CardDescription>
@@ -274,9 +280,12 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle className="font-headline">Current Plan</CardTitle>
+            <CardDescription>
+              Track your subscription status and renewal date.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
              {isProfileLoading && !isReadOnly ? (
@@ -301,15 +310,22 @@ export default function BillingPage() {
                          <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Renews/Expires On</p>
                             <p className="font-semibold">{endDate}</p>
-                        </div>
+                         </div>
                     )}
                 </>
              )}
           </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/pricing">
+                <Sparkles className="mr-2 h-4 w-4" /> Compare plans
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Payment Method</CardTitle>
@@ -334,7 +350,7 @@ export default function BillingPage() {
             </Card>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="font-headline">Billing History</CardTitle>
             <CardDescription>

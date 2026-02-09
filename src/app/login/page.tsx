@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { auth } = useFirebase();
@@ -21,7 +22,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      router.push("/admin");
+      router.push("/dashboard");
     } catch (error) {
       logger.error("Error signing in with Google", { error });
     }
@@ -31,7 +32,7 @@ export default function LoginPage() {
     const provider = new OAuthProvider("apple.com");
     try {
       await signInWithPopup(auth, provider);
-      router.push("/admin");
+      router.push("/dashboard");
     } catch (error) {
       logger.error("Error signing in with Apple", { error });
     }
@@ -66,6 +67,12 @@ export default function LoginPage() {
             Sign in with Apple
           </Button>
         </div>
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{" "}
+          <Link href="/signup" className="font-semibold text-primary underline">
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );
