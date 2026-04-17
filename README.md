@@ -57,3 +57,16 @@ PortfolioForge helps professionals launch an AI-native portfolio in minutes. Use
    ```
 
 Remember to populate the Firebase environment with the same keys and configure the Stripe webhook URL (`https://<your-app>/api/stripe/webhook`).
+
+## contributions :
+Purpose of the RepositoryPortfolioForge is a web-based application designed to help users create and manage online portfolios efficiently. The project aims to provide developers and creatives with tools to showcase their skills, projects, and achievements in a professional and user-friendly manner.
+
+Why Contribute?By contributing to PortfolioForge, you can join a growing community of developers who are committed to making portfolio creation accessible for everyone. Contributing to open source is a great way to improve your skills, collaborate with others, and gain recognition in the developer community.
+
+Getting Started
+
+Follow the steps below to contribute:
+
+1. Fork the Repository:Create a personal copy of this repository under your GitHub account by clicking the “Fork” button on the top right.
+
+2. Clone Your Fork:Clone your forked repository to your local machine
