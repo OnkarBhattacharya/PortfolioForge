@@ -1,0 +1,34 @@
+mutation CreateUser @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  user_insert(data: {
+    id_expr: "uuidV4()",
+    displayName: "New User",
+    email: "newuser@example.com",
+    createdAt_expr: "request.time"
+  })
+}
+
+query GetPublicPortfolios @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  portfolios(where: {isPublic: {eq: true}}) {
+    id
+    title
+    description
+  }
+}
+
+mutation UpdateProjectDescription($id: UUID!, $description: String!) @auth(level: USER) {
+  project_update(
+    id: $id,
+    data: {
+      description: $description,
+      lastUpdated_expr: "request.time"
+    }
+  )
+}
+
+query GetMyPortfolios @auth(level: USER) {
+  portfolios(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    title
+    description
+  }
+}
