@@ -1,0 +1,38 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  bio: String
+  photoUrl: String
+  contactEmail: String
+  phoneNumber: String
+  linkedinProfile: String
+  githubProfile: String
+}
+
+type Portfolio @table {
+  user: User!
+  title: String!
+  createdAt: Timestamp!
+  description: String
+  isPublic: Boolean
+  lastUpdated: Timestamp
+}
+
+type Section @table {
+  portfolio: Portfolio!
+  name: String!
+  order: Int!
+  createdAt: Timestamp!
+  description: String
+}
+
+type Project @table {
+  section: Section!
+  title: String!
+  createdAt: Timestamp!
+  order: Int!
+  description: String
+  imageUrl: String
+  projectLink: String
+}
