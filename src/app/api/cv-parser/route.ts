@@ -15,13 +15,19 @@ export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<type
 
 export async function POST(req: NextRequest) {
   try {
-    const { cvFile, userId } = await req.json();
+    const formData = await req.formData();
+    const cvFile = formData.get('cvFile') as File;
+    const userId = formData.get('userId') as string;
 
     if (!cvFile || !userId) {
-      return NextResponse.json({ error: 'cvFile (as data URI) and userId are required' }, { status: 400 });
+      return NextResponse.json({ error: 'cvFile (as a file) and userId are required' }, { status: 400 });
     }
 
-    const parsedData = await parseCv({ cvFile });
+    const bytes = await cvFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const cvFileAsDataUri = `data:${cvFile.type};base64,${buffer.toString('base64')}`;
+
+    const parsedData = await parseCv({ cvFile: cvFileAsDataUri });
     await saveCvDataToFirestore(userId, parsedData);
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any)

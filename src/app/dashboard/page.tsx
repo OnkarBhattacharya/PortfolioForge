@@ -196,7 +196,7 @@ export default function DashboardPage() {
     return doc(firestore, 'users', user.uid);
   }, [user, firestore, isReadOnly]);
 
-  const { data: userProfile } = useDoc<UserProfile>(userProfileQuery);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
 
   const recentItems = isReadOnly ? sampleItems : dbItems;
 
@@ -276,6 +276,14 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+          {isProfileLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-full" />
+            </div>
+    ) : (
             <ul className="space-y-4 text-sm font-medium">
               <li className="flex items-center">
                 {isReadOnly ? (
@@ -310,6 +318,7 @@ export default function DashboardPage() {
                 <span>Portfolio Items Added</span>
               </li>
             </ul>
+            )}
           </CardContent>
         </Card>
 
@@ -345,7 +354,25 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {userProfile?.skills && userProfile.skills.length > 0 && (
+      {isProfileLoading ? (
+        <div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="mt-2 h-4 w-2/3" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-28" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        userProfile?.skills && userProfile.skills.length > 0 && (
         <div>
           <Card>
             <CardHeader>
@@ -365,6 +392,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+        )
       )}
 
       <div>
