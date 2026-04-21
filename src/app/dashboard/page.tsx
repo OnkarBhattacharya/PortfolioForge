@@ -17,6 +17,7 @@ import { useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@
 import { collection, query, limit, doc } from 'firebase/firestore';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
@@ -60,9 +61,124 @@ const sampleItems: PortfolioItem[] = [
 ];
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const isReadOnly = !user || user.isAnonymous;
+
+  if (isUserLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-48" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="flex flex-col lg:col-span-1">
+            <CardHeader>
+              <Skeleton className="h-8 w-4/5" />
+              <Skeleton className="mt-2 h-4 w-full" />
+            </CardHeader>
+            <CardContent className="flex-1">
+              <Skeleton className="h-4 w-3/4" />
+            </CardContent>
+            <CardContent>
+              <Skeleton className="h-10 w-36" />
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <Skeleton className="h-8 w-3/5" />
+              <Skeleton className="mt-2 h-4 w-4/5" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <Skeleton className="h-8 w-2/5" />
+              <Skeleton className="mt-2 h-4 w-3/5" />
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+        <div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="mt-2 h-4 w-2/3" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-28" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-1/4" />
+              <Skeleton className="mt-2 h-4 w-1/2" />
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="overflow-hidden">
+                <Skeleton className="aspect-video w-full object-cover" />
+                <CardHeader>
+                  <Skeleton className="h-7 w-4/5" />
+                  <Skeleton className="mt-2 h-4 w-full" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <Skeleton className="aspect-video w-full object-cover" />
+                <CardHeader>
+                  <Skeleton className="h-7 w-4/5" />
+                  <Skeleton className="mt-2 h-4 w-full" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <Skeleton className="aspect-video w-full object-cover" />
+                <CardHeader>
+                  <Skeleton className="h-7 w-4/5" />
+                  <Skeleton className="mt-2 h-4 w-full" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const itemsQuery = useMemoFirebase(() => {
     if (isReadOnly || !firestore || !user) return null;
@@ -102,7 +218,7 @@ export default function DashboardPage() {
       </div>
 
       {isReadOnly && (
-        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
+        <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/20">
           <CardHeader className="flex flex-row items-center gap-4">
             <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
             <div>

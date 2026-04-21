@@ -160,7 +160,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
-  // This hook is a simple wrapper around useMemo to provide a consistent API for memoizing
-  // Firebase-related objects, like query references. This helps prevent re-renders.
-  return useMemo(factory, deps);
+  const instance = useMemo(factory, deps);
+
+  if (instance && typeof instance === 'object') {
+    // @ts-ignore
+    instance.__memo = true;
+  }
+
+  return instance;
 }
