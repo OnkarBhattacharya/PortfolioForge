@@ -41,12 +41,15 @@ export const cvParserFlow = ai.defineFlow(
     outputSchema: CvDataSchema,
   },
   async (input) => {
-    const { output } = await cvParserPrompt(input);
-    if (!output) {
-      throw new Error(
-        'Failed to parse CV. The model did not return valid data.'
-      );
+    try {
+      const { output } = await cvParserPrompt(input);
+      if (!output) {
+        throw new Error('Model returned no output');
+      }
+      CvDataSchema.parse(output); // Explicit validation
+      return output;
+    } catch (generateError: any) {
+      throw new Error(`CV parsing failed: ${generateError.message}. Ensure CV is clear PDF/image under 10MB.`);
     }
-    return output;
   }
 );

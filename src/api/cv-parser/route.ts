@@ -36,12 +36,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'cvFile (as data URI) and userId are required' }, { status: 400 });
   }
 
+  // Validate dataURI format and size (rough check: <10MB base64)
+  if (!cvFile.startsWith('data:') || cvFile.length > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Invalid or oversized CV file (max 10MB)' }, { status: 400 });
+  }
+
   try {
     const parsedData = await parseCv({ cvFile });
     await saveCvDataToFirestore(userId, parsedData);
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
-    logger.error('Error in cv-parser API:', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: 'An unexpected error occurred during CV processing' }, { status: 500 });
+    logger.error('Error in cv-parser API:', { 
+      error: error.message, 
+      stack: error.stack,
+      cvFilePreview: cvFile.substring(0, 100) + '...',
+      userId 
+    });
+    return NextResponse.json({ 
+      error: error.message?.includes('model') ? 'AI model failed to process CV (check file format: PDF/image)' : 'CV processing failed' 
+    }, { status: 500 });
   }
 }
