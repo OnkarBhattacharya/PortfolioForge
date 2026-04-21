@@ -53,8 +53,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_hsl(var(--primary))_0%,_transparent_55%)] opacity-20" />
-        <div className="absolute -top-20 right-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,_hsl(var(--accent))_0%,_transparent_65%)] opacity-30 blur-2xl animate-[float-slow_8s_ease-in-out_infinite]" />
-        <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,_hsl(var(--primary))_0%,_transparent_60%)] opacity-20 blur-3xl animate-[float-slow_10s_ease-in-out_infinite]" />
+        <div className="hero-orb-accent" />
+        <div className="hero-orb-primary" />
 
         <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
           <Link href="/" className="font-headline text-xl font-semibold tracking-tight">

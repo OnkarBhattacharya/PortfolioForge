@@ -117,3 +117,16 @@
     background-position: 100% 50%;
   }
 }
+
+@layer utilities {
+  .hero-orb-accent {
+    @apply absolute -top-20 right-0 h-64 w-64 rounded-full opacity-30 blur-2xl;
+    background: radial-gradient(circle, hsl(var(--accent)) 0%, transparent 65%);
+    animation: float-slow 8s ease-in-out infinite;
+  }
+  .hero-orb-primary {
+    @apply absolute bottom-0 left-0 h-64 w-64 rounded-full opacity-20 blur-3xl;
+    background: radial-gradient(circle, hsl(var(--primary)) 0%, transparent 60%);
+    animation: float-slow 10s ease-in-out infinite;
+  }
+}

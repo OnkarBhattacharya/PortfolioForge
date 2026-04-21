@@ -7,7 +7,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from '@/ai/genkit';
 
 const PortfolioContentSuggestionsInputSchema = z.object({
   profession: z.string().optional().describe('The user\'s profession, e.g., "Software Engineer", "Graphic Designer".'),
@@ -39,25 +39,6 @@ export async function generatePortfolioContentSuggestions(
   return portfolioContentSuggestionsFlow(input);
 }
 
-const portfolioContentSuggestionsPrompt = ai.definePrompt({
-  name: 'portfolioContentSuggestionsPrompt',
-  input: {schema: PortfolioContentSuggestionsInputSchema},
-  output: {schema: PortfolioContentSuggestionsOutputSchema},
-  prompt: `You are an expert career coach and copywriter who helps professionals create compelling portfolio content.
-
-  Based on the user's profession and the provided data from their CV, LinkedIn, and projects, generate engaging suggestions for their portfolio description and summary.
-
-  The user\'s profession is: {{profession}}
-
-  CV Data: {{cvData}}
-  LinkedIn Data: {{linkedInData}}
-  GitHub Projects Data: {{githubProjectsData}}
-
-  Your tone should be professional but also creative and engaging. The suggestions should highlight the candidate\'s unique skills and experience in a way that is tailored to their specific field.
-  Your output should be a JSON object that conforms to PortfolioContentSuggestionsOutputSchema.
-`,
-});
-
 const portfolioContentSuggestionsFlow = ai.defineFlow(
   {
     name: 'portfolioContentSuggestionsFlow',
@@ -65,7 +46,20 @@ const portfolioContentSuggestionsFlow = ai.defineFlow(
     outputSchema: PortfolioContentSuggestionsOutputSchema,
   },
   async (input) => {
-    const {output} = await portfolioContentSuggestionsPrompt(input);
+    const { output } = await ai.generate({
+      prompt: `You are an expert career coach and copywriter who helps professionals create compelling portfolio content.
+
+Based on the user's profession and the provided data from their CV, LinkedIn, and projects, generate engaging suggestions for their portfolio description and summary.
+
+Profession: ${input.profession ?? 'Not specified'}
+CV Data: ${input.cvData ?? 'Not provided'}
+LinkedIn Data: ${input.linkedInData ?? 'Not provided'}
+GitHub Projects Data: ${input.githubProjectsData ?? 'Not provided'}
+
+Your tone should be professional but also creative and engaging. Highlight the candidate's unique skills tailored to their field.`,
+      output: { schema: PortfolioContentSuggestionsOutputSchema },
+      config: { temperature: 0.7 },
+    });
     if (!output) {
       throw new Error('Failed to generate content suggestions. The model did not return valid data.');
     }

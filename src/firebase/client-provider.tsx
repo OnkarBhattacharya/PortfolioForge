@@ -1,32 +1,35 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase/index';
-import { MainLayout } from '@/components/main-layout';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import type { FirebaseApp } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 
-/**
- * This is the primary client-side boundary for Firebase.
- * It ensures that Firebase is initialized only once on the client and
- * provides the necessary context to all children, including the MainLayout.
- */
+interface FirebaseServices {
+    firebaseApp: FirebaseApp;
+    auth: Auth;
+    firestore: Firestore;
+}
+
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
-    // Memoize Firebase initialization to ensure it runs only once.
-    const firebaseServices = useMemo(() => {
-        if (typeof window !== 'undefined') {
-            return initializeFirebase();
+    const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+
+    useEffect(() => {
+        // Initialize Firebase only on the client, after first render.
+        // useEffect never runs on the server, so SSR output matches initial client render.
+        const services = initializeFirebase();
+        if (services) {
+            setFirebaseServices(services);
         }
-        // On the server, we return null. The provider will handle this gracefully.
-        return null;
     }, []);
 
-    // During SSR or before Firebase is initialized, we render nothing.
-    // The browser will wait for the client-side render to show the UI.
-    // This prevents any component from trying to access Firebase context prematurely.
     if (!firebaseServices) {
-        return null; 
+        // Render children without Firebase context on first render (matches SSR output).
+        return <>{children}</>;
     }
 
     return (
@@ -35,9 +38,7 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
             auth={firebaseServices.auth}
             firestore={firebaseServices.firestore}
         >
-            <MainLayout>
-                {children}
-            </MainLayout>
+            {children}
             <FirebaseErrorListener />
         </FirebaseProvider>
     );
