@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -409,201 +408,200 @@ export default function ImportDataPage() {
 
         <div className="lg:col-span-3 grid gap-6 md:grid-cols-2">
           <Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="space-y-1.5">
-              <CardTitle className="font-headline flex items-center gap-2">
-                <FileText className="h-6 w-6 text-primary" />
-                Upload CV
-              </CardTitle>
-              <CardDescription>
-                Upload your CV (PDF or image).
-              </CardDescription>
-            </div>
-             {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
-              <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
-            <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
-                {isUploading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                )}
-                {isUploading ? 'Parsing...' : 'Upload'}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-             Our multi-modal AI analyzes your CV's layout and content to pre-fill your portfolio and assist with content generation.
-            </p>
-          </CardContent>
-        </Card>
-
-          <Dialog>
-            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1.5">
                 <CardTitle className="font-headline flex items-center gap-2">
-                  <Linkedin className="h-6 w-6 text-blue-600" />
-                  Import from LinkedIn
+                  <FileText className="h-6 w-6 text-primary" />
+                  Upload CV
                 </CardTitle>
                 <CardDescription>
-                  AI-powered profile import.
+                  Upload your CV (PDF or image).
                 </CardDescription>
               </div>
-              {linkedInSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+              {cvUploadSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <DialogTrigger asChild>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isReadOnly}>
-                  <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Import'} LinkedIn Data
+            <CardContent className="space-y-4">
+              <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:space-x-2">
+                <Input type="file" placeholder="Select file" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" disabled={isReadOnly} className="flex-1" />
+                <Button onClick={handleUpload} disabled={isUploading || !selectedFile || isReadOnly} className="w-full sm:w-auto">
+                  {isUploading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
+                  {isUploading ? 'Parsing...' : 'Upload'}
                 </Button>
-              </DialogTrigger>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Paste your profile data to have our AI structure and import it.
+                Our multi-modal AI analyzes your CV's layout and content to pre-fill your portfolio and assist with content generation.
               </p>
             </CardContent>
+          </Card>
+
+          <Dialog>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1.5">
+                  <CardTitle className="font-headline flex items-center gap-2">
+                    <Linkedin className="h-6 w-6 text-blue-600" />
+                    Import from LinkedIn
+                  </CardTitle>
+                  <CardDescription>
+                    AI-powered profile import.
+                  </CardDescription>
+                </div>
+                {linkedInSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <DialogTrigger asChild>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isReadOnly}>
+                    <Linkedin className="mr-2 h-4 w-4" /> {linkedInSuccess ? 'Update' : 'Import'} LinkedIn Data
+                  </Button>
+                </DialogTrigger>
+                <p className="text-xs text-muted-foreground">
+                  Paste your profile data to have our AI structure and import it.
+                </p>
+              </CardContent>
             </Card>
             <DialogContent>
-            <DialogHeader>
-              <DialogTitle>AI-Powered LinkedIn Import</DialogTitle>
-              <DialogDescription>
-                Go to your LinkedIn profile, select "More" and then "Save to PDF". Open the PDF, copy all the text, and paste it below. Our AI will do the rest.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="linkedin-data">LinkedIn Profile Data</Label>
-                <Textarea
-                  id="linkedin-data"
-                  value={linkedInData}
-                  onChange={(e) => setLinkedInData(e.target.value)}
-                  placeholder="Paste your raw LinkedIn data here..."
-                  className="min-h-[200px]"
-                />
+              <DialogHeader>
+                <DialogTitle>AI-Powered LinkedIn Import</DialogTitle>
+                <DialogDescription>
+                  Go to your LinkedIn profile, select "More" and then "Save to PDF". Open the PDF, copy all the text, and paste it below. Our AI will do the rest.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="linkedin-data">LinkedIn Profile Data</Label>
+                  <Textarea
+                    id="linkedin-data"
+                    value={linkedInData}
+                    onChange={(e) => setLinkedInData(e.target.value)}
+                    placeholder="Paste your raw LinkedIn data here..."
+                    className="min-h-[200px]"
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" onClick={handleParseLinkedIn} disabled={isParsingLinkedIn}>
-                  {isParsingLinkedIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isParsingLinkedIn ? 'Parsing...' : 'Parse with AI'}
-                </Button>
-              </DialogClose>
-            </DialogFooter>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" onClick={handleParseLinkedIn} disabled={isParsingLinkedIn}>
+                    {isParsingLinkedIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isParsingLinkedIn ? 'Parsing...' : 'Parse with AI'}
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
           <Dialog>
             <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="space-y-1.5">
-                <CardTitle className="font-headline flex items-center gap-2">
-                  <Github className="h-6 w-6 text-foreground" />
-                  Sync GitHub Projects
-                </CardTitle>
-                <CardDescription>
-                  Import your top GitHub repos.
-                </CardDescription>
-              </div>
-              {githubSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <DialogTrigger asChild>
-                <Button
-                  className="w-full bg-foreground text-background hover:bg-foreground/90"
-                  disabled={isReadOnly || isFreeLimitReached}
-                >
-                  <Github className="mr-2 h-4 w-4" /> Import from GitHub
-                </Button>
-              </DialogTrigger>
-              <p className="text-xs text-muted-foreground">
-                Automatically fetch and display your public repositories.
-              </p>
-            </CardContent>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1.5">
+                  <CardTitle className="font-headline flex items-center gap-2">
+                    <Github className="h-6 w-6 text-foreground" />
+                    Sync GitHub Projects
+                  </CardTitle>
+                  <CardDescription>
+                    Import your top GitHub repos.
+                  </CardDescription>
+                </div>
+                {githubSuccess && <CheckCircle className="h-6 w-6 text-green-500" />}
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <DialogTrigger asChild>
+                  <Button
+                    className="w-full bg-foreground text-background hover:bg-foreground/90"
+                    disabled={isReadOnly || isFreeLimitReached}
+                  >
+                    <Github className="mr-2 h-4 w-4" /> Import from GitHub
+                  </Button>
+                </DialogTrigger>
+                <p className="text-xs text-muted-foreground">
+                  Automatically fetch and display your public repositories.
+                </p>
+              </CardContent>
             </Card>
             <DialogContent>
-             <DialogHeader>
-              <DialogTitle>Import from GitHub</DialogTitle>
-              <DialogDescription>
-                Enter your GitHub username to import your top 10 public repositories.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="github-username">GitHub Username</Label>
-                <Input
-                  id="github-username"
-                  value={githubUsername}
-                  onChange={(e) => setGithubUsername(e.target.value)}
-                  placeholder="e.g., 'torvalds'"
-                />
+              <DialogHeader>
+                <DialogTitle>Import from GitHub</DialogTitle>
+                <DialogDescription>
+                  Enter your GitHub username to import your top 10 public repositories.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="github-username">GitHub Username</Label>
+                  <Input
+                    id="github-username"
+                    value={githubUsername}
+                    onChange={(e) => setGithubUsername(e.target.value)}
+                    placeholder="e.g., 'torvalds'"
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-               <DialogClose asChild>
-                <Button type="button" onClick={handleConnectGitHub} disabled={isImportingGithub}>
-                  {isImportingGithub ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isImportingGithub ? 'Importing...' : 'Import Projects'}
-                </Button>
-              </DialogClose>
-            </DialogFooter>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" onClick={handleConnectGitHub} disabled={isImportingGithub}>
+                    {isImportingGithub ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isImportingGithub ? 'Importing...' : 'Import Projects'}
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
           <Dialog>
             <Card>
-            <CardHeader>
-              <CardTitle className="font-headline flex items-center gap-2">
-                <Link2 className="h-6 w-6 text-accent" />
-                Import from URL
-              </CardTitle>
-              <CardDescription>
-                AI-crawl a blog post or project link.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={isReadOnly || isFreeLimitReached}
-                >
-                  <Link2 className="mr-2 h-4 w-4" /> Add via URL
-                </Button>
-              </DialogTrigger>
-              <p className="text-xs text-muted-foreground">
-                Our AI will create a portfolio item from any link.
-              </p>
-            </CardContent>
+              <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2">
+                  <Link2 className="h-6 w-6 text-accent" />
+                  Import from URL
+                </CardTitle>
+                <CardDescription>
+                  AI-crawl a blog post or project link.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={isReadOnly || isFreeLimitReached}
+                  >
+                    <Link2 className="mr-2 h-4 w-4" /> Add via URL
+                  </Button>
+                </DialogTrigger>
+                <p className="text-xs text-muted-foreground">
+                  Our AI will create a portfolio item from any link.
+                </p>
+              </CardContent>
             </Card>
             <DialogContent>
-            <DialogHeader>
-              <DialogTitle>AI-Powered URL Import</DialogTitle>
-              <DialogDescription>
-                Enter the URL of a blog post, article, or project you want to add to your portfolio.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="import-url">URL to Import</Label>
-                <Input
-                  id="import-url"
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  placeholder="https://your-blog.com/your-awesome-article"
-                />
+              <DialogHeader>
+                <DialogTitle>AI-Powered URL Import</DialogTitle>
+                <DialogDescription>
+                  Enter the URL of a blog post, article, or project you want to add to your portfolio.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="import-url">URL to Import</Label>
+                  <Input
+                    id="import-url"
+                    value={importUrl}
+                    onChange={(e) => setImportUrl(e.target.value)}
+                    placeholder="https://your-blog.com/your-awesome-article"
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" onClick={handleAddLink} disabled={isImportingUrl}>
-                  {isImportingUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isImportingUrl ? 'AI is working...' : 'Import with AI'}
-                </Button>
-              </DialogClose>
-            </DialogFooter>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" onClick={handleAddLink} disabled={isImportingUrl}>
+                    {isImportingUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isImportingUrl ? 'AI is working...' : 'Import with AI'}
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
