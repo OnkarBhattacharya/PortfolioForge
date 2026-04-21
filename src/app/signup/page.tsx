@@ -1,19 +1,22 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Button } from '@/components/ui/button';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
-import { useFirebase } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { GoogleAuthProvider, signInWithPopup, OAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import Link from 'next/link';
 
 export default function SignupPage() {
-  const { auth } = useFirebase();
+  const auth = useAuth();
   const router = useRouter();
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -24,6 +27,7 @@ export default function SignupPage() {
   };
 
   const handleAppleSignIn = async () => {
+    if (!auth) return;
     const provider = new OAuthProvider('apple.com');
     try {
       await signInWithPopup(auth, provider);

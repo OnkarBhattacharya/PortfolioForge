@@ -11,6 +11,8 @@ const shellExceptions = [
   '/privacy-policy',
   '/terms-and-conditions',
   '/cookie-policy',
+  '/_not-found',
+  '/not-found',
 ];
 
 const isShellExcluded = (pathname: string) => {
