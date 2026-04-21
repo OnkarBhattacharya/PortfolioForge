@@ -1,96 +1,225 @@
+# PortfolioForge
 
-# PortfolioForge: The Intelligent Portfolio Platform for Every Professional
+> The intelligent portfolio platform for every professional.
 
-PortfolioForge helps professionals launch an AI-native portfolio in minutes. Users import CVs, LinkedIn text, GitHub repos, or any URL, finetune the narrative with AI content suggestions and theme generators, and publish with premium themes on custom domains. The product now ships:
+PortfolioForge lets professionals launch an AI-native portfolio in minutes. Import a CV, LinkedIn text, GitHub repos, or any public URL — let AI craft the narrative — then publish with premium themes on a custom domain.
 
-* Public landing + pricing pages with clear CTAs.
-* Dashboard, projects, billing, and AI flows inside an app shell.
-* Stripe-powered Pro/Studio plans plus gating on premium themes, custom domains, and unlimited portfolio items.
-* Stripe Checkout, Billing Portal, and webhook listeners that update Firestore subscription metadata.
+---
 
-## Tech Highlights
+## What ships today
 
-* **Next.js 15 (App Router)** powers the public landing, dashboard, and API routes.
-* **Firebase (Auth, Firestore, Storage, App Hosting)** is the backend and data store.
-* **Genkit + Google AI** provide all the AI assistants (content suggestions, theme generator, CV/LinkedIn parsers).
-* **ShadCN UI + Tailwind CSS** deliver a cohesive, responsive UI.
-* **Stripe** handles monetization via Checkout / Portal + Firestore sync through webhooks.
+| Area | Details |
+|---|---|
+| Public pages | Landing, pricing, privacy policy, terms, cookie policy |
+| App shell | Dashboard, portfolio items, AI assistant, billing, settings |
+| AI flows | CV parser, LinkedIn parser, GitHub importer, URL importer, content suggester, theme generator, translator |
+| Monetisation | Stripe Checkout + Billing Portal + webhook → Firestore subscription sync |
+| Auth | Google, Apple, anonymous (read-only guest mode) |
+| Themes | 9 built-in themes + AI-generated custom themes; premium gating on Pro/Studio |
+| Portfolio renderer | Three public theme layouts: Freelancer, Agency, Stylish Portfolio |
 
-## Setup
+---
 
-1. Clone the repo:
+## Tech stack
 
-   ```bash
-   git clone https://github.com/your-username/portfolioforge.git
-   ```
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router, Turbopack) |
+| Language | TypeScript 5 |
+| UI | ShadCN UI + Tailwind CSS v3 |
+| Backend / DB | Firebase — Auth, Firestore, Storage, App Hosting |
+| AI | Genkit 1.x + Google AI (Gemini) |
+| Payments | Stripe (Checkout, Billing Portal, webhooks) |
+| Testing | Vitest + React Testing Library + Playwright |
 
-2. Install dependencies:
+---
 
-   ```bash
-   pnpm install
-   ```
+## Project structure
 
-3. Copy `.env.example` to `.env.local` and fill in the Firebase + Stripe credentials:
+```
+src/
+├── ai/
+│   ├── flows/          # Genkit AI flows (cv-parser, github-importer, …)
+│   ├── genkit.ts       # Single ai instance + z re-export
+│   └── dev.ts          # Genkit dev server entry
+├── app/
+│   ├── api/            # Next.js API routes (AI, Stripe, contact)
+│   ├── dashboard/      # App shell pages
+│   ├── portfolio/      # Public portfolio renderer ([userId])
+│   └── …               # landing, pricing, login, signup, legal pages
+├── components/         # Shared React components + ShadCN ui/
+├── firebase/           # Client init, provider, hooks (useUser, useDoc, …)
+├── hooks/              # use-mobile, use-toast, use-translation
+├── lib/                # types, utils, theme-schema, stripe, logger, web-vitals
+└── telemetry/          # OpenTelemetry server init
+tests/
+├── unit/               # Vitest — pure utility functions
+├── frontend/           # Vitest + React Testing Library — component tests
+├── e2e/                # Playwright — full browser flows
+├── contract/           # Placeholder — API contract tests
+└── performance/        # Placeholder — load / Lighthouse tests
+```
 
-   ```bash
-   cp .env.example .env.local
-   ```
+---
 
-4. Start the dev server:
+## Local setup
 
-   ```bash
-   pnpm dev
-   ```
+### Prerequisites
+
+- Node.js 20+
+- `pnpm` (recommended) or `npm`
+- A Firebase project with Auth, Firestore, and Storage enabled
+- A Stripe account (test mode is fine for development)
+
+### 1 — Clone and install
+
+```bash
+git clone https://github.com/your-username/portfolioforge.git
+cd portfolioforge
+pnpm install
+```
+
+### 2 — Environment variables
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+
+```env
+# Firebase (client-side — all NEXT_PUBLIC_)
+NEXT_PUBLIC_FIREBASE_API_KEY=""
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=""
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=""
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=""
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
+NEXT_PUBLIC_FIREBASE_APP_ID=""
+
+# Firebase App Check (optional in dev, required in prod)
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=""
+
+# Firebase Admin SDK (server-side only)
+FIREBASE_SERVICE_ACCOUNT_KEY=""   # JSON string of your service account key
+
+# App URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Stripe
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+STRIPE_PRICE_PRO_MONTHLY="price_..."
+STRIPE_PRICE_STUDIO_MONTHLY="price_..."
+```
+
+### 3 — Start the dev server
+
+```bash
+pnpm dev          # Next.js on http://localhost:3000 (Turbopack)
+```
+
+To also run the Genkit AI dev UI:
+
+```bash
+pnpm genkit:dev   # Genkit dev server (separate terminal)
+```
+
+### 4 — Stripe webhooks (local)
+
+Forward Stripe events to your local server using the Stripe CLI:
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+---
+
+## Available scripts
+
+| Script | Description |
+|---|---|
+| `pnpm dev` | Next.js dev server with Turbopack |
+| `pnpm build` | Production build |
+| `pnpm start` | Start production server |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | TypeScript type check (no emit) |
+| `pnpm test` | Vitest unit + component tests |
+| `pnpm test:watch` | Vitest in watch mode |
+| `pnpm test:ui` | Vitest with browser UI |
+| `pnpm test:e2e` | Playwright end-to-end tests |
+| `pnpm genkit:dev` | Genkit AI dev server |
+| `pnpm predeploy` | lint + typecheck + build (runs before deploy) |
+| `pnpm deploy:prod` | `firebase deploy --only hosting` |
+
+---
 
 ## Deployment
 
-1. Run predeploy checks:
+### Firebase App Hosting
 
-   ```bash
-   npm run predeploy
-   ```
+```bash
+pnpm predeploy    # lint, typecheck, build
+pnpm deploy:prod  # firebase deploy --only hosting
+```
 
-2. Deploy:
+Set the same environment variables in the Firebase App Hosting console (or `apphosting.yaml` secrets). Configure the Stripe webhook endpoint to:
 
-   ```bash
-   npm run deploy:prod
-   ```
+```
+https://<your-app>/api/stripe/webhook
+```
 
-Remember to populate the Firebase environment with the same keys and configure the Stripe webhook URL (`https://<your-app>/api/stripe/webhook`).
+### Environment separation
 
-## Contributions :
-Purpose of the RepositoryPortfolioForge is a web-based application designed to help users create and manage online portfolios efficiently. The project aims to provide developers and creatives with tools to showcase their skills, projects, and achievements in a professional and user-friendly manner.
+The project currently uses a single Firebase project. For production workloads, a separate Firebase project per environment (dev / staging / prod) is strongly recommended.
 
-Why Contribute?By contributing to PortfolioForge, you can join a growing community of developers who are committed to making portfolio creation accessible for everyone. Contributing to open source is a great way to improve your skills, collaborate with others, and gain recognition in the developer community.
+---
 
-Getting Started
+## AI flows
 
-Follow the steps below to contribute:
+All flows live in `src/ai/flows/` and are wired to API routes under `src/app/api/`.
 
-1. Fork the Repository:Create a personal copy of this repository under your GitHub account by clicking the “Fork” button on the top right.
+| Flow | Route | Description |
+|---|---|---|
+| `cv-parser` | `/api/cv-parser` | Multi-modal CV/resume parsing (PDF or image) |
+| `linkedin-parser` | `/api/linkedin-parser` | Parses raw LinkedIn profile text |
+| `github-importer` | `/api/github-importer` | Fetches public repos + AI README summaries |
+| `web-importer` | `/api/web-importer` | Crawls a URL and creates a portfolio item |
+| `content-suggester` | `/api/content-suggester` | Improves user-written text |
+| `ai-powered-content-suggestions` | `/api/ai/ai-powered-content-suggestions` | Generates portfolio headline + summary |
+| `theme-generator` | `/api/theme-generator` | Generates a full theme config from a text prompt |
+| `translator` | `/api/translate` | Translates portfolio content |
 
-2. Clone Your Fork:Clone your forked repository to your local machine
+All flows use `ai.generate()` with structured Zod output schemas and import `z` from `@/ai/genkit` (not directly from `genkit` or `zod`).
 
-3. Create a New Branch:Create a branch for your feature or bug fix
+---
 
-4. Make Your Changes:Develop your feature or fix the issue. Be sure to test your changes thoroughly.
+## Subscription plans
 
-5. Commit Your Changes:Stage and commit the files with meaningful commit messages
+| Feature | Free | Pro ($12/mo) | Studio ($29/mo) |
+|---|---|---|---|
+| Portfolio items | 3 | Unlimited | Unlimited |
+| Standard themes | ✅ | ✅ | ✅ |
+| Premium themes | ❌ | ✅ | ✅ |
+| Custom domain | ❌ | ✅ | ✅ |
+| Remove branding | ❌ | ✅ | ✅ |
+| AI theme generator | ❌ | ✅ | ✅ |
+| Team collaboration | ❌ | ❌ | ✅ |
 
-6. Push the Changes:Push your changes to your forked repository
+Plan gating is enforced both client-side (UI disabled states) and server-side (API routes check subscription tier before writing).
 
-7. Submit a Pull Request:Go to the original repository and open a pull request with a detailed description of your changes.
+---
 
-## Contribution Guidelines
+## Contributing
 
-• Make sure your code follows the existing style and structure.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow. The short version:
 
-• Include sufficient comments for better readability.
+1. Fork → clone → `pnpm install`
+2. Create a feature branch
+3. Make changes, run `pnpm lint && pnpm typecheck && pnpm test`
+4. Open a pull request with a clear description
 
-• Add appropriate tests for new features or bug fixes.
+---
 
-• Avoid introducing unnecessary libraries or breaking existing features.
+## Licence
 
-How Can You Reach me?
-
-If you have suggestions, ideas, or questions, feel free to open an issue or reach out via discussions or any contact details mentioned in the repository.
+MIT

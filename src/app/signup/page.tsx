@@ -34,13 +34,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="font-headline text-3xl font-bold">
             Create your account
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-muted-foreground">
             Start free. Upgrade when you&apos;re ready to publish like a pro.
           </p>
         </div>

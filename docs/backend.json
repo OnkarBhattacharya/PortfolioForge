@@ -56,10 +56,18 @@
             "type": "string"
           }
         },
+        "customTheme": {
+          "type": "object",
+          "description": "AI-generated ThemeConfig stored on the user document. Takes precedence over themeId when set."
+        },
+        "stripeCustomerId": {
+          "type": "string",
+          "description": "Stripe customer ID written by the webhook handler."
+        },
         "subscriptionTier": {
           "type": "string",
           "description": "The user's current subscription tier.",
-          "enum": ["free", "pro"]
+          "enum": ["free", "pro", "studio"]
         },
         "subscriptionStatus": {
           "type": "string",
@@ -103,6 +111,10 @@
         "imageId": {
           "type": "string",
           "description": "ID of the placeholder image for the item."
+        },
+        "itemIndex": {
+          "type": "number",
+          "description": "Zero-based position index. Firestore rules use this to enforce the free-plan limit of 3 items (itemIndex < 3)."
         },
         "itemUrl": {
           "type": "string",

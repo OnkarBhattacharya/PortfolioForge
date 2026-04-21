@@ -10,19 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
-import { Check, CheckCircle, KeyRound, Loader2, X, Sparkles } from 'lucide-react';
+import { Check, KeyRound, Loader2, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
@@ -80,26 +72,7 @@ const Tiers = {
   },
 };
 
-const sampleInvoices = [
-  {
-    id: 'INV-2024-001',
-    date: 'July 1, 2024',
-    amount: '$12.00',
-    status: 'Paid',
-  },
-  {
-    id: 'INV-2024-002',
-    date: 'August 1, 2024',
-    amount: '$12.00',
-    status: 'Paid',
-  },
-  {
-    id: 'INV-2024-003',
-    date: 'September 1, 2024',
-    amount: '$12.00',
-    status: 'Paid',
-  },
-];
+
 
 export default function BillingPage() {
   const { user } = useUser();
@@ -421,62 +394,40 @@ export default function BillingPage() {
           <CardHeader>
             <CardTitle className="font-headline">Payment Method</CardTitle>
             <CardDescription>
-              Manage your payment information.
+              Manage your payment information via the Stripe billing portal.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Card className="flex items-center justify-between p-4 bg-muted/50">
-              <div className="flex items-center gap-4">
-                <CheckCircle className="h-6 w-6 text-green-500" />
-                <div>
-                  <p className="font-semibold">Visa ending in 4242</p>
-                  <p className="text-sm text-muted-foreground">
-                    Expires 12/2028
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" disabled>
-                Update
-              </Button>
-            </Card>
+            {currentTier === 'free' ? (
+              <p className="text-sm text-muted-foreground">No payment method on file. Upgrade to a paid plan to add one.</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Payment details are managed securely through Stripe. Click &quot;Manage Subscription&quot; above to update your payment method.
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="font-headline">Billing History</CardTitle>
             <CardDescription>
-              View and download your past invoices.
+              View and download your past invoices via the Stripe portal.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sampleInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">{invoice.id}</TableCell>
-                    <TableCell>{invoice.date}</TableCell>
-                    <TableCell>{invoice.amount}</TableCell>
-                    <TableCell>
-                      <Badge>{invoice.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm" disabled>
-                        Download
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {currentTier === 'free' ? (
+              <p className="text-sm text-muted-foreground">No invoices yet. Invoices appear here after your first payment.</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Your full invoice history is available in the Stripe billing portal.
+                </p>
+                <Button onClick={handleManageSubscription} disabled={isLoading} variant="outline">
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Open Billing Portal
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

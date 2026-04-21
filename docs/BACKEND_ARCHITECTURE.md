@@ -1,134 +1,216 @@
+# PortfolioForge — Backend Architecture
 
-# PortfolioForge Backend Architecture
-
-This document provides a technical overview of the backend infrastructure for the PortfolioForge application. It is intended for developers to understand the data models, database structure, and authentication mechanisms.
-
-Our backend is built entirely on **Firebase**, leveraging its powerful, scalable, and serverless services.
-
-## Core File: `docs/backend.json`
-
-The file `docs/backend.json` is the single source of truth for the backend's structure. It is a blueprint that defines our data models and how they are stored in Firestore. This file is not just documentation; it is used as a reference for code generation and to provision the backend environment.
-
-The `backend.json` file has three main sections:
-
-1.  `entities`: JSON Schema definitions for our core data models.
-2.  `firestore`: The structure of our Cloud Firestore database.
-3.  `auth`: Configuration for Firebase Authentication.
+This document is the technical reference for the backend infrastructure. It covers data models, Firestore structure, authentication, server-side patterns, and the Stripe monetisation layer.
 
 ---
 
-## 1. Data Models (Entities)
+## Overview
 
-The `entities` section defines the shape and validation rules for all data objects in the application.
-
-### `UserProfile`
-- **Description**: Represents a user's core profile information, settings, and subscription status.
-- **Key Properties**:
-    - `id` (string): The user's unique ID (matches Firebase Auth UID).
-    - `fullName` (string): The user's full name.
-    - `email` (string): The user's email address.
-    - `role` (string, enum): The user's role in the system. Can be `user` or `admin`.
-    - `themeId` (string): The ID of the visual theme selected for the user's portfolio.
-    - `customDomain` (string, hostname): The custom domain connected to their portfolio.
-    - `customDomainStatus` (string, enum): The verification status of the custom domain (`pending`, `active`, `error`).
-    - `subscriptionTier` (string, enum): The user's current subscription plan (`free`, `pro`).
-    - `subscriptionStatus` (string, enum): The status of the subscription (`active`, `canceled`, `past_due`).
-    - `subscriptionPeriodEndDate` (string, date-time): The date when the current subscription period ends.
-
-### `CvData`
-- **Description**: An intermediate data structure that holds the professional information extracted by our AI parsers (from a CV or LinkedIn profile). This data is then merged into the `UserProfile` document.
-- **Key Properties**:
-    - `fullName` (string): The user's full name, as extracted from the document.
-    - `email` (string): The user's email address.
-    - `phoneNumber` (string): The user's phone number.
-    - `website` (string, uri): The user's personal website or portfolio link.
-    - `location` (string): The user's general location (e.g., "London, UK").
-    - `professionalSummary` (string): A summary of the user's professional background.
-    - `workExperience` (array of objects): A list of previous jobs, including company, role, dates, and responsibilities.
-    - `education` (array of objects): A list of educational qualifications, including institution, degree, and dates.
-    - `skills` (array of strings): A list of identified skills.
-
-### `PortfolioItem`
-- **Description**: A generic item within a user's portfolio. This can represent a software project, a design case study, a marketing campaign, etc.
-- **Key Properties**:
-    - `id` (string): A unique ID for the portfolio item.
-    - `userProfileId` (string): A reference to the owning `UserProfile`.
-    - `name` (string): The title of the item.
-    - `description` (string): A detailed description of the item.
-    - `itemUrl` (string, uri): A link to the live project, code repository, or case study.
-    - `tags` (array of strings): Skills or technologies associated with the item (e.g., "React", "UI/UX", "SEO").
-
-### `Theme`
-- **Description**: Represents a visual theme that can be applied to a public portfolio.
-- **Key Properties**:
-    - `id` (string): A unique identifier for the theme (e.g., "default", "dark-sapphire").
-    - `name` (string): The display name of the theme.
-    - `previewImageUrl` (string, uri): A URL to an image showing a preview of the theme.
-    - `isPremium` (boolean): Whether the theme is a premium theme.
-
-### `Message`
-- **Description**: Represents a message sent via the contact form on a user's public portfolio.
-- **Key Properties**:
-    - `id` (string): A unique identifier for the message.
-    - `userProfileId` (string): The ID of the portfolio owner receiving the message.
-    - `name` (string): The name of the sender.
-    - `email` (string): The email address of the sender.
-    - `message` (string): The content of the message.
-    - `createdAt` (string, date-time): Timestamp when the message was sent.
-    - `read` (boolean): Flag to indicate if the message has been read.
+The backend is built entirely on **Firebase** (Firestore, Auth, Storage, App Hosting) with **Next.js API routes** handling server-side logic. AI capabilities are provided by **Genkit 1.x** running inside those API routes.
 
 ---
 
-## 2. Firestore Database Structure
+## 1. Data models
 
-The `firestore.structure` section in `backend.json` maps our entities to specific collection paths in Cloud Firestore. This defines our database's hierarchy and access patterns.
+### `UserProfile` — `/users/{userId}`
 
-### `/users/{userId}`
-- **Schema**: `UserProfile`
-- **Description**: This is the root collection for all user data. The document ID (`userId`) is the same as the user's Firebase Authentication UID. This document stores the user's profile information, settings, and subscription details. When a user parses their CV or LinkedIn profile, the extracted `CvData` is merged into this document.
+The root document for every user. Its ID matches the Firebase Auth UID.
 
-### `/users/{userId}/portfolioItems/{itemId}`
-- **Schema**: `PortfolioItem`
-- **Description**: This is a **sub-collection** under each user document. It stores all the portfolio items belonging to that specific user. This structure is efficient and secure, as it allows us to query for a single user's items without scanning a global collection. Our AI-powered importers for GitHub and web URLs directly populate this collection.
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Firebase Auth UID |
+| `fullName` | string | Display name |
+| `email` | string | Email address |
+| `role` | `'user' \| 'admin'` | System role; admin unlocks `/admin` panel |
+| `themeId` | string | ID of the selected built-in theme (e.g. `'freelancer-teal'`) or `'custom'` |
+| `customTheme` | `ThemeConfig \| null` | Full AI-generated theme config; takes precedence over `themeId` when set |
+| `customDomain` | string | Custom domain hostname |
+| `customDomainStatus` | `'pending' \| 'active' \| 'error'` | DNS verification state |
+| `subscriptionTier` | `'free' \| 'pro' \| 'studio'` | Current plan |
+| `subscriptionStatus` | `'active' \| 'canceled' \| 'past_due'` | Stripe subscription status |
+| `subscriptionPeriodEndDate` | ISO date-time string | Renewal / expiry date |
+| `stripeCustomerId` | string | Stripe customer ID (written by webhook) |
+| `skills` | string[] | Top skills extracted by AI from CV / LinkedIn |
+| `summary` | string | Professional summary |
+| `profession` | string | Detected profession |
+| `experience` | object[] | Work experience entries |
+| `education` | object[] | Education entries |
+| `personalInfo` | object | Name, location, phone, LinkedIn, GitHub, website |
+| `createdAt` | ISO date-time string | Account creation timestamp |
 
-### `/users/{userId}/messages/{messageId}`
-- **Schema**: `Message`
-- **Description**: This is a **sub-collection** under each user document for storing messages submitted via the contact form. This allows for secure, user-specific message retrieval. The security rules are configured to only allow the user to read their own messages, while writes are handled by a trusted backend process.
+### `PortfolioItem` — `/users/{userId}/portfolioItems/{itemId}`
 
-### `/themes/{themeId}`
-- **Schema**: `Theme`
-- **Description**: A top-level collection that stores all available portfolio themes. This collection is configured to be publicly readable so that themes can be displayed and selected by users in the settings.
+Sub-collection; one document per portfolio item.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | UUID generated client-side |
+| `userProfileId` | string | Owning user's UID |
+| `name` | string | Item title |
+| `description` | string | Item description (may be AI-generated) |
+| `tags` | string[] | Skills / technologies |
+| `itemUrl` | string (URI) | Link to live project, repo, or case study |
+| `imageId` | string | Placeholder image key (e.g. `'project-1'`) |
+| `itemIndex` | number | Position index; used by Firestore rules to enforce free-plan limit of 3 |
+
+### `Message` — `/users/{userId}/messages/{messageId}`
+
+Contact form submissions received on a user's public portfolio.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Auto-generated |
+| `userProfileId` | string | Portfolio owner's UID |
+| `name` | string | Sender name |
+| `email` | string | Sender email |
+| `message` | string | Message body |
+| `createdAt` | ISO date-time string | Submission timestamp |
+| `read` | boolean | Read flag for the owner |
+
+### `Theme` — `/themes/{themeId}`
+
+Publicly readable collection of built-in themes.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | e.g. `'freelancer-teal'`, `'agency'` |
+| `name` | string | Display name |
+| `description` | string | Short description |
+| `previewImageUrl` | string (URI) | Preview image |
+| `isPremium` | boolean | Requires Pro/Studio to select |
+| `background` | string | HSL value |
+| `foreground` | string | HSL value |
+| `primary` | string | HSL value |
+| `accent` | string | HSL value |
+
+### `ThemeConfig` (inline on `UserProfile.customTheme`)
+
+Generated by the AI theme generator flow. Stored directly on the user document.
+
+```typescript
+{
+  name: string;
+  description: string;
+  light: ThemeColorSchema;   // full set of CSS custom property values
+  dark: ThemeColorSchema;
+  font: {
+    heading: { family, variants, url };
+    body:    { family, variants, url };
+  };
+  borderRadius: number;      // 0–1 rem
+}
+```
+
+---
+
+## 2. Firestore structure
+
+```
+/users/{userId}                          UserProfile
+/users/{userId}/portfolioItems/{itemId}  PortfolioItem
+/users/{userId}/messages/{messageId}     Message
+/themes/{themeId}                        Theme
+```
+
+### Security rules summary
+
+- Users can read and write only their own `/users/{userId}` document and sub-collections.
+- Free-plan users are blocked from writing `portfolioItems` with `itemIndex >= 3` (enforced in `firestore.rules`).
+- Free-plan users cannot set `themeId` to a premium theme.
+- Free-plan users cannot write `customDomain`.
+- `/themes/` is publicly readable; writes are admin-only.
+- `/users/{userId}/messages/` is readable only by the owner; client writes are blocked (written by the server-side contact API route using the Admin SDK).
 
 ---
 
 ## 3. Firebase Authentication
 
-The `auth` section defines the sign-in methods enabled for the application.
+| Provider | Use |
+|---|---|
+| `google.com` | Primary sign-in |
+| `apple.com` | Alternative sign-in |
+| `anonymous` | Guest / read-only mode |
 
-- **Providers**:
-    - `google.com`: Federated sign-in with Google.
-    - `apple.com`: Federated sign-in with Apple.
-    - `anonymous`: Anonymous sign-in, which allows new visitors to explore the app in a "guest" or "read-only" mode before creating a full account.
+On first sign-in with a permanent account, `FirebaseProvider` checks for an existing `/users/{userId}` document and creates one with default values (`role: 'user'`, `subscriptionTier: 'free'`) if it does not exist.
 
----
+### Client initialisation pattern
 
-## 4. Server-Side Architecture
+Firebase is initialised **only on the client, inside a `useEffect`** in `FirebaseClientProvider`. This ensures the server-rendered HTML and the initial client render are identical (no React hydration mismatch). The `FirebaseProvider` context becomes available on the next tick after hydration.
 
-For operations that require administrative privileges (like creating portfolio items on behalf of a user from an API route), the application uses the **Firebase Admin SDK**.
-
-### `src/firebase/admin.ts`
-- **Purpose**: This file provides a critical function, `getAdminApp()`, which ensures that the Firebase Admin SDK is initialized only **once** per server instance (a singleton pattern). This prevents common errors related to re-initialization in a serverless environment like Next.js.
-- **Authentication**: It securely initializes the Admin SDK using a service account key stored in the `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable. This variable is loaded via the `dotenv` package.
-- **Usage**: All server-side code (primarily API routes in `src/app/api/`) uses `getAdminFirestore()` from this file to get a trusted Firestore instance for performing database operations that should not be exposed to the client.
-
-### Firebase Storage
-- **Purpose**: User-uploaded content, such as images for portfolio items, is stored in Firebase Storage.
-- **Security**: Access is controlled by `storage.rules`, which ensures that users can only write to their own designated storage paths and enforces file size and type restrictions.
+```typescript
+// src/firebase/client-provider.tsx
+useEffect(() => {
+  const services = initializeFirebase();
+  if (services) setFirebaseServices(services);
+}, []);
+```
 
 ---
 
-## Recent Enhancements
+## 4. Server-side (Admin SDK)
 
-- **Stripe Monetization**: Added server routes for Checkout, Billing Portal, and webhook handling. Firestore now stores Stripe customer IDs and subscription metadata for Pro/Studio plans.
-- **Firestorm Rules Tightening**: Rules now enforce premium-theme selection, custom domain writes, and free-tier item limits via `itemIndex`. Public themes remain readable, but premium ones require Pro/Studio documents.
-- **AI Flow Safeguards**: Import endpoints check subscription tiers before writing new portfolio items, preventing free-plan overage in GitHub/URL imports.
+All API routes that write to Firestore on behalf of a user use the **Firebase Admin SDK** via `src/firebase/admin.ts`.
+
+- `getAdminApp()` — singleton initialisation from `FIREBASE_SERVICE_ACCOUNT_KEY` env var.
+- `getAdminFirestore()` — returns a trusted Firestore instance.
+
+API routes verify the caller's Firebase ID token (`Authorization: Bearer <token>`) before performing any privileged write.
+
+---
+
+## 5. AI flows and API routes
+
+| Route | Flow file | Description |
+|---|---|---|
+| `POST /api/cv-parser` | `cv-parser.ts` | Multi-modal CV parsing; writes merged data to `/users/{userId}` |
+| `POST /api/linkedin-parser` | `linkedin-parser.ts` | LinkedIn text parsing; same write target |
+| `POST /api/github-importer` | `github-importer.ts` | Fetches repos, summarises READMEs, writes to `portfolioItems` |
+| `POST /api/web-importer` | `web-importer.ts` | Crawls URL, writes one `portfolioItem` |
+| `POST /api/content-suggester` | `content-suggester.ts` | Returns text improvement suggestions (no DB write) |
+| `POST /api/ai/ai-powered-content-suggestions` | `ai-powered-content-suggestions.ts` | Returns headline + summary (no DB write) |
+| `POST /api/theme-generator` | `theme-generator.ts` | Returns a `ThemeConfig` (no DB write; client saves to profile) |
+| `POST /api/translate` | `translator.ts` | Returns translated content |
+| `POST /api/contact` | — | Writes a `Message` document via Admin SDK |
+
+All flows import `z` from `@/ai/genkit` and use `ai.generate()` with a Zod `output.schema`.
+
+---
+
+## 6. Stripe monetisation
+
+| Route | Description |
+|---|---|
+| `POST /api/stripe/checkout` | Creates a Stripe Checkout session for Pro or Studio; requires valid Firebase ID token |
+| `POST /api/stripe/portal` | Creates a Stripe Billing Portal session; requires valid Firebase ID token |
+| `POST /api/stripe/webhook` | Receives Stripe events; verified with `STRIPE_WEBHOOK_SECRET` |
+
+### Webhook events handled
+
+| Event | Action |
+|---|---|
+| `checkout.session.completed` | Writes `stripeCustomerId`, `subscriptionTier`, `subscriptionStatus` to Firestore |
+| `customer.subscription.updated` | Updates `subscriptionTier`, `subscriptionStatus`, `subscriptionPeriodEndDate` |
+| `customer.subscription.deleted` | Resets `subscriptionTier` to `'free'`, sets `subscriptionStatus` to `'canceled'` |
+
+---
+
+## 7. Firebase Storage
+
+User-uploaded assets (portfolio item images) are stored under `/users/{userId}/`. Security rules enforce:
+
+- Authenticated writes only to the user's own path.
+- 10 MB file size limit.
+- `image/*` content type only.
+- Public reads for all assets.
+
+---
+
+## 8. Observability
+
+| Tool | Purpose |
+|---|---|
+| Firebase Performance | Automatic page load and network request traces |
+| Core Web Vitals (`src/lib/web-vitals.ts`) | CLS, FID, FCP, LCP, TTFB logged via structured logger |
+| OpenTelemetry (`src/telemetry/init.ts`) | Server-side trace spans; console exporter in dev, OTLP in prod |
+| Structured logger (`src/lib/logger.ts`) | Replaces all `console.*` calls; ready to forward to Cloud Logging / Sentry |
+| Firebase App Check | reCAPTCHA v3 in production (`NEXT_PUBLIC_RECAPTCHA_SITE_KEY`) |

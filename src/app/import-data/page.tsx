@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Link2, KeyRound, Loader2, Sparkles } from "lucide-react";
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Circle, Link2, KeyRound, Loader2, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -375,7 +375,7 @@ export default function ImportDataPage() {
               <p className="text-sm font-semibold">CV or Resume</p>
               <p className="text-xs text-muted-foreground">Best for summary and experience</p>
               <div className="mt-3 flex items-center gap-2 text-sm">
-                {cvUploadSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                {cvUploadSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                 <span>{cvUploadSuccess ? 'Imported' : 'Pending'}</span>
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function ImportDataPage() {
               <p className="text-sm font-semibold">LinkedIn</p>
               <p className="text-xs text-muted-foreground">Great for credibility and keywords</p>
               <div className="mt-3 flex items-center gap-2 text-sm">
-                {linkedInSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                {linkedInSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                 <span>{linkedInSuccess ? 'Imported' : 'Pending'}</span>
               </div>
             </div>
@@ -391,7 +391,7 @@ export default function ImportDataPage() {
               <p className="text-sm font-semibold">GitHub</p>
               <p className="text-xs text-muted-foreground">Turns repos into projects</p>
               <div className="mt-3 flex items-center gap-2 text-sm">
-                {githubSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                {githubSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                 <span>{githubSuccess ? 'Imported' : 'Pending'}</span>
               </div>
             </div>
@@ -399,7 +399,7 @@ export default function ImportDataPage() {
               <p className="text-sm font-semibold">Public URL</p>
               <p className="text-xs text-muted-foreground">Capture articles or case studies</p>
               <div className="mt-3 flex items-center gap-2 text-sm">
-                {importUrlSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Loader2 className="h-4 w-4 text-muted-foreground" />}
+                {importUrlSuccess ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
                 <span>{importUrlSuccess ? 'Imported' : 'Pending'}</span>
               </div>
             </div>

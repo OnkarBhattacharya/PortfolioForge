@@ -33,37 +33,29 @@ type PortfolioItem = {
   imageId: string;
 };
 
-const sampleItems: PortfolioItem[] = [
-  {
-    id: 'sample-1',
-    name: 'Corporate Rebranding Campaign',
-    description:
-      'A full-scale corporate rebranding, including a new logo, website, and marketing materials. Increased brand recognition by 40%.',
-    tags: ['Branding', 'Marketing', 'Design'],
-    imageId: 'project-5',
-  },
-  {
-    id: 'sample-2',
-    name: 'Data-driven SEO Strategy',
-    description:
-      'A real-time analytics dashboard that provides insightful visualizations for complex datasets, helping businesses make data-driven decisions.',
-    tags: ['SEO', 'Analytics', 'Content Strategy'],
-    imageId: 'project-2',
-  },
-  {
-    id: 'sample-3',
-    name: 'Mobile App UI/UX',
-    description:
-      'A web application that uses a powerful AI model to generate concise summaries of long articles, saving users time and effort.',
-    tags: ['UI/UX', 'Figma', 'Mobile Design'],
-    imageId: 'project-3',
-  },
-];
-
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const isReadOnly = !user || user.isAnonymous;
+
+  // All hooks must be called unconditionally before any early return
+  const itemsQuery = useMemoFirebase(() => {
+    if (isReadOnly || !firestore || !user) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'portfolioItems'),
+      limit(3)
+    );
+  }, [user, firestore, isReadOnly]);
+
+  const { data: dbItems, isLoading: areItemsLoading } =
+    useCollection<PortfolioItem>(itemsQuery);
+
+  const userProfileQuery = useMemoFirebase(() => {
+    if (isReadOnly || !firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore, isReadOnly]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
 
   if (isUserLoading) {
     return (
@@ -180,25 +172,7 @@ export default function DashboardPage() {
     );
   }
 
-  const itemsQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'portfolioItems'),
-      limit(3)
-    );
-  }, [user, firestore, isReadOnly]);
-
-  const { data: dbItems, isLoading: areItemsLoading } =
-    useCollection<PortfolioItem>(itemsQuery);
-
-  const userProfileQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore, isReadOnly]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
-
-  const recentItems = isReadOnly ? sampleItems : dbItems;
+  const recentItems = isReadOnly ? [] : dbItems;
 
   const hasProfileData =
     !!userProfile?.summary ||

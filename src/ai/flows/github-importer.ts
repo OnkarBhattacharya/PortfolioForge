@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from '@/ai/genkit';
 import { summarizeReadme } from './readme-summarizer';
 
 // For better type safety, define an interface for the GitHub API response.

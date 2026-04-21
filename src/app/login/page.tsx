@@ -39,13 +39,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-2xl border border-border shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="font-headline text-3xl font-bold">
             Sign In
           </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-muted-foreground">
             Choose your preferred sign-in method
           </p>
         </div>
