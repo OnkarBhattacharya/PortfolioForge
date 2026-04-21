@@ -168,10 +168,6 @@ Set the same environment variables in the Firebase App Hosting console (or `apph
 https://<your-app>/api/stripe/webhook
 ```
 
-### Environment separation
-
-The project currently uses a single Firebase project. For production workloads, a separate Firebase project per environment (dev / staging / prod) is strongly recommended.
-
 ---
 
 ## AI flows
