@@ -7,7 +7,7 @@ import { Auth, getAuth, User } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { useContext } from 'react';
 import { FirebaseContext, FirebaseServicesAndUser } from './provider';
-import { getPerformance, Performance } from 'firebase/performance';
+import { getPerformance, Performance, initializePerformance } from 'firebase/performance';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 // A structure to hold the initialized Firebase services.
@@ -59,7 +59,7 @@ export function initializeFirebase(): FirebaseServices {
       firebaseApp: app,
       auth: getAuth(app),
       firestore: getFirestore(app),
-      performance: getPerformance(app),
+      performance: initializePerformance(app, { dataCollectionEnabled: false, instrumentationEnabled: false }),
     };
   } else {
     const app = getApp();

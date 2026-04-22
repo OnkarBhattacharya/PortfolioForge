@@ -11,6 +11,10 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
+if (!process.env.GOOGLE_GENAI_API_KEY) {
+  throw new Error('GOOGLE_GENAI_API_KEY environment variable is not set.');
+}
+
 // Enable Firebase telemetry for observability.
 enableFirebaseTelemetry();
 

@@ -14,5 +14,43 @@ env:
   - variable: NODE_ENV
     value: "production"
 
+  # Non-sensitive public config — safe to commit as plain values
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://studio--studio-3849653404-e5627.us-central1.hosted.app"
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyCro9bdB4rd9oD64EYNamI3iIkKmWsOSbM"
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "studio-3849653404-e5627.firebaseapp.com"
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "studio-3849653404-e5627"
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "studio-3849653404-e5627.firebasestorage.app"
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "978801814369"
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:978801814369:web:fe79a420d9bd15522cf320"
+
+  # Secrets — resolved from Google Cloud Secret Manager at runtime
+  - variable: GOOGLE_GENAI_API_KEY
+    secret: GOOGLE_GENAI_API_KEY
+
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+
+  - variable: STRIPE_PRICE_PRO_MONTHLY
+    secret: STRIPE_PRICE_PRO_MONTHLY
+
+  - variable: STRIPE_PRICE_STUDIO_MONTHLY
+    secret: STRIPE_PRICE_STUDIO_MONTHLY
+
 build:
   run: "npm run build"
