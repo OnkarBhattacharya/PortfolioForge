@@ -40,17 +40,17 @@ env:
   - variable: GOOGLE_GENAI_API_KEY
     secret: GOOGLE_GENAI_API_KEY
 
-  - variable: STRIPE_SECRET_KEY
-    secret: STRIPE_SECRET_KEY
+  #- variable: STRIPE_SECRET_KEY
+   # secret: STRIPE_SECRET_KEY
 
-  - variable: STRIPE_WEBHOOK_SECRET
-    secret: STRIPE_WEBHOOK_SECRET
+  #- variable: STRIPE_WEBHOOK_SECRET
+   # secret: STRIPE_WEBHOOK_SECRET
 
-  - variable: STRIPE_PRICE_PRO_MONTHLY
-    secret: STRIPE_PRICE_PRO_MONTHLY
+  #- variable: STRIPE_PRICE_PRO_MONTHLY
+    #secret: STRIPE_PRICE_PRO_MONTHLY
 
-  - variable: STRIPE_PRICE_STUDIO_MONTHLY
-    secret: STRIPE_PRICE_STUDIO_MONTHLY
+  #- variable: STRIPE_PRICE_STUDIO_MONTHLY
+   # secret: STRIPE_PRICE_STUDIO_MONTHLY
 
 build:
   run: "npm run build"
