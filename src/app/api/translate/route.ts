@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 
 import { translate } from '@/ai/flows/translator';
 import {NextRequest, NextResponse} from 'next/server';

@@ -11,23 +11,13 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
-if (!process.env.GOOGLE_GENAI_API_KEY) {
-  throw new Error('GOOGLE_GENAI_API_KEY environment variable is not set.');
-}
-
 // Enable Firebase telemetry for observability.
 enableFirebaseTelemetry();
 
-// Statically configure the `ai` instance with all required plugins.
-// This ensures that the plugins are registered once when the module is loaded.
 export const ai = genkit({
   plugins: [
-    googleAI({
-      // You can specify the API version if needed, e.g., 'v1beta'
-      // apiVersion: 'v1beta',
-    }),
+    googleAI(),
   ],
 });
 
-// Re-export Zod for consistent usage in flows.
 export { z };

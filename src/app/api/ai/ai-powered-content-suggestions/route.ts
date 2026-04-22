@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePortfolioContentSuggestions } from '@/ai/flows/ai-powered-content-suggestions';
 import { logger } from '@/lib/logger';
