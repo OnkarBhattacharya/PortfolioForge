@@ -7,13 +7,18 @@ function getAdminApp(): App {
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-  // In production (App Hosting), use Application Default Credentials automatically.
-  // In local dev, fall back to the service account key from .env.local.
-  return initializeApp({
-    credential: serviceAccountKey
-      ? cert(JSON.parse(serviceAccountKey))
-      : applicationDefault(),
-  });
+  let credential;
+  if (serviceAccountKey) {
+    try {
+      credential = cert(JSON.parse(serviceAccountKey));
+    } catch {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is set but contains invalid JSON.');
+    }
+  } else {
+    credential = applicationDefault();
+  }
+
+  return initializeApp({ credential });
 }
 
 /**

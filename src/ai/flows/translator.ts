@@ -43,15 +43,15 @@ export async function translate(input: TranslationInput): Promise<TranslationOut
   if (input.texts.length === 0) return { translations: [] };
 
   const ai = getAi();
-  const prompt = ai.definePrompt({
-    name: 'textTranslatorPrompt',
-    input: { schema: TranslationInputSchema },
+  const { output } = await ai.generate({
+    prompt: `You are a professional translator. Translate each of the following texts into ${input.targetLanguage}. Return a JSON object with a "translations" array in the same order as the input.
+
+Input texts: ${JSON.stringify(input.texts)}
+
+Respond ONLY with valid JSON: { "translations": [...] }`,
     output: { schema: TranslationOutputSchema },
-    prompt: PROMPT_TEXT,
     config: { temperature: 0.1 },
   });
-
-  const { output } = await prompt(input);
   if (!output || !Array.isArray(output.translations) || output.translations.length !== input.texts.length) {
     throw new Error('Translation failed. The model returned invalid or incomplete data.');
   }

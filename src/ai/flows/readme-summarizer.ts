@@ -33,19 +33,16 @@ export async function summarizeReadme(
   input: ReadmeSummarizerInput
 ): Promise<ReadmeSummarizerOutput> {
   const ai = getAi();
-  const prompt = ai.definePrompt({
-    name: 'readmeSummarizerPrompt',
-    input: { schema: ReadmeSummarizerInputSchema },
-    output: { schema: ReadmeSummarizerOutputSchema },
-    prompt: PROMPT_TEXT,
-    config: { temperature: 0.4 },
-  });
 
   const truncatedContent = input.readmeContent.length > 15000
     ? input.readmeContent.substring(0, 15000)
     : input.readmeContent;
 
-  const { output } = await prompt({ readmeContent: truncatedContent });
+  const { output } = await ai.generate({
+    prompt: PROMPT_TEXT.replace('{{readmeContent}}', truncatedContent),
+    output: { schema: ReadmeSummarizerOutputSchema },
+    config: { temperature: 0.4 },
+  });
   if (!output) {
     throw new Error('Failed to summarize README. The model did not return a valid summary.');
   }

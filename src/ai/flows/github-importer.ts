@@ -50,7 +50,7 @@ export async function importGithubRepositories(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Failed to fetch repositories for user: ${input.username}. Status: ${response.status}. Details: ${errorText}`);
+    throw new Error(`Failed to fetch repositories for user. Status: ${response.status}.`);
   }
 
   const repos: GithubRepoApiResponse[] = await response.json();

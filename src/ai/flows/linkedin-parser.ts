@@ -36,14 +36,10 @@ export async function parseLinkedInProfile(
   }
 
   const ai = getAi();
-  const prompt = ai.definePrompt({
-    name: 'linkedInParserPrompt',
-    input: { schema: LinkedInParserInputSchema },
+  const { output } = await ai.generate({
+    prompt: PROMPT_TEXT.replace('{{profileText}}', input.profileText),
     output: { schema: CvDataSchema },
-    prompt: PROMPT_TEXT,
   });
-
-  const { output } = await prompt(input);
   if (!output) {
     throw new Error('Failed to parse LinkedIn profile. The model did not return valid data.');
   }
