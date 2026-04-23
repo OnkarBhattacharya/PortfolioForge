@@ -19,7 +19,7 @@ Thank you for taking the time to contribute. All help is welcome — bug reports
 4. **Set up environment variables**:
    ```bash
    cp .env.example .env.local
-   # Fill in Firebase + Stripe credentials — see README for details
+   # Fill in Firebase, Google AI, and Stripe credentials — see README for details
    ```
 5. **Start the dev server**:
    ```bash
@@ -85,7 +85,7 @@ src/
 │   ├── genkit.ts       # Shared ai instance; always import z from here
 │   └── dev.ts          # Genkit dev server entry point
 ├── app/
-│   ├── api/            # Next.js API routes (AI endpoints, Stripe, contact)
+│   ├── api/            # Next.js API routes (AI endpoints, Stripe, portfolio-items, contact)
 │   ├── dashboard/      # Authenticated app pages
 │   ├── portfolio/      # Public portfolio renderer
 │   └── …               # Public pages (landing, pricing, login, signup, legal)
@@ -115,6 +115,7 @@ tests/
 - **Design tokens**: Use Tailwind design-system tokens (`bg-background`, `text-foreground`, etc.) — never raw colour classes like `bg-gray-100` or `bg-white`.
 - **Hooks**: Never call React hooks after an early `return`. All hooks must be at the top of the component.
 - **No dummy data**: Do not commit hardcoded placeholder data in pages. Use empty states and loading skeletons instead.
+- **Portfolio item creation**: Always route through `POST /api/portfolio-items` — never write directly from the client. This enforces the free-plan limit server-side.
 - **Comments**: Write self-documenting code. Add comments only where the *why* is non-obvious.
 - **Tests**: Add tests for new features or bug fixes. Do not remove existing tests.
 
@@ -157,6 +158,7 @@ tests/
 - [ ] `pnpm test` passes
 - [ ] No hardcoded dummy/placeholder data in UI
 - [ ] Design-system tokens used (no raw gray/white classes)
+- [ ] Portfolio item creation goes through `/api/portfolio-items`
 - [ ] PR description explains *what* changed and *why*
 
 ---

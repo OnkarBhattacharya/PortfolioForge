@@ -11,7 +11,7 @@ PortfolioForge
 ### Data import
 - **CV upload & parsing** — Upload a PDF or image; a multi-modal Genkit flow extracts name, summary, experience, education, skills, and profession.
 - **LinkedIn import** — Paste raw LinkedIn profile text; AI infers the same structured fields.
-- **GitHub project import** — Fetch up to 5 public repos per user, generate AI README summaries, and seed portfolio items automatically.
+- **GitHub project import** — Fetch up to 5 public repos per user, generate AI README summaries via the `readme-summarizer` flow, and seed portfolio items automatically.
 - **URL importer** — Crawl any public URL, clean the HTML, and create a portfolio item with AI-crafted tags and description.
 
 ### AI content
@@ -38,7 +38,7 @@ PortfolioForge
 - Google and Apple federated sign-in via Firebase Auth.
 - Anonymous sign-in for read-only guest mode (no data saved).
 - All authenticated app pages show a "Read-Only Mode" banner to anonymous users.
-- Free-plan item limits enforced both client-side (UI disabled) and server-side (API routes check tier before writing).
+- Free-plan item limit enforced both client-side (UI disabled) and server-side (`POST /api/portfolio-items` checks tier before writing; direct client creates are blocked by Firestore rules).
 
 ### Admin
 - Admin panel at `/admin` visible only to users with `role: 'admin'` in Firestore.
@@ -85,7 +85,9 @@ PortfolioForge
 - All public pages (landing, pricing, legal) are live and production-ready.
 - All app shell pages (dashboard, portfolio items, AI assistant, billing, settings) are connected to Firestore with real data — no dummy/placeholder data remains.
 - All AI flows use `ai.generate()` with structured Zod schemas; `z` is always imported from `@/ai/genkit`.
-- Stripe Checkout / Portal / webhook and Firestore rules enforce monetisation commitments.
+- Portfolio item creation is routed through `POST /api/portfolio-items` (Admin SDK); direct client creates are blocked by Firestore rules.
+- Stripe Checkout / Portal / webhook and Firestore rules enforce monetisation commitments. Stripe secrets are pending Secret Manager configuration for production.
 - React hydration is stable: Firebase is initialised client-side via `useEffect`, eliminating the SSR/client mismatch (React error #418).
 - Firebase Performance attribute length issue resolved by extracting long Tailwind class strings into named CSS utility classes.
 - `tsconfig.json` uses `moduleResolution: bundler`; deprecated `baseUrl` removed.
+- App Hosting configured with VPC connector (`managed-vpc`) and auto-scaling (1–10 instances).

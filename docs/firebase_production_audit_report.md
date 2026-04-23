@@ -41,16 +41,18 @@ runConfig:
   cpu: 1
   memory: 512Mi
   concurrency: 80
+vpc:
+  connector: "managed-vpc"
 env:
   - variable: NODE_ENV
     value: "production"
 ```
 
-✅ Auto-scaling configured. `NODE_ENV` set explicitly.
+✅ Auto-scaling configured. `NODE_ENV` set explicitly. VPC connector enabled.
 
 ### Environment variables
 
-All Firebase client keys are read from `NEXT_PUBLIC_*` environment variables. The Admin SDK reads `FIREBASE_SERVICE_ACCOUNT_KEY` server-side. No credentials are in source code.
+All Firebase client keys are read from `NEXT_PUBLIC_*` environment variables. The Admin SDK reads `FIREBASE_SERVICE_ACCOUNT_KEY` server-side. `GOOGLE_GENAI_API_KEY` is resolved from Secret Manager. No credentials are in source code.
 
 ```typescript
 // src/firebase/config.ts
@@ -75,9 +77,10 @@ export const firebaseConfig = {
 ✅ Strong user-ownership model. Key enforcements:
 
 - Users read/write only their own `/users/{userId}` and sub-collections.
-- Free-plan users blocked from `portfolioItems` with `itemIndex >= 3`.
-- Free-plan users cannot set a premium `themeId` or write `customDomain`.
-- `/themes/` publicly readable; writes admin-only.
+- Admin users (`role: 'admin'`) can list all `/users/` for the admin dashboard.
+- Free-plan users cannot set a premium `themeId`, write `customDomain`, or write `customTheme`.
+- `/themes/` publicly readable; client writes blocked.
+- `/users/{userId}/portfolioItems/` — `allow create: if false`; all creates go through `POST /api/portfolio-items` (Admin SDK) which enforces the free-plan limit of 3.
 - `/users/{userId}/messages/` readable only by owner; client writes blocked.
 
 ### Storage rules
@@ -177,7 +180,17 @@ useEffect(() => {
 
 ---
 
-## 8. Design system consistency
+## 8. Portfolio item creation — client write bypass
+
+**Finding (High):** Portfolio items were being written directly from the client, bypassing the free-plan limit of 3. Firestore rules alone were insufficient because `itemIndex` could be manipulated client-side.
+
+**Resolution:** Firestore rules now set `allow create: if false` for `portfolioItems`. All creates go through `POST /api/portfolio-items` (Admin SDK), which reads the current item count from Firestore and rejects the request if the user is on the free plan and already has 3 items.
+
+✅ Resolved.
+
+---
+
+## 9. Design system consistency
 
 **Finding (Medium):** `login/page.tsx` and `signup/page.tsx` used raw Tailwind colour classes (`bg-gray-100`, `bg-white`, `bg-gray-800`, `text-gray-900`) instead of design-system tokens. This broke dark mode and theme switching.
 
@@ -187,7 +200,7 @@ useEffect(() => {
 
 ---
 
-## 9. TypeScript configuration
+## 10. TypeScript configuration
 
 **Finding (Medium):** `tsconfig.json` had `baseUrl: "."` with `ignoreDeprecations: "5.0"`. `baseUrl` is deprecated in TypeScript 6.0 and unnecessary when `moduleResolution` is `bundler`.
 
@@ -197,7 +210,7 @@ useEffect(() => {
 
 ---
 
-## 10. UX issues
+## 11. UX issues
 
 **Finding (Low):** The import checklist used an animated spinning `Loader2` icon for items not yet imported, implying an active loading operation rather than "not done yet".
 
@@ -207,16 +220,17 @@ useEffect(() => {
 
 ---
 
-## 11. Remaining recommendations
+## 12. Remaining recommendations
 
 | Item | Priority | Notes |
 |---|---|---|
+| Stripe secrets in Secret Manager | High | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_STUDIO_MONTHLY` are defined in `apphosting.yaml` but commented out; Stripe routes return HTTP 500 until populated |
 | Multi-project Firebase environments (dev / staging / prod) | High | Currently a single project is used for all environments |
 | Automated alerting in Firebase console | Medium | Logger and Performance are in place; alerts not yet configured |
+| CI/CD deployment secrets | Medium | GitHub Actions workflow exists; repository secrets need configuring for automated deploys |
 | Portfolio page Next.js 15 `params` pattern | Low | `{ params: { userId } }` destructuring is deprecated; migrate to `async params: Promise<{userId}>` |
 | Avatar fallback in portfolio themes | Low | Falls back to `picsum.photos` random image; should use Firebase Auth `photoURL` |
 | Footer social links | Low | Twitter/GitHub/LinkedIn links point to `#`; should be real URLs or removed |
-| CI/CD deployment secrets | Medium | GitHub Actions workflow exists; repository secrets need configuring for automated deploys |
 
 ---
 
@@ -224,4 +238,4 @@ useEffect(() => {
 
 **9.5 / 10**
 
-All critical and high-severity issues are resolved. The remaining items are low-risk improvements for long-term operational maturity.
+All critical and high-severity issues are resolved. The remaining items are low-risk improvements for long-term operational maturity, with the exception of Stripe Secret Manager configuration which must be completed before Stripe billing is active in production.

@@ -104,7 +104,7 @@ Playwright tests covering:
 
 ### `tests/contract/placeholder.test.ts`
 
-Placeholder describing future contract tests that will verify the request/response schema between the frontend and AI API routes (e.g. `/api/cv-parser` input/output shape).
+Placeholder describing future contract tests that will verify the request/response schema between the frontend and API routes (e.g. `/api/cv-parser`, `/api/portfolio-items` input/output shape).
 
 ### `tests/performance/placeholder.test.ts`
 

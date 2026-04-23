@@ -12,7 +12,7 @@ PortfolioForge lets professionals launch an AI-native portfolio in minutes. Impo
 |---|---|
 | Public pages | Landing, pricing, privacy policy, terms, cookie policy |
 | App shell | Dashboard, portfolio items, AI assistant, billing, settings |
-| AI flows | CV parser, LinkedIn parser, GitHub importer, URL importer, content suggester, theme generator, translator |
+| AI flows | CV parser, LinkedIn parser, GitHub importer, URL importer, content suggester, theme generator, translator, README summarizer |
 | Monetisation | Stripe Checkout + Billing Portal + webhook → Firestore subscription sync |
 | Auth | Google, Apple, anonymous (read-only guest mode) |
 | Themes | 9 built-in themes + AI-generated custom themes; premium gating on Pro/Studio |
@@ -39,11 +39,11 @@ PortfolioForge lets professionals launch an AI-native portfolio in minutes. Impo
 ```
 src/
 ├── ai/
-│   ├── flows/          # Genkit AI flows (cv-parser, github-importer, …)
+│   ├── flows/          # Genkit AI flows (cv-parser, github-importer, readme-summarizer, …)
 │   ├── genkit.ts       # Single ai instance + z re-export
 │   └── dev.ts          # Genkit dev server entry
 ├── app/
-│   ├── api/            # Next.js API routes (AI, Stripe, contact)
+│   ├── api/            # Next.js API routes (AI, Stripe, portfolio-items, contact)
 │   ├── dashboard/      # App shell pages
 │   ├── portfolio/      # Public portfolio renderer ([userId])
 │   └── …               # landing, pricing, login, signup, legal pages
@@ -101,6 +101,9 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=""
 
 # Firebase Admin SDK (server-side only)
 FIREBASE_SERVICE_ACCOUNT_KEY=""   # JSON string of your service account key
+
+# Google AI (Genkit)
+GOOGLE_GENAI_API_KEY=""
 
 # App URL
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -162,11 +165,13 @@ pnpm predeploy    # lint, typecheck, build
 pnpm deploy:prod  # firebase deploy --only hosting
 ```
 
-Set the same environment variables in the Firebase App Hosting console (or `apphosting.yaml` secrets). Configure the Stripe webhook endpoint to:
+Set environment variables in the Firebase App Hosting console or via Google Cloud Secret Manager (see `apphosting.yaml`). Configure the Stripe webhook endpoint to:
 
 ```
 https://<your-app>/api/stripe/webhook
 ```
+
+> Note: Stripe secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_STUDIO_MONTHLY`) must be added to Secret Manager before Stripe features are active in production.
 
 ---
 
@@ -179,6 +184,7 @@ All flows live in `src/ai/flows/` and are wired to API routes under `src/app/api
 | `cv-parser` | `/api/cv-parser` | Multi-modal CV/resume parsing (PDF or image) |
 | `linkedin-parser` | `/api/linkedin-parser` | Parses raw LinkedIn profile text |
 | `github-importer` | `/api/github-importer` | Fetches public repos + AI README summaries |
+| `readme-summarizer` | _(used internally by github-importer)_ | Summarises a GitHub README into a portfolio item description |
 | `web-importer` | `/api/web-importer` | Crawls a URL and creates a portfolio item |
 | `content-suggester` | `/api/content-suggester` | Improves user-written text |
 | `ai-powered-content-suggestions` | `/api/ai/ai-powered-content-suggestions` | Generates portfolio headline + summary |
@@ -186,6 +192,26 @@ All flows live in `src/ai/flows/` and are wired to API routes under `src/app/api
 | `translator` | `/api/translate` | Translates portfolio content |
 
 All flows use `ai.generate()` with structured Zod output schemas and import `z` from `@/ai/genkit` (not directly from `genkit` or `zod`).
+
+---
+
+## API routes
+
+| Route | Description |
+|---|---|
+| `POST /api/cv-parser` | CV parsing |
+| `POST /api/linkedin-parser` | LinkedIn text parsing |
+| `POST /api/github-importer` | GitHub repo import |
+| `POST /api/web-importer` | URL crawl and import |
+| `POST /api/content-suggester` | Text improvement suggestions |
+| `POST /api/ai/ai-powered-content-suggestions` | Headline + summary generation |
+| `POST /api/theme-generator` | AI theme generation |
+| `POST /api/translate` | Content translation |
+| `POST /api/portfolio-items` | Server-side portfolio item creation (enforces free-plan limit) |
+| `POST /api/contact` | Contact form submission (writes via Admin SDK) |
+| `POST /api/stripe/checkout` | Creates a Stripe Checkout session |
+| `POST /api/stripe/portal` | Creates a Stripe Billing Portal session |
+| `POST /api/stripe/webhook` | Handles Stripe webhook events |
 
 ---
 
@@ -201,7 +227,7 @@ All flows use `ai.generate()` with structured Zod output schemas and import `z` 
 | AI theme generator | ❌ | ✅ | ✅ |
 | Team collaboration | ❌ | ❌ | ✅ |
 
-Plan gating is enforced both client-side (UI disabled states) and server-side (API routes check subscription tier before writing).
+Plan gating is enforced both client-side (UI disabled states) and server-side (API routes check subscription tier before writing). Portfolio item creation is routed through `/api/portfolio-items` so the free-plan limit of 3 is enforced server-side regardless of Firestore rules.
 
 ---
 
