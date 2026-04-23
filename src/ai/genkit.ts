@@ -16,6 +16,7 @@ import { z } from 'zod';
 
 let _ai: Genkit | undefined;
 let _aiKeySnapshot: string | undefined;
+let _telemetryEnabled = false;
 
 export function getAi(): Genkit {
   const currentKey = process.env.GOOGLE_GENAI_API_KEY;
@@ -25,7 +26,10 @@ export function getAi(): Genkit {
       console.error('[Genkit Init] ' + msg);
       throw new Error(msg);
     }
-    enableFirebaseTelemetry();
+    if (!_telemetryEnabled) {
+      enableFirebaseTelemetry();
+      _telemetryEnabled = true;
+    }
     _ai = genkit({ plugins: [googleAI({ apiKey: currentKey })] });
     _aiKeySnapshot = currentKey;
   }
