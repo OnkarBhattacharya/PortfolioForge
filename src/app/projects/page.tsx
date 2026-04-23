@@ -172,7 +172,6 @@ export default function ProjectsPage() {
         <AddPortfolioItemDialog
           canAdd={canAdd}
           limitMessage="Free plans are limited to 3 portfolio items. Upgrade to add more."
-          nextIndex={itemCount}
         >
           <Button disabled={isReadOnly}>
             <Plus className="mr-2 h-4 w-4" /> Add Item
@@ -205,7 +204,7 @@ export default function ProjectsPage() {
               Add your first item manually or import from GitHub or a URL.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 justify-center">
-              <AddPortfolioItemDialog canAdd={canAdd} nextIndex={0}>
+              <AddPortfolioItemDialog canAdd={canAdd}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" /> Add manually
                 </Button>

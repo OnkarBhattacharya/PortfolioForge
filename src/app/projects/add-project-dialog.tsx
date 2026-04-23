@@ -21,16 +21,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useFirestore, useUser } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useUser } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { collection } from 'firebase/firestore';
 import { Loader2, Wand2, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent } from '@/components/ui/card';
 import { logger } from '@/lib/logger';
 
@@ -47,19 +44,16 @@ export default function AddPortfolioItemDialog({
   children,
   canAdd = true,
   limitMessage,
-  nextIndex,
 }: {
   children: React.ReactNode;
   canAdd?: boolean;
   limitMessage?: string;
-  nextIndex?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
   const isReadOnly = !user || user.isAnonymous;
@@ -93,43 +87,36 @@ export default function AddPortfolioItemDialog({
   };
 
   async function onSubmit(values: FormValues) {
-    if (!firestore || !user || user.isAnonymous) return;
+    if (!user || user.isAnonymous) return;
     if (!canAdd) {
-      toast({
-        variant: "destructive",
-        title: "Upgrade Required",
-        description: limitMessage || "Free plans are limited to 3 portfolio items. Upgrade to add more.",
-      });
+      toast({ variant: 'destructive', title: 'Upgrade Required', description: limitMessage || 'Free plans are limited to 3 portfolio items. Upgrade to add more.' });
       return;
     }
 
     setIsSubmitting(true);
-    const itemsCol = collection(firestore, 'users', user.uid, 'portfolioItems');
-    const tagsArray =
-      values.tags?.split(',').map((t) => t.trim()).filter(Boolean) || [];
-    
-    const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
-    const newItemId = uuidv4();
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/portfolio-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: values.name, description: values.description, tags: values.tags, itemUrl: values.itemUrl }),
+      });
 
-    addDocumentNonBlocking(itemsCol, {
-        id: newItemId,
-        name: values.name,
-        description: values.description,
-        itemUrl: values.itemUrl,
-        tags: tagsArray,
-        userProfileId: user.uid,
-        imageId,
-        itemIndex: typeof nextIndex === 'number' ? nextIndex : 0,
-    });
+      if (res.status === 403) {
+        toast({ variant: 'destructive', title: 'Upgrade Required', description: 'Free plans are limited to 3 portfolio items.' });
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to add item');
 
-    toast({
-        title: 'Portfolio Item Added!',
-        description: `${values.name} has been added to your portfolio.`,
-    });
-
-    form.reset();
-    setOpen(false);
-    setIsSubmitting(false);
+      toast({ title: 'Portfolio Item Added!', description: `${values.name} has been added to your portfolio.` });
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      logger.error('Error adding portfolio item:', { error });
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not add item. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
   
   async function getSuggestions() {

@@ -98,9 +98,7 @@ service cloud.firestore {
       }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId)
-        && request.resource.data.userProfileId == userId
-        && (isPro(userId) || (request.resource.data.itemIndex is int && request.resource.data.itemIndex < 3));
+      allow create: if false; // All creates must go through the server-side API (/api/portfolio-items)
       allow update: if isExistingOwner(userId) && request.resource.data.userProfileId == resource.data.userProfileId;
       allow delete: if isExistingOwner(userId);
     }

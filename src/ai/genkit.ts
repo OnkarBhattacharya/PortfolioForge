@@ -6,18 +6,25 @@
  * ensuring that all necessary plugins are registered before any flows are defined.
  */
 
-import { genkit } from 'genkit';
+import { genkit, type Genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
-// Enable Firebase telemetry for observability.
-enableFirebaseTelemetry();
+let _ai: Genkit | undefined;
 
-export const ai = genkit({
-  plugins: [
-    googleAI(),
-  ],
+function getInstance(): Genkit {
+  if (!_ai) {
+    enableFirebaseTelemetry();
+    _ai = genkit({ plugins: [googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY })] });
+  }
+  return _ai;
+}
+
+export const ai = new Proxy({} as Genkit, {
+  get(_target, prop) {
+    return (getInstance() as never)[prop];
+  },
 });
 
 export { z };

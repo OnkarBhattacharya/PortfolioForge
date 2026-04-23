@@ -40,17 +40,24 @@ env:
   - variable: GOOGLE_GENAI_API_KEY
     secret: GOOGLE_GENAI_API_KEY
 
-  #- variable: STRIPE_SECRET_KEY
-   # secret: STRIPE_SECRET_KEY
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: FIREBASE_SERVICE_ACCOUNT_KEY
 
-  #- variable: STRIPE_WEBHOOK_SECRET
-   # secret: STRIPE_WEBHOOK_SECRET
-
-  #- variable: STRIPE_PRICE_PRO_MONTHLY
-    #secret: STRIPE_PRICE_PRO_MONTHLY
-
-  #- variable: STRIPE_PRICE_STUDIO_MONTHLY
-   # secret: STRIPE_PRICE_STUDIO_MONTHLY
+  # TODO: Uncomment and populate these secrets in Secret Manager once Stripe is integrated.
+  # The route handlers in /api/stripe/* already guard against missing values and will
+  # return HTTP 500 with "Stripe is not configured" until these are set.
+  #
+  # - variable: STRIPE_SECRET_KEY
+  #   secret: STRIPE_SECRET_KEY
+  #
+  # - variable: STRIPE_WEBHOOK_SECRET
+  #   secret: STRIPE_WEBHOOK_SECRET
+  #
+  # - variable: STRIPE_PRICE_PRO_MONTHLY
+  #   secret: STRIPE_PRICE_PRO_MONTHLY
+  #
+  # - variable: STRIPE_PRICE_STUDIO_MONTHLY
+  #   secret: STRIPE_PRICE_STUDIO_MONTHLY
 
 build:
   run: "npm run build"
