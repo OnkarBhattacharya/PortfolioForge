@@ -71,6 +71,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
 
   const isReadOnly = !user || user.isAnonymous;
+  const [isMounted, setIsMounted] = useState(false);
   
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,7 +94,11 @@ export default function SettingsPage() {
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
       if (userProfile?.themeId) {
@@ -219,8 +224,19 @@ export default function SettingsPage() {
     toast({ title: "Copied to clipboard!" });
   };
 
-  const isLoading = areThemesLoading || isUserLoading;
+  const isLoading = areThemesLoading || isUserLoading || (!isReadOnly && isProfileLoading);
   const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
+
+  if (!isMounted || isLoading) {
+    return (
+      <div className="flex min-h-[50vh] flex-1 items-center justify-center p-4 md:p-6">
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading settings...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6">

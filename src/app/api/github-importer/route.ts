@@ -1,69 +1,215 @@
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
+import * as adminModule from '@/firebase/admin';
+import * as githubImporterModule from '@/ai/flows/github-importer';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { importGithubRepositories } from '@/ai/flows/github-importer';
-import { getAdminFirestore } from '@/firebase/admin';
-import { v4 as uuidv4 } from 'uuid';
-import { logger } from '@/lib/logger';
+type RequestBody = Record<string, unknown>;
 
-export async function POST(req: NextRequest) {
+function jsonError(error: string, status = 400) {
+  return NextResponse.json({ success: false, error }, { status });
+}
+
+function getAuthHelper() {
+  const mod = adminModule as Record<string, unknown>;
+  const authHelper = mod.getAdminAuth ?? mod.adminAuth ?? mod.auth;
+
+  if (typeof authHelper === 'function') {
+    return authHelper();
+  }
+
+  if (authHelper) {
+    return authHelper;
+  }
+
+  throw new Error('Firebase Admin auth is not initialized.');
+}
+
+function getBearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization') || request.headers.get('Authorization');
+  if (!header) return null;
+
+  const [scheme, token, ...rest] = header.trim().split(/\s+/);
+  if (!scheme || scheme.toLowerCase() !== 'bearer' || !token || rest.length > 0) {
+    return null;
+  }
+
+  return token;
+}
+
+async function verifyRequestUser(request: Request) {
+  const token = getBearerToken(request);
+  if (!token) {
+    return { errorResponse: jsonError('Unauthorized.', 401) };
+  }
+
   try {
-    const db = getAdminFirestore();
-    const { username, userId } = await req.json();
+    const decoded = await getAuthHelper().verifyIdToken(token);
+    return { uid: decoded.uid, decoded };
+  } catch {
+    return { errorResponse: jsonError('Unauthorized.', 401) };
+  }
+}
 
-    if (!username || !userId) {
-      return NextResponse.json({ error: 'Username and userId are required' }, { status: 400 });
+async function readRequestBody(request: Request): Promise<RequestBody> {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const result: RequestBody = {};
+
+    for (const [key, value] of formData.entries()) {
+      const existing = result[key];
+      if (Array.isArray(existing)) {
+        existing.push(value);
+      } else if (existing !== undefined) {
+        result[key] = [existing, value];
+      } else {
+        result[key] = value;
+      }
     }
-    
-    const userDoc = await db.collection('users').doc(userId).get();
-    const userData = userDoc.data() || {};
-    const subscriptionTier = userData.subscriptionTier || 'free';
 
-    const portfolioItemsRef = db.collection('users').doc(userId).collection('portfolioItems');
-    const existingItems = await portfolioItemsRef.get();
-    const existingCount = existingItems.size;
-    const maxFreeItems = 3;
+    return result;
+  }
 
-    if (subscriptionTier === 'free' && existingCount >= maxFreeItems) {
-      return NextResponse.json({ error: 'Free plan limit reached.' }, { status: 403 });
+  try {
+    const json = await request.json();
+    if (json && typeof json === 'object' && !Array.isArray(json)) {
+      return json as RequestBody;
     }
+  } catch {
+    // ignore
+  }
 
-    const repositories = await importGithubRepositories({ username });
-    const remainingSlots = subscriptionTier === 'free'
-      ? Math.max(0, maxFreeItems - existingCount)
-      : repositories.length;
-    const allowedRepos = subscriptionTier === 'free'
-      ? repositories.slice(0, remainingSlots)
-      : repositories;
-    
-    if (allowedRepos.length > 0) {
-      const batch = db.batch();
+  return {};
+}
 
-      allowedRepos.forEach((project, index) => {
-        const newItemId = uuidv4();
-        const imageId = `project-${Math.floor(Math.random() * 5) + 1}`;
-        const tags = project.language ? [project.language] : [];
+function getFlowRunner(): (input: Record<string, unknown>) => Promise<unknown> {
+  const mod = githubImporterModule as Record<string, unknown>;
+  const candidates = [
+    mod.githubImporterFlow,
+    mod.importGitHubData,
+    mod.importGithubData,
+    mod.githubImporter,
+    mod.default,
+  ];
 
-        const newDocRef = portfolioItemsRef.doc(newItemId);
-        batch.set(newDocRef, {
-          id: newItemId,
-          userProfileId: userId,
-          name: project.name,
-          description: project.description,
-          itemUrl: project.url,
-          tags: tags,
-          imageId,
-          itemIndex: existingCount + index,
-        });
-      });
-
-      await batch.commit();
+  for (const candidate of candidates) {
+    if (typeof candidate === 'function') {
+      return candidate as (input: Record<string, unknown>) => Promise<unknown>;
     }
-    
-    return NextResponse.json({ success: true, importedCount: allowedRepos.length });
-    
-  } catch (error: any) {
-    logger.error('Error in github-importer API:', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+  }
+
+  throw new Error('GitHub importer flow is unavailable.');
+}
+
+function normalizeGitHubUsername(rawValue: unknown): string | null {
+  if (typeof rawValue !== 'string') {
+    return null;
+  }
+
+  const value = rawValue.trim();
+  if (!value) return null;
+
+  const urlPattern = /^https?:\/\/(www\.)?github\.com\/([^/?#]+)(?:[/?#].*)?$/i;
+  const urlMatch = value.match(urlPattern);
+  const username = urlMatch ? urlMatch[2] : value.replace(/^@/, '');
+
+  if (!/^[a-z\d](?:[a-z\d-]{0,38}[a-z\d])?$/i.test(username)) {
+    return null;
+  }
+
+  return username;
+}
+
+function normalizeRepositoryIdentifier(rawValue: unknown): string | null {
+  if (typeof rawValue !== 'string') {
+    return null;
+  }
+
+  const value = rawValue.trim();
+  if (!value) return null;
+
+  if (/^[a-z\d_.-]+\/[a-z\d_.-]+$/i.test(value)) {
+    return value;
+  }
+
+  const urlPattern = /^https?:\/\/(www\.)?github\.com\/([a-z\d_.-]+)\/([a-z\d_.-]+)(?:\.git)?(?:[/?#].*)?$/i;
+  const urlMatch = value.match(urlPattern);
+  if (urlMatch) {
+    return `${urlMatch[2]}/${urlMatch[3]}`;
+  }
+
+  return null;
+}
+
+function normalizeGitHubPayload(body: RequestBody) {
+  const usernameFields = ['username', 'githubUsername', 'profile', 'profileUrl', 'githubUrl'];
+  let username: string | null = null;
+
+  for (const field of usernameFields) {
+    username = normalizeGitHubUsername(body[field]);
+    if (username) break;
+  }
+
+  const repositoryFields = ['repositories', 'repoUrls', 'repositoryUrls', 'repoIdentifiers'];
+  const repositories = new Set<string>();
+
+  for (const field of repositoryFields) {
+    const value = body[field];
+    if (!Array.isArray(value)) continue;
+
+    for (const item of value) {
+      const normalized = normalizeRepositoryIdentifier(item);
+      if (!normalized) {
+        throw new Error('One or more repository values are invalid.');
+      }
+      repositories.add(normalized);
+    }
+  }
+
+  if (!username && repositories.size === 0) {
+    throw new Error('A GitHub username or repository list is required.');
+  }
+
+  const normalized = {
+    username,
+    repositories: Array.from(repositories),
+  };
+
+  return normalized;
+}
+
+export async function POST(request: Request) {
+  const auth = await verifyRequestUser(request);
+  if ('errorResponse' in auth) {
+    return auth.errorResponse;
+  }
+
+  const body = await readRequestBody(request);
+  const bodyUserId = typeof body.userId === 'string' ? body.userId.trim() : '';
+  if (bodyUserId && bodyUserId !== auth.uid) {
+    return jsonError('Forbidden.', 403);
+  }
+
+  let normalized;
+  try {
+    normalized = normalizeGitHubPayload(body);
+  } catch (error) {
+    return jsonError(error instanceof Error ? error.message : 'Invalid request body.', 400);
+  }
+
+  const runner = getFlowRunner();
+
+  try {
+    const data = await runner({
+      ...body,
+      userId: auth.uid,
+      uid: auth.uid,
+      ...normalized,
+    });
+
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('[github-importer] import failed', error);
+    return jsonError(error instanceof Error ? error.message : 'Failed to import GitHub data.', 500);
   }
 }

@@ -1,91 +1,206 @@
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
+import * as adminModule from '@/firebase/admin';
+import * as cvParserModule from '@/ai/flows/cv-parser';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { parseCv } from '@/ai/flows/cv-parser';
-import { getAdminFirestore } from '@/firebase/admin';
-import { CvDataSchema } from '@/lib/types';
-import { logger } from '@/lib/logger';
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
-const JsonBodySchema = z.object({
-  cvFile: z.string().min(1),
-  userId: z.string().min(1),
-});
+type RequestBody = Record<string, unknown>;
 
-export const saveCvDataToFirestore = async (userId: string, cvData: z.infer<typeof CvDataSchema>) => {
-  const db = getAdminFirestore();
-  if (!userId) throw new Error('User ID is required to save CV data.');
-  const userDocRef = db.collection('users').doc(userId);
-  await userDocRef.set({ ...cvData }, { merge: true });
-};
-
-async function normalizeCvInput(req: NextRequest): Promise<{ cvFile: string; userId: string }> {
-  const contentType = req.headers.get('content-type') ?? '';
-
-  if (contentType.includes('application/json')) {
-    return JsonBodySchema.parse(await req.json());
-  }
-
-  const formData = await req.formData();
-  const rawCvFile = formData.get('cvFile');
-  const rawUserId = formData.get('userId');
-
-  if (typeof rawUserId !== 'string' || !rawUserId) {
-    throw new Error('userId is required');
-  }
-
-  if (typeof rawCvFile === 'string' && rawCvFile) {
-    return { cvFile: rawCvFile, userId: rawUserId };
-  }
-
-  if (rawCvFile instanceof File) {
-    const bytes = await rawCvFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const cvFile = `data:${rawCvFile.type || 'application/pdf'};base64,${buffer.toString('base64')}`;
-    return { cvFile, userId: rawUserId };
-  }
-
-  throw new Error('cvFile is required');
+function jsonError(error: string, status = 400) {
+  return NextResponse.json({ success: false, error }, { status });
 }
 
-function ensureDataUri(cvFile: string): string {
-  if (cvFile.startsWith('data:')) {
-    return cvFile;
+function getAuthHelper() {
+  const mod = adminModule as Record<string, unknown>;
+  const authHelper = mod.getAdminAuth ?? mod.adminAuth ?? mod.auth;
+
+  if (typeof authHelper === 'function') {
+    return authHelper();
   }
 
-  return `data:application/octet-stream;base64,${cvFile}`;
+  if (authHelper) {
+    return authHelper;
+  }
+
+  throw new Error('Firebase Admin auth is not initialized.');
 }
 
-export async function POST(req: NextRequest) {
+function getBearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization') || request.headers.get('Authorization');
+  if (!header) return null;
+
+  const [scheme, token, ...rest] = header.trim().split(/\s+/);
+  if (!scheme || scheme.toLowerCase() !== 'bearer' || !token || rest.length > 0) {
+    return null;
+  }
+
+  return token;
+}
+
+async function verifyRequestUser(request: Request) {
+  const token = getBearerToken(request);
+  if (!token) {
+    return { errorResponse: jsonError('Unauthorized.', 401) };
+  }
+
   try {
-    const { cvFile, userId } = await normalizeCvInput(req);
+    const decoded = await getAuthHelper().verifyIdToken(token);
+    return { uid: decoded.uid, decoded };
+  } catch {
+    return { errorResponse: jsonError('Unauthorized.', 401) };
+  }
+}
 
-    if (!cvFile || !userId) {
-      return NextResponse.json({ error: 'cvFile (as a file or data URI) and userId are required' }, { status: 400 });
+function formDataToObject(formData: FormData): RequestBody {
+  const result: RequestBody = {};
+
+  for (const [key, value] of formData.entries()) {
+    const existing = result[key];
+
+    if (Array.isArray(existing)) {
+      existing.push(value);
+      continue;
     }
 
-    const parsedData = await parseCv({ cvFile: ensureDataUri(cvFile) });
-    await saveCvDataToFirestore(userId, parsedData);
+    if (existing !== undefined) {
+      result[key] = [existing, value];
+      continue;
+    }
 
-    return NextResponse.json({ success: true, data: parsedData });
-  } catch (error: any) {
-    const message = error?.message ?? 'Unknown error';
-    logger.error('Error in cv-parser API:', { error: message, stack: error?.stack });
+    result[key] = value;
+  }
 
-    const isClientError =
-      error instanceof z.ZodError ||
-      message.includes('required') ||
-      message.includes('Invalid') ||
-      message.includes('too large') ||
-      message.includes('must be');
+  return result;
+}
 
-    return NextResponse.json(
-      {
-        error: isClientError
-          ? message
-          : 'CV processing failed. Check file size/format (<10MB PDF/image) or AI service status.',
-      },
-      { status: isClientError ? 400 : 500 }
-    );
+async function readRequestBody(request: Request): Promise<RequestBody> {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    return formDataToObject(await request.formData());
+  }
+
+  try {
+    const json = await request.json();
+    if (json && typeof json === 'object' && !Array.isArray(json)) {
+      return json as RequestBody;
+    }
+  } catch {
+    // fall through
+  }
+
+  return {};
+}
+
+function getFlowRunner(): (input: Record<string, unknown>) => Promise<unknown> {
+  const mod = cvParserModule as Record<string, unknown>;
+  const candidates = [
+    mod.cvParserFlow,
+    mod.parseCv,
+    mod.parseResume,
+    mod.resumeParser,
+    mod.default,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'function') {
+      return candidate as (input: Record<string, unknown>) => Promise<unknown>;
+    }
+  }
+
+  throw new Error('CV parser flow is unavailable.');
+}
+
+function getTextValue(body: RequestBody): string | null {
+  const textFields = ['resumeText', 'cvText', 'text', 'content', 'documentText', 'parsedText'];
+
+  for (const field of textFields) {
+    const value = body[field];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
+function getUploadedFile(body: RequestBody): File | null {
+  const fileFields = ['file', 'resumeFile', 'cvFile', 'document', 'upload'];
+
+  for (const field of fileFields) {
+    const value = body[field];
+    if (value instanceof File) {
+      return value;
+    }
+    if (Array.isArray(value)) {
+      const match = value.find((item) => item instanceof File);
+      if (match instanceof File) {
+        return match;
+      }
+    }
+  }
+
+  for (const value of Object.values(body)) {
+    if (value instanceof File) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function pickPayload(body: RequestBody, uid: string, text: string | null, file: File | null) {
+  return {
+    ...body,
+    userId: uid,
+    uid,
+    resumeText: text ?? undefined,
+    cvText: text ?? undefined,
+    fileName: file?.name,
+    fileType: file?.type,
+  };
+}
+
+export async function POST(request: Request) {
+  const auth = await verifyRequestUser(request);
+  if ('errorResponse' in auth) {
+    return auth.errorResponse;
+  }
+
+  const body = await readRequestBody(request);
+  const bodyUserId = typeof body.userId === 'string' ? body.userId.trim() : '';
+  if (bodyUserId && bodyUserId !== auth.uid) {
+    return jsonError('Forbidden.', 403);
+  }
+
+  const file = getUploadedFile(body);
+  const text = getTextValue(body);
+
+  if (!file && !text) {
+    return jsonError('A CV file or text content is required.', 400);
+  }
+
+  let fileText: string | null = null;
+  if (file) {
+    if (file.size > MAX_FILE_BYTES) {
+      return jsonError('Uploaded file is too large.', 413);
+    }
+
+    try {
+      fileText = (await file.text()).trim() || null;
+    } catch {
+      return jsonError('Unable to read uploaded file.', 400);
+    }
+  }
+
+  const payload = pickPayload(body, auth.uid, text ?? fileText, file);
+  const runner = getFlowRunner();
+
+  try {
+    const data = await runner(payload);
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('[cv-parser] parse failed', error);
+    return jsonError(error instanceof Error ? error.message : 'Failed to parse CV.', 500);
   }
 }

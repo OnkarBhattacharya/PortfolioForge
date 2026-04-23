@@ -1,73 +1,217 @@
-/**
- * @fileOverview A Genkit flow for importing content from a URL into a portfolio item.
- *
- * - importFromUrl - A function that fetches content from a URL and uses AI to summarize it.
- * - WebImporterInput - The input type for the importFromUrl function.
- * - WebImporterOutput - The return type for the importFromUrl function.
- */
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
-import { getAi, z } from '@/ai/genkit';
-import { parse } from 'node-html-parser';
+const MAX_REDIRECTS = 5;
+const MAX_RESPONSE_BYTES = 1_000_000;
+const USER_AGENT = 'PortfolioForge-WebImporter/1.0';
 
-const WebImporterInputSchema = z.object({
-  url: z.string().url().describe('The URL of the page to import.'),
-});
+export interface WebImporterInput {
+  url?: string;
+  urls?: string[];
+  userId?: string;
+  [key: string]: unknown;
+}
 
-const WebImporterOutputSchema = z.object({
-  name: z.string().describe('The concise, engaging title of the content, extracted from the page.'),
-  description: z.string().describe('A 2-3 sentence summary of the page content, written in a professional tone for a portfolio.'),
-  tags: z.array(z.string()).describe('A list of 3-5 relevant keywords or technologies found on the page.'),
-});
+export interface WebImporterPageContent {
+  url: string;
+  finalUrl: string;
+  title: string | null;
+  html: string;
+  contentType: string | null;
+  status: number;
+  fetchedAt: string;
+}
 
-export type WebImporterInput = z.infer<typeof WebImporterInputSchema>;
-export type WebImporterOutput = z.infer<typeof WebImporterOutputSchema>;
+function isPrivateIPv4(address: string): boolean {
+  const octets = address.split('.').map((part) => Number(part));
+  if (octets.length !== 4 || octets.some((octet) => Number.isNaN(octet) || octet < 0 || octet > 255)) {
+    return true;
+  }
 
-const PROMPT_TEXT = `You are an expert content analyst and copywriter. Your task is to analyze the text content of a webpage and extract structured data suitable for a professional portfolio.
+  const [a, b] = octets;
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a >= 224) return true;
 
-    Analyze the content and perform the following actions:
-    1.  **Generate a Title**: Create a concise, engaging title for the content. This should be based on the main heading or purpose of the page.
-    2.  **Write a Summary**: Craft a professional, 2-3 sentence summary of the page's main content. This summary should be perfect for a portfolio item description.
-    3.  **Suggest Tags**: Identify 3-5 of the most relevant keywords, concepts, or technologies from the text to use as tags.
+  return false;
+}
 
-    Webpage Text Content:
-    {{pageAsText}}
+function isPrivateIPv6(address: string): boolean {
+  const normalized = address.toLowerCase();
 
-    Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`;
+  if (normalized === '::1') return true;
+  if (normalized.startsWith('fe80:') || normalized.startsWith('fe90:') || normalized.startsWith('fea0:') || normalized.startsWith('feb0:')) {
+    return true;
+  }
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) {
+    return true;
+  }
+  if (normalized === '::') return true;
 
-export async function importFromUrl(input: WebImporterInput): Promise<WebImporterOutput> {
-  let rawHtml = '';
+  return false;
+}
+
+function isUnsafeHostname(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+
+  if (!lower) return true;
+  if (lower === 'localhost' || lower.endsWith('.localhost')) return true;
+  if (lower === 'metadata.google.internal' || lower.endsWith('.metadata.google.internal')) return true;
+  if (lower.endsWith('.local') || lower.endsWith('.internal')) return true;
+  if (lower === '0.0.0.0' || lower === '::' || lower === '::1') return true;
+  if (lower === '169.254.169.254') return true;
+
+  if (isIP(lower) === 4) return isPrivateIPv4(lower);
+  if (isIP(lower) === 6) return isPrivateIPv6(lower);
+
+  return false;
+}
+
+async function assertSafeUrl(rawUrl: string): Promise<URL> {
+  let url: URL;
+
   try {
-    const response = await fetch(input.url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
-    });
-    if (!response.ok) throw new Error(`Failed to fetch URL with status: ${response.status}`);
-    rawHtml = await response.text();
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error('Invalid URL.');
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('Only HTTP and HTTPS URLs are allowed.');
+  }
+
+  if (url.username || url.password) {
+    throw new Error('URLs with credentials are not allowed.');
+  }
+
+  if (!url.hostname) {
+    throw new Error('URL hostname is required.');
+  }
+
+  if (isUnsafeHostname(url.hostname)) {
+    throw new Error('Unsafe destination blocked.');
+  }
+
+  try {
+    const records = await lookup(url.hostname, { all: true, verbatim: true });
+    if (records.some((record) => isUnsafeHostname(record.address))) {
+      throw new Error('Unsafe destination blocked.');
+    }
   } catch (error) {
-    throw new Error('The URL could not be reached. Please check if it\'s a valid, publicly accessible page.');
+    if (error instanceof Error && error.message === 'Unsafe destination blocked.') {
+      throw error;
+    }
+
+    throw new Error('Unable to resolve destination safely.');
   }
 
-  if (!rawHtml.trim()) throw new Error('The fetched content from the URL is empty.');
+  return url;
+}
 
-  const root = parse(rawHtml);
-  root.querySelectorAll('script, style, nav, footer, header, aside').forEach(node => node.remove());
-  const pageAsText = root.textContent || '';
-  const truncatedText = pageAsText.length > 30000 ? pageAsText.substring(0, 30000) : pageAsText;
+function extractTitle(html: string): string | null {
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (!titleMatch?.[1]) return null;
 
-  if (!truncatedText.trim()) {
-    throw new Error('Could not extract meaningful text content from the URL. The page might be rendered dynamically with JavaScript.');
-  }
+  return titleMatch[1].replace(/\s+/g, ' ').trim() || null;
+}
 
-  const ai = getAi();
-  const prompt = ai.definePrompt({
-    name: 'webContentSummarizerPrompt',
-    input: { schema: z.object({ pageAsText: z.string() }) },
-    output: { schema: WebImporterOutputSchema },
-    prompt: PROMPT_TEXT,
+async function fetchSafeHtml(rawUrl: string, redirectCount = 0): Promise<WebImporterPageContent> {
+  const url = await assertSafeUrl(rawUrl);
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    redirect: 'manual',
   });
 
-  const { output } = await prompt({ pageAsText: truncatedText });
-  if (!output) {
-    throw new Error('The AI model could not process the content from the URL. Please try a different page.');
+  if (response.status >= 300 && response.status < 400) {
+    if (redirectCount >= MAX_REDIRECTS) {
+      throw new Error('Too many redirects.');
+    }
+
+    const location = response.headers.get('location');
+    if (!location) {
+      throw new Error('Redirect response is missing a location header.');
+    }
+
+    const nextUrl = new URL(location, url);
+    return fetchSafeHtml(nextUrl.toString(), redirectCount + 1);
   }
-  return output;
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url.hostname}.`);
+  }
+
+  const contentType = response.headers.get('content-type');
+  const contentLength = Number(response.headers.get('content-length') ?? '0');
+
+  if (Number.isFinite(contentLength) && contentLength > MAX_RESPONSE_BYTES) {
+    throw new Error('Response is too large.');
+  }
+
+  const html = await response.text();
+
+  if (html.length > MAX_RESPONSE_BYTES) {
+    throw new Error('Response is too large.');
+  }
+
+  return {
+    url: rawUrl,
+    finalUrl: response.url || url.toString(),
+    title: extractTitle(html),
+    html,
+    contentType,
+    status: response.status,
+    fetchedAt: new Date().toISOString(),
+  };
 }
+
+function normalizeInputUrls(input: WebImporterInput): string[] {
+  const candidates: string[] = [];
+
+  if (typeof input.url === 'string' && input.url.trim()) {
+    candidates.push(input.url.trim());
+  }
+
+  if (Array.isArray(input.urls)) {
+    for (const value of input.urls) {
+      if (typeof value === 'string' && value.trim()) {
+        candidates.push(value.trim());
+      }
+    }
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+export async function webImporterFlow(input: WebImporterInput): Promise<WebImporterPageContent | WebImporterPageContent[]> {
+  const urls = normalizeInputUrls(input);
+
+  if (urls.length === 0) {
+    throw new Error('At least one URL is required.');
+  }
+
+  if (urls.length === 1) {
+    return fetchSafeHtml(urls[0]);
+  }
+
+  const results: WebImporterPageContent[] = [];
+  for (const url of urls) {
+    results.push(await fetchSafeHtml(url));
+  }
+
+  return results;
+}
+
+export const webImporter = webImporterFlow;
+export const importWebsiteData = webImporterFlow;
+export const fetchWebsiteContent = webImporterFlow;
+export default webImporterFlow;

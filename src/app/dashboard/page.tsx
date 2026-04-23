@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { ArrowUpRight, CheckCircle, Circle, KeyRound } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { useEffect, useState } from 'react';
 import { useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, limit, doc } from 'firebase/firestore';
 import { z } from 'zod';
@@ -39,6 +40,11 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const isReadOnly = !user || user.isAnonymous;
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // All hooks must be called unconditionally before any early return
   const itemsQuery = useMemoFirebase(() => {
@@ -59,7 +65,7 @@ export default function DashboardPage() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
 
-  if (isUserLoading) {
+  if (!isMounted || isUserLoading || (!isReadOnly && (isProfileLoading || areItemsLoading))) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
         <div className="flex items-center justify-between">

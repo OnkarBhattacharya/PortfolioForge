@@ -1,8 +1,8 @@
-
 'use client';
 
 export const dynamic = 'force-dynamic';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,12 +13,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Check, KeyRound, Loader2, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 
 type UserProfile = {
   id: string;
@@ -32,12 +32,7 @@ const Tiers = {
     name: 'Free',
     price: '$0',
     frequency: 'per month',
-    features: [
-      '1 Portfolio',
-      'AI Content Suggestions',
-      '3 Portfolio Items',
-      'Standard Themes',
-    ],
+    features: ['1 Portfolio', 'AI Content Suggestions', '3 Portfolio Items', 'Standard Themes'],
     unavailableFeatures: [
       'Unlimited Portfolio Items',
       'Custom Domain',
@@ -63,110 +58,138 @@ const Tiers = {
     name: 'Studio',
     price: '$29',
     frequency: 'per month',
-    features: [
-      'Multiple portfolios',
-      'Client-ready case studies',
-      'Custom domain',
-      'Premium themes',
-      'Team collaboration',
-    ],
+    features: ['Multiple portfolios', 'Client-ready case studies', 'Custom domain', 'Premium themes', 'Team collaboration'],
     unavailableFeatures: [],
   },
 };
 
-
+type PendingAction = 'checkout' | 'portal' | null;
 
 export default function BillingPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const isReadOnly = !user || user.isAnonymous;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const userProfileRef = useMemoFirebase(() => {
     if (isReadOnly || !user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user, isReadOnly]);
 
-  const { data: userProfile, isLoading: isProfileLoading } =
-    useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const currentTier = (userProfile?.subscriptionTier || 'free') as keyof typeof Tiers;
+  const currentTier =
+    userProfile?.subscriptionTier && userProfile.subscriptionTier in Tiers
+      ? (userProfile.subscriptionTier as keyof typeof Tiers)
+      : 'free';
   const currentStatus = userProfile?.subscriptionStatus;
   const endDate = userProfile?.subscriptionPeriodEndDate
     ? new Date(userProfile.subscriptionPeriodEndDate).toLocaleDateString()
     : null;
 
-  const handleManageSubscription = async () => {
-    setIsLoading(true);
-    try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error('Authentication required.');
-      }
-      const response = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({}),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not open billing portal');
-      }
-      window.location.href = data.url;
-    } catch (error: any) {
+  const showLoadingState = !isMounted || isUserLoading || (!isReadOnly && isProfileLoading);
+
+  const pendingLabel =
+    pendingAction === 'checkout'
+      ? 'Starting checkout...'
+      : pendingAction === 'portal'
+        ? 'Opening billing portal...'
+        : null;
+
+  const readResponseError = async (response: Response) => {
+    const data = await response.json().catch(() => null);
+    return data?.error || 'The billing service could not complete your request.';
+  };
+
+  const createStripeSession = async (
+    endpoint: '/api/stripe/checkout' | '/api/stripe/portal',
+    action: PendingAction,
+    payload?: Record<string, unknown>
+  ) => {
+    if (pendingAction) {
+      return;
+    }
+
+    if (!user || user.isAnonymous) {
+      const message = 'Please log in or sign up to manage your billing.';
+      setActionError(message);
       toast({
         variant: 'destructive',
-        title: 'Portal unavailable',
-        description: error.message || 'Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-    const handleUpgrade = async (tier: 'free' | 'pro' | 'studio') => {
-    if (isReadOnly) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to upgrade your plan.",
+        title: 'Authentication required',
+        description: message,
       });
       return;
     }
-    setIsLoading(true);
+
+    setPendingAction(action);
+    setActionError(null);
+
     try {
-      const token = await user?.getIdToken();
+      const token = await user.getIdToken();
       if (!token) {
         throw new Error('Authentication required.');
       }
-      const response = await fetch('/api/stripe/checkout', {
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan: tier }),
+        body: JSON.stringify(payload || {}),
       });
-      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || 'Could not start checkout');
+        throw new Error(await readResponseError(response));
       }
+
+      const data = await response.json().catch(() => null);
+      if (!data?.url) {
+        throw new Error('The billing service did not return a redirect URL.');
+      }
+
       window.location.href = data.url;
     } catch (error: any) {
+      const message = error instanceof Error && error.message ? error.message : 'Please try again later.';
+      setActionError(message);
       toast({
         variant: 'destructive',
-        title: 'Checkout unavailable',
-        description: error.message || 'Please try again later.',
+        title: action === 'portal' ? 'Portal unavailable' : 'Checkout unavailable',
+        description: message,
       });
     } finally {
-      setIsLoading(false);
+      setPendingAction(null);
     }
   };
 
+  const handleManageSubscription = async () => {
+    await createStripeSession('/api/stripe/portal', 'portal');
+  };
+
+  const handleUpgrade = async (tier: 'free' | 'pro' | 'studio') => {
+    await createStripeSession('/api/stripe/checkout', 'checkout', { plan: tier });
+  };
+
+  if (showLoadingState) {
+    return (
+      <div className="flex min-h-[50vh] flex-1 items-center justify-center p-4 md:p-6">
+        <Card className="w-full max-w-lg">
+          <CardHeader className="space-y-2 text-center">
+            <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />
+            <CardTitle className="font-headline">Loading billing</CardTitle>
+            <CardDescription>Verifying your account and subscription details.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6">
@@ -179,8 +202,22 @@ export default function BillingPage() {
         </p>
       </div>
 
+      {actionError && (
+        <Alert variant="destructive">
+          <AlertTitle className="font-headline">Billing action failed</AlertTitle>
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
+      )}
+
+      {pendingLabel && (
+        <Alert>
+          <AlertTitle className="font-headline">Processing request</AlertTitle>
+          <AlertDescription>{pendingLabel}</AlertDescription>
+        </Alert>
+      )}
+
       {isReadOnly && (
-        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
+        <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-900/20">
           <CardHeader className="flex flex-row items-center gap-4">
             <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
             <div>
@@ -207,38 +244,26 @@ export default function BillingPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline">Subscription Plans</CardTitle>
-            <CardDescription>
-              Choose the plan that's right for you.
-            </CardDescription>
+            <CardDescription>Choose the plan that's right for you.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-3">
-            <Card
-              className={currentTier === 'free' ? 'border-primary' : ''}
-            >
+            <Card className={currentTier === 'free' ? 'border-primary' : ''}>
               <CardHeader>
-                <CardTitle className="font-headline">
-                  {Tiers.free.name}
-                </CardTitle>
+                <CardTitle className="font-headline">{Tiers.free.name}</CardTitle>
                 <CardDescription>
                   <span className="text-2xl font-bold">{Tiers.free.price}</span>
-                  <span className="text-muted-foreground">
-                    /{Tiers.free.frequency}
-                  </span>
+                  <span className="text-muted-foreground">/{Tiers.free.frequency}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2 text-sm">
                   {Tiers.free.features.map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <Check className="mr-2 h-4 w-4 text-green-500" />{' '}
-                      {feature}
+                      <Check className="mr-2 h-4 w-4 text-green-500" /> {feature}
                     </li>
                   ))}
                   {Tiers.free.unavailableFeatures.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-center text-muted-foreground"
-                    >
+                    <li key={feature} className="flex items-center text-muted-foreground">
                       <X className="mr-2 h-4 w-4" /> {feature}
                     </li>
                   ))}
@@ -263,38 +288,27 @@ export default function BillingPage() {
                 <CardTitle className="font-headline">{Tiers.pro.name}</CardTitle>
                 <CardDescription>
                   <span className="text-2xl font-bold">{Tiers.pro.price}</span>
-                  <span className="text-muted-foreground">
-                    /{Tiers.pro.frequency}
-                  </span>
+                  <span className="text-muted-foreground">/{Tiers.pro.frequency}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2 text-sm">
                   {Tiers.pro.features.map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <Check className="mr-2 h-4 w-4 text-green-500" />{' '}
-                      {feature}
+                      <Check className="mr-2 h-4 w-4 text-green-500" /> {feature}
                     </li>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter>
                 {currentTier === 'pro' ? (
-                  <Button
-                    className="w-full"
-                    onClick={handleManageSubscription}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
+                  <Button className="w-full" onClick={handleManageSubscription} disabled={!!pendingAction}>
+                    {pendingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Manage Subscription
                   </Button>
                 ) : (
-                  <Button className="w-full" onClick={() => handleUpgrade('pro')} disabled={isLoading || isReadOnly}>
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
+                  <Button className="w-full" onClick={() => handleUpgrade('pro')} disabled={!!pendingAction || isReadOnly}>
+                    {pendingAction === 'checkout' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Upgrade to Pro
                   </Button>
                 )}
@@ -306,38 +320,27 @@ export default function BillingPage() {
                 <CardTitle className="font-headline">{Tiers.studio.name}</CardTitle>
                 <CardDescription>
                   <span className="text-2xl font-bold">{Tiers.studio.price}</span>
-                  <span className="text-muted-foreground">
-                    /{Tiers.studio.frequency}
-                  </span>
+                  <span className="text-muted-foreground">/{Tiers.studio.frequency}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ul className="space-y-2 text-sm">
                   {Tiers.studio.features.map((feature) => (
                     <li key={feature} className="flex items-center">
-                      <Check className="mr-2 h-4 w-4 text-green-500" />{' '}
-                      {feature}
+                      <Check className="mr-2 h-4 w-4 text-green-500" /> {feature}
                     </li>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter>
                 {currentTier === 'studio' ? (
-                  <Button
-                    className="w-full"
-                    onClick={handleManageSubscription}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
+                  <Button className="w-full" onClick={handleManageSubscription} disabled={!!pendingAction}>
+                    {pendingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Manage Subscription
                   </Button>
                 ) : (
-                  <Button className="w-full" onClick={() => handleUpgrade('studio')} disabled={isLoading || isReadOnly}>
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
+                  <Button className="w-full" onClick={() => handleUpgrade('studio')} disabled={!!pendingAction || isReadOnly}>
+                    {pendingAction === 'checkout' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Upgrade to Studio
                   </Button>
                 )}
@@ -349,37 +352,35 @@ export default function BillingPage() {
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="font-headline">Current Plan</CardTitle>
-            <CardDescription>
-              Track your subscription status and renewal date.
-            </CardDescription>
+            <CardDescription>Track your subscription status and renewal date.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             {isProfileLoading && !isReadOnly ? (
-                <Loader2 className="h-8 w-8 animate-spin" />
-             ) : (
-                <>
-                    <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Your Plan</p>
-                        <p className="text-lg font-semibold">{Tiers[currentTier].name}</p>
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-semibold">
-                            {currentStatus === 'active' ? (
-                                <Badge>Active</Badge>
-                            ) : (
-                                <Badge variant="secondary">{currentStatus || 'N/A'}</Badge>
-                            )}
-                        </p>
-                    </div>
-                    {endDate && (
-                         <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Renews/Expires On</p>
-                            <p className="font-semibold">{endDate}</p>
-                         </div>
+            {isProfileLoading && !isReadOnly ? (
+              <Loader2 className="h-8 w-8 animate-spin" />
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Your Plan</p>
+                  <p className="text-lg font-semibold">{Tiers[currentTier].name}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-semibold">
+                    {currentStatus === 'active' ? (
+                      <Badge>Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">{currentStatus || 'N/A'}</Badge>
                     )}
-                </>
-             )}
+                  </p>
+                </div>
+                {endDate && (
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Renews/Expires On</p>
+                    <p className="font-semibold">{endDate}</p>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
@@ -401,10 +402,12 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             {currentTier === 'free' ? (
-              <p className="text-sm text-muted-foreground">No payment method on file. Upgrade to a paid plan to add one.</p>
+              <p className="text-sm text-muted-foreground">
+                No payment method on file. Upgrade to a paid plan to add one.
+              </p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Payment details are managed securely through Stripe. Click &quot;Manage Subscription&quot; above to update your payment method.
+                Payment details are managed securely through Stripe. Click "Manage Subscription" above to update your payment method.
               </p>
             )}
           </CardContent>
@@ -418,14 +421,16 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             {currentTier === 'free' ? (
-              <p className="text-sm text-muted-foreground">No invoices yet. Invoices appear here after your first payment.</p>
+              <p className="text-sm text-muted-foreground">
+                No invoices yet. Invoices appear here after your first payment.
+              </p>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
                   Your full invoice history is available in the Stripe billing portal.
                 </p>
-                <Button onClick={handleManageSubscription} disabled={isLoading} variant="outline">
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                <Button onClick={handleManageSubscription} disabled={!!pendingAction} variant="outline">
+                  {pendingAction === 'portal' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Open Billing Portal
                 </Button>
               </div>

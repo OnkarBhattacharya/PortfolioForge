@@ -47,8 +47,9 @@ export default function AiAssistantPage() {
   const [suggestions, setSuggestions] = useState<any | null>(null);
   const [hasCvData, setHasCvData] = useState(false);
   const [hasProfession, setHasProfession] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
 
   const form = useForm<FormValues>({
@@ -62,6 +63,8 @@ export default function AiAssistantPage() {
   });
 
   useEffect(() => {
+    setIsMounted(true);
+
     const updateFormData = () => {
         try {
             const cvDataString = localStorage.getItem("cvData");
@@ -129,6 +132,17 @@ export default function AiAssistantPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!isMounted || isUserLoading) {
+    return (
+      <div className="flex min-h-[50vh] flex-1 items-center justify-center p-4 md:p-6">
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading AI Assistant...
+        </div>
+      </div>
+    );
   }
 
   return (

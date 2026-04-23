@@ -89,23 +89,29 @@ const loremIpsum = {
 
 
 export function ThemePreview({ theme, showBranding = true }: ThemePreviewProps) {
+  const safeTheme = {
+    background: theme?.background ?? '220 13% 95%',
+    foreground: theme?.foreground ?? '222.2 84% 4.9%',
+    primary: theme?.primary ?? '231 48% 48%',
+    accent: theme?.accent ?? '174 100% 29%',
+  };
 
   const customStyles = {
-    '--background': theme.background,
-    '--foreground': theme.foreground,
-    '--primary': theme.primary,
-    '--accent': theme.accent,
-    '--card': theme.background, 
-    '--card-foreground': theme.foreground,
-    '--popover': theme.background,
-    '--popover-foreground': theme.foreground,
-    '--secondary': theme.accent, 
-    '--secondary-foreground': theme.foreground,
-    '--muted': theme.accent,
-    '--muted-foreground': `hsl(${theme.foreground}) / 0.7`,
-    '--border': `hsl(${theme.foreground}) / 0.2`,
-    '--input': `hsl(${theme.foreground}) / 0.2`,
-    '--ring': theme.primary,
+    '--background': safeTheme.background,
+    '--foreground': safeTheme.foreground,
+    '--primary': safeTheme.primary,
+    '--accent': safeTheme.accent,
+    '--card': safeTheme.background,
+    '--card-foreground': safeTheme.foreground,
+    '--popover': safeTheme.background,
+    '--popover-foreground': safeTheme.foreground,
+    '--secondary': safeTheme.accent,
+    '--secondary-foreground': safeTheme.foreground,
+    '--muted': safeTheme.accent,
+    '--muted-foreground': `hsl(${safeTheme.foreground}) / 0.7`,
+    '--border': `hsl(${safeTheme.foreground}) / 0.2`,
+    '--input': `hsl(${safeTheme.foreground}) / 0.2`,
+    '--ring': safeTheme.primary,
   } as React.CSSProperties;
 
 

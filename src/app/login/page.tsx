@@ -1,78 +1,107 @@
+'use client';
 
-"use client";
+export const dynamic = 'force-dynamic';
 
-export const dynamic = "force-dynamic";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { FcGoogle } from 'react-icons/fc';
+import { FaApple } from 'react-icons/fa';
+import { useAuth } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup, OAuthProvider } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
+import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { FcGoogle } from "react-icons/fc";
-import { FaApple } from "react-icons/fa";
-import { useAuth } from "@/firebase";
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  OAuthProvider,
-} from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { logger } from "@/lib/logger";
-import Link from "next/link";
+const getAuthErrorMessage = (error: unknown) => {
+  const code = typeof error === 'object' && error && 'code' in error ? String((error as { code?: string }).code) : '';
+  switch (code) {
+    case 'auth/popup-closed-by-user':
+      return 'The sign-in popup was closed before completing authentication.';
+    case 'auth/cancelled-popup-request':
+      return 'The sign-in request was cancelled. Please try again.';
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the sign-in popup. Please allow popups and try again.';
+    case 'auth/account-exists-with-different-credential':
+      return 'An account already exists with this email using a different sign-in method.';
+    default:
+      return error instanceof Error && error.message ? error.message : 'Unable to sign in right now. Please try again.';
+  }
+};
 
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleGoogleSignIn = async () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
+  const handleSignIn = async (provider: GoogleAuthProvider | OAuthProvider, providerName: string) => {
+    if (!auth || isLoading) {
+      return;
+    }
+
+    setIsLoading(true);
+    setAuthError(null);
+
     try {
       await signInWithPopup(auth, provider);
-      router.push("/dashboard");
+      router.replace('/dashboard');
+      router.refresh();
     } catch (error) {
-      logger.error("Error signing in with Google", { error });
+      logger.error(`Error signing in with ${providerName}`, { error });
+      setAuthError(getAuthErrorMessage(error));
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAppleSignIn = async () => {
-    if (!auth) return;
-    const provider = new OAuthProvider("apple.com");
-    try {
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
-    } catch (error) {
-      logger.error("Error signing in with Apple", { error });
-    }
-  };
+  const canSignIn = !!auth && !isLoading;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-2xl border border-border shadow-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-md">
         <div className="text-center">
-          <h1 className="font-headline text-3xl font-bold">
-            Sign In
-          </h1>
+          <h1 className="font-headline text-3xl font-bold">Sign In</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Choose your preferred sign-in method
           </p>
         </div>
+
+        {authError && (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
+            {authError}
+          </p>
+        )}
+
+        {!auth && (
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            Authentication is still loading. Please wait a moment and try again.
+          </p>
+        )}
+
         <div className="space-y-4">
           <Button
-            onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center"
+            onClick={() => handleSignIn(new GoogleAuthProvider(), 'Google')}
+            className="flex w-full items-center justify-center"
             variant="outline"
+            disabled={!canSignIn}
           >
-            <FcGoogle className="w-5 h-5 mr-2" />
+            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FcGoogle className="mr-2 h-5 w-5" />}
             Sign in with Google
           </Button>
           <Button
-            onClick={handleAppleSignIn}
-            className="w-full flex items-center justify-center"
+            onClick={() => handleSignIn(new OAuthProvider('apple.com'), 'Apple')}
+            className="flex w-full items-center justify-center"
             variant="outline"
+            disabled={!canSignIn}
           >
-            <FaApple className="w-5 h-5 mr-2" />
+            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FaApple className="mr-2 h-5 w-5" />}
             Sign in with Apple
           </Button>
         </div>
+
         <p className="text-center text-sm text-muted-foreground">
-          New here?{" "}
+          New here?{' '}
           <Link href="/signup" className="font-semibold text-primary underline">
             Create an account
           </Link>

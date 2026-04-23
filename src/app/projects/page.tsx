@@ -21,6 +21,7 @@ import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import AddPortfolioItemDialog from './add-project-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 type PortfolioItem = {
   id: string;
@@ -97,13 +98,18 @@ export default function ProjectsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const isReadOnly = !user || user.isAnonymous;
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const userProfileRef = useMemoFirebase(() => {
     if (isReadOnly || !user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [user, firestore, isReadOnly]);
 
-  const { data: userProfile } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
 
   const itemsQuery = useMemoFirebase(() => {
     if (isReadOnly || !user || !firestore) return null;
@@ -127,7 +133,7 @@ export default function ProjectsPage() {
     }
   };
 
-  if (isUserLoading || areItemsLoading) {
+  if (!isMounted || isUserLoading || (!isReadOnly && isProfileLoading) || areItemsLoading) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6">
         <div className="flex items-center justify-between">

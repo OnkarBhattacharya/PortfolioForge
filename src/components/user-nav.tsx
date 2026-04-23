@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { CreditCard, LogOut, User, LogIn, Settings, Shield } from 'lucide-react';
+import { CreditCard, Loader2, LogOut, User, LogIn, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -29,6 +29,7 @@ export function UserNav() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous || !firestore) return null;
@@ -38,9 +39,18 @@ export function UserNav() {
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleLogout = async () => {
-    if (auth) {
+    if (!auth || isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+
+    try {
       await signOut(auth);
-      router.push('/');
+      router.replace('/');
+      router.refresh();
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -109,19 +119,19 @@ export function UserNav() {
                 <span>Settings</span>
               </Link>
             </DropdownMenuItem>
-              {userProfile?.role === 'admin' && (
+            {userProfile?.role === 'admin' && (
               <DropdownMenuItem asChild>
-                  <Link href="/admin">
+                <Link href="/admin">
                   <Shield className="mr-2 h-4 w-4" />
                   <span>Admin</span>
-                  </Link>
+                </Link>
               </DropdownMenuItem>
-              )}
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+          <DropdownMenuItem onClick={handleLogout} disabled={isSigningOut}>
+            {isSigningOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+            <span>{isSigningOut ? 'Logging out...' : 'Log out'}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

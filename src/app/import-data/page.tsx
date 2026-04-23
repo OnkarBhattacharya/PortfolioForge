@@ -23,10 +23,11 @@ import { logger } from "@/lib/logger";
 import { collection, doc, query } from "firebase/firestore";
 
 export default function ImportDataPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const isReadOnly = !user || user.isAnonymous;
   const firestore = useFirestore();
   const maxFreeItems = 3;
+  const [isMounted, setIsMounted] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -59,13 +60,15 @@ export default function ImportDataPage() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user, isReadOnly]);
 
-  const { data: userProfile } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
 
   const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
   const itemCount = items?.length || 0;
   const isFreeLimitReached = !isPro && !isReadOnly && itemCount >= maxFreeItems;
 
   useEffect(() => {
+    setIsMounted(true);
+
     if (localStorage.getItem("cvUploadSuccess") === "true") {
       setCvUploadSuccess(true);
     }

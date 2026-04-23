@@ -1,4 +1,3 @@
-
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +41,8 @@ export type PortfolioItem = {
   imageId: string;
 };
 
-export default function PortfolioPage({ params: { userId } }: { params: { userId: string } }) {
+export default function PortfolioPage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = use(params);
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(() => {
@@ -67,72 +67,87 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
   const { data: items, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
   
   const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
-  
+  const fallbackTheme = staticThemes.find((themeItem) => themeItem.id === 'freelancer-teal') || staticThemes[0];
+
   const selectedTheme = useMemo(() => {
     if (profile?.customTheme) {
       return profile.customTheme;
     }
-    const themeId = profile?.themeId || 'freelancer-teal';
-    return staticThemes.find(t => t.id === themeId) || staticThemes.find(t => t.id === 'freelancer-teal')!;
-  }, [profile]);
 
+    const themeId = profile?.themeId;
+
+    if (themeId && themeId !== 'custom') {
+      return theme || staticThemes.find((themeItem) => themeItem.id === themeId) || fallbackTheme;
+    }
+
+    return fallbackTheme;
+  }, [fallbackTheme, profile?.customTheme, profile?.themeId, theme]);
+
+  const selectedThemeStyles = selectedTheme as {
+    light?: Record<string, string>;
+    primary?: string;
+    font?: {
+      heading: { family: string; url: string };
+      body: { family: string; url: string };
+    };
+    borderRadius?: number;
+  };
 
   useEffect(() => {
-    if (selectedTheme) {
-      const themeToApply = selectedTheme.light || selectedTheme; // Use light mode for custom themes for now
+    if (selectedThemeStyles) {
+      const themeToApply = (selectedThemeStyles.light || selectedThemeStyles) as Record<string, string>;
       Object.entries(themeToApply).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(`--${key}`, value);
+        document.documentElement.style.setProperty(`--${key}`, String(value));
       });
 
-      if (selectedTheme.font) {
-        const headingFont = selectedTheme.font.heading;
-        const bodyFont = selectedTheme.font.body;
+      if (selectedThemeStyles.font) {
+        const headingFont = selectedThemeStyles.font.heading;
+        const bodyFont = selectedThemeStyles.font.body;
 
         document.documentElement.style.setProperty('--font-heading', headingFont.family);
         document.documentElement.style.setProperty('--font-body', bodyFont.family);
 
-        // Load fonts from Google Fonts
         const link = document.createElement('link');
-        link.href = selectedTheme.font.heading.url;
+        link.href = selectedThemeStyles.font.heading.url;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
 
         if (headingFont.url !== bodyFont.url) {
-            const bodyLink = document.createElement('link');
-            bodyLink.href = bodyFont.url;
-            bodyLink.rel = 'stylesheet';
-            document.head.appendChild(bodyLink);
+          const bodyLink = document.createElement('link');
+          bodyLink.href = bodyFont.url;
+          bodyLink.rel = 'stylesheet';
+          document.head.appendChild(bodyLink);
         }
       }
       
-      if (selectedTheme.borderRadius) {
-        document.documentElement.style.setProperty('--border-radius', `${selectedTheme.borderRadius}rem`);
+      if (selectedThemeStyles.borderRadius) {
+        document.documentElement.style.setProperty('--border-radius', `${selectedThemeStyles.borderRadius}rem`);
       }
     }
 
     return () => {
       // Cleanup logic if needed
     };
-  }, [selectedTheme]);
+  }, [selectedThemeStyles]);
 
   
   if (isLoading) {
-      return (
-          <div className="flex h-screen w-full items-center justify-center" style={{ backgroundColor: `hsl(${selectedTheme.primary})`}}>
-              <Loader2 className="h-16 w-16 animate-spin text-white" />
-          </div>
-      )
+    return (
+      <div className="flex h-screen w-full items-center justify-center" style={{ backgroundColor: `hsl(${selectedThemeStyles.primary || fallbackTheme.primary})` }}>
+        <Loader2 className="h-16 w-16 animate-spin text-white" />
+      </div>
+    );
   }
 
   if (profileError || !profile) {
-      return (
-          <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">Portfolio Not Found</h1>
-                <p className="text-muted-foreground">This user profile could not be loaded.</p>
-              </div>
-          </div>
-      )
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Portfolio Not Found</h1>
+          <p className="text-muted-foreground">This user profile could not be loaded.</p>
+        </div>
+      </div>
+    );
   }
   
   const themeProps = { profile, items: items || [], theme: selectedTheme };
@@ -145,6 +160,5 @@ export default function PortfolioPage({ params: { userId } }: { params: { userId
     return <StylishPortfolioTheme {...themeProps} />;
   }
 
-  // Default to Freelancer theme, which will now be styled by the custom theme if present
   return <FreelancerTheme {...themeProps} />;
 }

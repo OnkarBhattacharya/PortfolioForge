@@ -1,42 +1,75 @@
-import { initializeApp, getApp, getApps, cert, applicationDefault, App } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { getAuth, Auth } from 'firebase-admin/auth';
+import { cert, getApp, getApps, initializeApp, type App } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
-function getAdminApp(): App {
-  if (getApps().length > 0) return getApp();
+let cachedApp: App | null = null;
 
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+function getServiceAccountConfig() {
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  let credential;
-  if (serviceAccountKey) {
-    try {
-      credential = cert(JSON.parse(serviceAccountKey));
-    } catch {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY is set but contains invalid JSON.');
-    }
-  } else {
-    credential = applicationDefault();
+  if (!projectId || !clientEmail || !privateKey) {
+    return null;
   }
 
-  return initializeApp({ credential });
+  return {
+    projectId,
+    clientEmail,
+    privateKey: privateKey.replace(/\\n/g, '\n'),
+  };
 }
 
-/**
- * A robust singleton for the Admin Firestore instance.
- *
- * @returns {Firestore} The initialized Admin Firestore instance.
- */
-export function getAdminFirestore(): Firestore {
-    const app = getAdminApp();
-    return getFirestore(app);
+function assertAdminConfiguration() {
+  const existingApps = getApps();
+  if (existingApps.length > 0) {
+    return;
+  }
+
+  const serviceAccount = getServiceAccountConfig();
+  if (!serviceAccount) {
+    throw new Error(
+      'Firebase Admin is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY before using admin helpers.'
+    );
+  }
 }
 
-/**
- * A robust singleton for the Admin Auth instance.
- *
- * @returns {Auth} The initialized Admin Auth instance.
- */
-export function getAdminAuth(): Auth {
-    const app = getAdminApp();
-    return getAuth(app);
+export function getAdminApp(): App {
+  if (cachedApp) {
+    return cachedApp;
+  }
+
+  const apps = getApps();
+  if (apps.length > 0) {
+    cachedApp = getApp();
+    return cachedApp;
+  }
+
+  assertAdminConfiguration();
+
+  const serviceAccount = getServiceAccountConfig();
+  if (!serviceAccount) {
+    throw new Error(
+      'Firebase Admin is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY before using admin helpers.'
+    );
+  }
+
+  cachedApp = initializeApp({
+    credential: cert(serviceAccount),
+    projectId: serviceAccount.projectId,
+  });
+
+  return cachedApp;
 }
+
+export function getAdminAuth() {
+  return getAuth(getAdminApp());
+}
+
+export function getAdminDb() {
+  return getFirestore(getAdminApp());
+}
+
+export const getAdminFirestore = getAdminDb;
+export const adminAuth = getAdminAuth;
+export const adminDb = getAdminDb;
