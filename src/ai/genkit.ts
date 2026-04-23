@@ -1,9 +1,12 @@
-
 /**
  * @fileOverview Centralized Genkit AI configuration and initialization.
  *
- * This file configures a single `ai` instance for the entire application,
- * ensuring that all necessary plugins are registered before any flows are defined.
+ * Exports `getAi()` instead of a bare singleton so that `genkit()` and
+ * `googleAI()` are never called at module-load time. App Hosting injects
+ * secrets at runtime; reading `process.env.GOOGLE_GENAI_API_KEY` during the
+ * Next.js cold-start module-evaluation phase would capture `undefined` and
+ * cache it permanently. `getAi()` is called inside flow functions, which only
+ * run after the runtime environment is fully initialised.
  */
 
 import { genkit, type Genkit } from 'genkit';
@@ -13,18 +16,12 @@ import { z } from 'zod';
 
 let _ai: Genkit | undefined;
 
-function getInstance(): Genkit {
+export function getAi(): Genkit {
   if (!_ai) {
     enableFirebaseTelemetry();
     _ai = genkit({ plugins: [googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY })] });
   }
   return _ai;
 }
-
-export const ai = new Proxy({} as Genkit, {
-  get(_target, prop) {
-    return (getInstance() as never)[prop];
-  },
-});
 
 export { z };

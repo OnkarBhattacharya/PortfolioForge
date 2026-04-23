@@ -1,0 +1,33 @@
+# Local development overrides for Firebase App Hosting environment variables.
+#
+# This file is intentionally NOT referenced by apphosting.yaml — it is only
+# used by developers running the emulator suite locally. Copy your real secret
+# values here; this file is gitignored so credentials never reach the repo.
+#
+# Usage:
+#   FIREBASE_APPHOSTING_ENV_FILE=apphosting.emulator.yaml pnpm dev
+#
+# Or set the variables directly in .env.local (preferred for Next.js dev):
+#   cp apphosting.emulator.yaml.example .env.local  (then fill in values)
+#
+# See: https://firebase.google.com/docs/app-hosting/configure#local-emulator
+
+env:
+  - variable: GOOGLE_GENAI_API_KEY
+    value: ""   # Paste your Gemini API key here for local dev
+
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    value: ""   # Paste the JSON string of your service account key here
+
+  # Stripe is not yet integrated. Uncomment when ready.
+  # - variable: STRIPE_SECRET_KEY
+  #   value: "sk_test_..."
+  #
+  # - variable: STRIPE_WEBHOOK_SECRET
+  #   value: "whsec_..."
+  #
+  # - variable: STRIPE_PRICE_PRO_MONTHLY
+  #   value: "price_..."
+  #
+  # - variable: STRIPE_PRICE_STUDIO_MONTHLY
+  #   value: "price_..."

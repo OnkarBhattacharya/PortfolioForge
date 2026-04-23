@@ -6,8 +6,7 @@
  * - ReadmeSummarizerOutput - The return type for the summarizeReadme function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi, z } from '@/ai/genkit';
 
 const ReadmeSummarizerInputSchema = z.object({
   readmeContent: z.string().describe('The full text content of a README.md file.'),
@@ -18,17 +17,7 @@ const ReadmeSummarizerOutputSchema = z.string().describe('A concise, 1-2 sentenc
 export type ReadmeSummarizerInput = z.infer<typeof ReadmeSummarizerInputSchema>;
 export type ReadmeSummarizerOutput = z.infer<typeof ReadmeSummarizerOutputSchema>;
 
-export async function summarizeReadme(
-  input: ReadmeSummarizerInput
-): Promise<ReadmeSummarizerOutput> {
-  return readmeSummarizerFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'readmeSummarizerPrompt',
-  input: { schema: ReadmeSummarizerInputSchema },
-  output: { schema: ReadmeSummarizerOutputSchema },
-  prompt: `You are an expert technical writer. Your task is to read the following README.md file content and generate a concise, compelling 1-2 sentence summary for a developer portfolio.
+const PROMPT_TEXT = `You are an expert technical writer. Your task is to read the following README.md file content and generate a concise, compelling 1-2 sentence summary for a developer portfolio.
 
     The summary should:
     -   Clearly state the project's purpose (the "why").
@@ -38,28 +27,27 @@ const prompt = ai.definePrompt({
     README Content:
     {{readmeContent}}
 
-    Your output MUST be a single string containing only the summary. Do not include any other text, comments, or code block fences.`,
-    config: {
-        temperature: 0.4, // Slightly lower for more factual summaries
-    }
-});
+    Your output MUST be a single string containing only the summary. Do not include any other text, comments, or code block fences.`;
 
-const readmeSummarizerFlow = ai.defineFlow(
-  {
-    name: 'readmeSummarizerFlow',
-    inputSchema: ReadmeSummarizerInputSchema,
-    outputSchema: ReadmeSummarizerOutputSchema,
-  },
-  async ({ readmeContent }) => {
-    // Truncate content to avoid excessive token usage, focusing on the most important part of the README.
-    const truncatedContent = readmeContent.length > 15000 ? readmeContent.substring(0, 15000) : readmeContent;
+export async function summarizeReadme(
+  input: ReadmeSummarizerInput
+): Promise<ReadmeSummarizerOutput> {
+  const ai = getAi();
+  const prompt = ai.definePrompt({
+    name: 'readmeSummarizerPrompt',
+    input: { schema: ReadmeSummarizerInputSchema },
+    output: { schema: ReadmeSummarizerOutputSchema },
+    prompt: PROMPT_TEXT,
+    config: { temperature: 0.4 },
+  });
 
-    const { output } = await prompt({ readmeContent: truncatedContent });
-    
-    if (!output) {
-      throw new Error('Failed to summarize README. The model did not return a valid summary.');
-    }
-    
-    return output;
+  const truncatedContent = input.readmeContent.length > 15000
+    ? input.readmeContent.substring(0, 15000)
+    : input.readmeContent;
+
+  const { output } = await prompt({ readmeContent: truncatedContent });
+  if (!output) {
+    throw new Error('Failed to summarize README. The model did not return a valid summary.');
   }
-);
+  return output;
+}

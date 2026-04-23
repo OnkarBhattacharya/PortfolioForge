@@ -1,13 +1,6 @@
-import {config} from 'dotenv';
-config();
-
-import '@genkit-ai/firebase/plugin';
-import './flows/ai-powered-content-suggestions.ts';
-import './flows/cv-parser.ts';
-import './flows/github-importer.ts';
-import './flows/linkedin-parser.ts';
-import './flows/web-importer.ts';
-import './flows/translator.ts';
-import './flows/readme-summarizer.ts';
-
-export {cvParserFlow, parseCv} from './flows/cv-parser';
+// Genkit dev server entry point.
+// Flows are now plain async functions (not self-registering Genkit flows),
+// so there is nothing to import here for registration purposes.
+// getAi() initialises the Genkit instance on first call from a flow function.
+import { getAi } from './genkit';
+getAi(); // Eagerly init in dev so the Genkit UI can introspect the instance.
