@@ -1,247 +1,47 @@
-# PortfolioForge
-
-> The intelligent portfolio platform for every professional.
-
-PortfolioForge lets professionals launch an AI-native portfolio in minutes. Import a CV, LinkedIn text, GitHub repos, or any public URL — let AI craft the narrative — then publish with premium themes on a custom domain.
-
----
-
-## What ships today
-
-| Area | Details |
-|---|---|
-| Public pages | Landing, pricing, privacy policy, terms, cookie policy |
-| App shell | Dashboard, portfolio items, AI assistant, billing, settings |
-| AI flows | CV parser, LinkedIn parser, GitHub importer, URL importer, content suggester, theme generator, translator, README summarizer |
-| Monetisation | Stripe Checkout + Billing Portal + webhook → Firestore subscription sync |
-| Auth | Google, Apple, anonymous (read-only guest mode) |
-| Themes | 9 built-in themes + AI-generated custom themes; premium gating on Pro/Studio |
-| Portfolio renderer | Three public theme layouts: Freelancer, Agency, Stylish Portfolio |
-
----
-
-## Tech stack
-
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router, Turbopack) |
-| Language | TypeScript 5 |
-| UI | ShadCN UI + Tailwind CSS v3 |
-| Backend / DB | Firebase — Auth, Firestore, Storage, App Hosting |
-| AI | Genkit 1.x + Google AI (Gemini) |
-| Payments | Stripe (Checkout, Billing Portal, webhooks) |
-| Testing | Vitest + React Testing Library + Playwright |
-
----
-
-## Project structure
-
-```
-src/
-├── ai/
-│   ├── flows/          # Genkit AI flows (cv-parser, github-importer, readme-summarizer, …)
-│   ├── genkit.ts       # Single ai instance + z re-export
-│   └── dev.ts          # Genkit dev server entry
-├── app/
-│   ├── api/            # Next.js API routes (AI, Stripe, portfolio-items, contact)
-│   ├── dashboard/      # App shell pages
-│   ├── portfolio/      # Public portfolio renderer ([userId])
-│   └── …               # landing, pricing, login, signup, legal pages
-├── components/         # Shared React components + ShadCN ui/
-├── firebase/           # Client init, provider, hooks (useUser, useDoc, …)
-├── hooks/              # use-mobile, use-toast, use-translation
-├── lib/                # types, utils, theme-schema, stripe, logger, web-vitals
-└── telemetry/          # OpenTelemetry server init
-tests/
-├── unit/               # Vitest — pure utility functions
-├── frontend/           # Vitest + React Testing Library — component tests
-├── e2e/                # Playwright — full browser flows
-├── contract/           # Placeholder — API contract tests
-└── performance/        # Placeholder — load / Lighthouse tests
-```
-
----
-
-## Local setup
-
-### Prerequisites
-
-- Node.js 20+
-- `pnpm` (recommended) or `npm`
-- A Firebase project with Auth, Firestore, and Storage enabled
-- A Stripe account (test mode is fine for development)
-
-### 1 — Clone and install
+## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/your-username/portfolioforge.git
-cd portfolioforge
-pnpm install
+pnpm i
+pnpm dev
 ```
 
-### 2 — Environment variables
+## 🔑 Environment Variables (Production)
 
-```bash
+**Critical for AI features**: Set `GOOGLE_GENAI_API_KEY`.
+
+### Firebase App Hosting (Prod)
+1. Get API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Google Cloud Console → Secret Manager → Create secret `GOOGLE_GENAI_API_KEY`.
+3. `apphosting.yaml` already mounts it → `firebase apps:deploy`.
+
+### Local Dev
+```
 cp .env.example .env.local
+# Edit .env.local with your GOOGLE_GENAI_API_KEY
+pnpm dev
 ```
 
-Fill in `.env.local`:
+### CI (GitHub Actions)
+Repo Settings → Secrets → Add `GOOGLE_GENAI_API_KEY`.
 
-```env
-# Firebase (client-side — all NEXT_PUBLIC_)
-NEXT_PUBLIC_FIREBASE_API_KEY=""
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=""
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=""
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=""
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=""
-NEXT_PUBLIC_FIREBASE_APP_ID=""
+See [TODO.md high priority](TODO.md#🔴-high-priority) for Stripe/Firestore setup.
 
-# Firebase App Check (optional in dev, required in prod)
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY=""
-
-# Firebase Admin SDK (server-side only)
-FIREBASE_SERVICE_ACCOUNT_KEY=""   # JSON string of your service account key
-
-# Google AI (Genkit)
-GOOGLE_GENAI_API_KEY=""
-
-# App URL
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Stripe
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-STRIPE_PRICE_PRO_MONTHLY="price_..."
-STRIPE_PRICE_STUDIO_MONTHLY="price_..."
-```
-
-### 3 — Start the dev server
-
+## 🧪 Test APIs
 ```bash
-pnpm dev          # Next.js on http://localhost:3000 (Turbopack)
+# CV Parser
+curl -X POST http://localhost:3000/api/cv-parser \
+  -F 'cvFile=@path/to/cv.pdf' \
+  -F 'userId=test-user'
+
+# Content Suggester
+curl -X POST http://localhost:3000/api/content-suggester \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"My project","contentType":"description"}'
 ```
 
-To also run the Genkit AI dev UI:
+## 📊 Console Errors Fixed
+- **500 on AI APIs**: Clearer msgs; validate `GOOGLE_GENAI_API_KEY`.
+- **COOP window.close**: Handled in `next.config.js`.
 
-```bash
-pnpm genkit:dev   # Genkit dev server (separate terminal)
-```
+REST unchanged.
 
-### 4 — Stripe webhooks (local)
-
-Forward Stripe events to your local server using the Stripe CLI:
-
-```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhook
-```
-
----
-
-## Available scripts
-
-| Script | Description |
-|---|---|
-| `pnpm dev` | Next.js dev server with Turbopack |
-| `pnpm build` | Production build |
-| `pnpm start` | Start production server |
-| `pnpm lint` | ESLint |
-| `pnpm typecheck` | TypeScript type check (no emit) |
-| `pnpm test` | Vitest unit + component tests |
-| `pnpm test:watch` | Vitest in watch mode |
-| `pnpm test:ui` | Vitest with browser UI |
-| `pnpm test:e2e` | Playwright end-to-end tests |
-| `pnpm genkit:dev` | Genkit AI dev server |
-| `pnpm predeploy` | lint + typecheck + build (runs before deploy) |
-| `pnpm deploy:prod` | `firebase deploy --only hosting` |
-
----
-
-## Deployment
-
-### Firebase App Hosting
-
-```bash
-pnpm predeploy    # lint, typecheck, build
-pnpm deploy:prod  # firebase deploy --only hosting
-```
-
-Set environment variables in the Firebase App Hosting console or via Google Cloud Secret Manager (see `apphosting.yaml`). Configure the Stripe webhook endpoint to:
-
-```
-https://<your-app>/api/stripe/webhook
-```
-
-> Note: Stripe secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_PRICE_STUDIO_MONTHLY`) must be added to Secret Manager before Stripe features are active in production.
-
----
-
-## AI flows
-
-All flows live in `src/ai/flows/` and are wired to API routes under `src/app/api/`.
-
-| Flow | Route | Description |
-|---|---|---|
-| `cv-parser` | `/api/cv-parser` | Multi-modal CV/resume parsing (PDF or image) |
-| `linkedin-parser` | `/api/linkedin-parser` | Parses raw LinkedIn profile text |
-| `github-importer` | `/api/github-importer` | Fetches public repos + AI README summaries |
-| `readme-summarizer` | _(used internally by github-importer)_ | Summarises a GitHub README into a portfolio item description |
-| `web-importer` | `/api/web-importer` | Crawls a URL and creates a portfolio item |
-| `content-suggester` | `/api/content-suggester` | Improves user-written text |
-| `ai-powered-content-suggestions` | `/api/ai/ai-powered-content-suggestions` | Generates portfolio headline + summary |
-| `theme-generator` | `/api/theme-generator` | Generates a full theme config from a text prompt |
-| `translator` | `/api/translate` | Translates portfolio content |
-
-All flows use `ai.generate()` with structured Zod output schemas and import `z` from `@/ai/genkit` (not directly from `genkit` or `zod`).
-
----
-
-## API routes
-
-| Route | Description |
-|---|---|
-| `POST /api/cv-parser` | CV parsing |
-| `POST /api/linkedin-parser` | LinkedIn text parsing |
-| `POST /api/github-importer` | GitHub repo import |
-| `POST /api/web-importer` | URL crawl and import |
-| `POST /api/content-suggester` | Text improvement suggestions |
-| `POST /api/ai/ai-powered-content-suggestions` | Headline + summary generation |
-| `POST /api/theme-generator` | AI theme generation |
-| `POST /api/translate` | Content translation |
-| `POST /api/portfolio-items` | Server-side portfolio item creation (enforces free-plan limit) |
-| `POST /api/contact` | Contact form submission (writes via Admin SDK) |
-| `POST /api/stripe/checkout` | Creates a Stripe Checkout session |
-| `POST /api/stripe/portal` | Creates a Stripe Billing Portal session |
-| `POST /api/stripe/webhook` | Handles Stripe webhook events |
-
----
-
-## Subscription plans
-
-| Feature | Free | Pro ($12/mo) | Studio ($29/mo) |
-|---|---|---|---|
-| Portfolio items | 3 | Unlimited | Unlimited |
-| Standard themes | ✅ | ✅ | ✅ |
-| Premium themes | ❌ | ✅ | ✅ |
-| Custom domain | ❌ | ✅ | ✅ |
-| Remove branding | ❌ | ✅ | ✅ |
-| AI theme generator | ❌ | ✅ | ✅ |
-| Team collaboration | ❌ | ❌ | ✅ |
-
-Plan gating is enforced both client-side (UI disabled states) and server-side (API routes check subscription tier before writing). Portfolio item creation is routed through `/api/portfolio-items` so the free-plan limit of 3 is enforced server-side regardless of Firestore rules.
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow. The short version:
-
-1. Fork → clone → `pnpm install`
-2. Create a feature branch
-3. Make changes, run `pnpm lint && pnpm typecheck && pnpm test`
-4. Open a pull request with a clear description
-
----
-
-## Licence
-
-MIT

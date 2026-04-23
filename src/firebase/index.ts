@@ -67,7 +67,7 @@ export function initializeFirebase(): FirebaseServices {
       firebaseApp: app,
       auth: getAuth(app),
       firestore: getFirestore(app),
-      performance: getPerformance(app),
+      performance: initializePerformance(app, { dataCollectionEnabled: false, instrumentationEnabled: false }),
     };
   }
   

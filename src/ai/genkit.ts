@@ -15,11 +15,19 @@ import { enableFirebaseTelemetry } from '@genkit-ai/firebase';
 import { z } from 'zod';
 
 let _ai: Genkit | undefined;
+let _aiKeySnapshot: string | undefined;
 
 export function getAi(): Genkit {
-  if (!_ai) {
+  const currentKey = process.env.GOOGLE_GENAI_API_KEY;
+  if (!_ai || _aiKeySnapshot !== currentKey) {
+    if (!currentKey) {
+      const msg = 'GOOGLE_GENAI_API_KEY environment variable is missing. AI features disabled in this environment.';
+      console.error('[Genkit Init] ' + msg);
+      throw new Error(msg);
+    }
     enableFirebaseTelemetry();
-    _ai = genkit({ plugins: [googleAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY })] });
+    _ai = genkit({ plugins: [googleAI({ apiKey: currentKey })] });
+    _aiKeySnapshot = currentKey;
   }
   return _ai;
 }

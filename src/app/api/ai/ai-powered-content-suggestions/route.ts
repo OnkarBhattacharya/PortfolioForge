@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       stack: error.stack 
     });
     return NextResponse.json(
-      { error: 'Failed to generate suggestions' }, 
+      { error: 'Portfolio content generation failed. AI service temporarily unavailable.' }, 
       { status: 500 }
     );
   }

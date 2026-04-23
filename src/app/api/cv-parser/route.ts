@@ -34,6 +34,6 @@ export async function POST(req: NextRequest) {
   } catch (error: any)
    {
     logger.error('Error in cv-parser API:', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: 'An unexpected error occurred during CV processing' }, { status: 500 });
+    return NextResponse.json({ error: 'CV processing failed. Check file size/format (<10MB PDF/image) or AI service status.' }, { status: 500 });
   }
 }

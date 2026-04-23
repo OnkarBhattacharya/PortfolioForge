@@ -28,6 +28,15 @@ const PROMPT_TEXT = `You are an expert document analyst. Your task is to parse t
     Your output MUST be a valid JSON object that conforms to the output schema. Do not include any other text, comments, or code block fences in your response.`;
 
 export async function parseCv(input: CvParserInput): Promise<CvParserOutput> {
+  // Input validation for CV data URI
+  const sizeKb = Math.round((input.cvFile.length * 3) / 4 / 1024); // Base64 overhead ~33%
+  if (sizeKb > 10000) { // 10MB limit for multimodal
+    throw new Error('CV file too large (10MB+). Compress or split.');
+  }
+  if (!input.cvFile.startsWith('data:(application/pdf|image/') && !input.cvFile.includes(';base64,')) {
+    throw new Error('Invalid CV format. Use PDF or image (PNG/JPG).');
+  }
+  
   const ai = getAi();
   try {
     const cvParserPrompt = ai.definePrompt({

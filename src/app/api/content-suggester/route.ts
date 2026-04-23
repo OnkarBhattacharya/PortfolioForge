@@ -16,6 +16,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error: any) {
     logger.error('Error in content-suggester API:', { error: error.message, stack: error.stack });
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return NextResponse.json({ error: 'Content suggestions unavailable. AI service may be down. Try again later.' }, { status: 500 });
   }
 }
