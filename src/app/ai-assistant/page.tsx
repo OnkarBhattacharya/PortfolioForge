@@ -113,17 +113,18 @@ export default function AiAssistantPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate suggestions");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Failed to generate suggestions");
       }
 
       const result = await response.json();
       setSuggestions(result);
-    } catch (error) {
+    } catch (error: any) {
       logger.error("Error generating content:", { error });
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: "Could not generate content suggestions. Please try again.",
+        description: error?.message || "Could not generate content suggestions. Please try again.",
       });
     } finally {
       setLoading(false);
