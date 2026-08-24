@@ -1,8 +1,8 @@
 ## 🚀 Quick Start
 
 ```bash
-pnpm i
-pnpm dev
+npm install
+npm run dev
 ```
 
 ## 🔑 Environment Variables (Production)
@@ -18,24 +18,30 @@ pnpm dev
 ```
 cp .env.example .env.local
 # Edit .env.local with your GOOGLE_GENAI_API_KEY
-pnpm dev
+npm run dev
 ```
 
 ### CI (GitHub Actions)
-Repo Settings → Secrets → Add `GOOGLE_GENAI_API_KEY`.
+> **Note:** No CI workflow is currently checked in (`.github/workflows/` is absent).
+> When adding one, store `GOOGLE_GENAI_API_KEY` under Repo Settings → Secrets.
 
 See [TODO.md high priority](TODO.md#🔴-high-priority) for Stripe/Firestore setup.
 
 ## 🧪 Test APIs
+
+All AI/portfolio APIs require a Firebase ID token (`Authorization: Bearer <idToken>`)
+except the contact form. Examples:
+
 ```bash
 # CV Parser
 curl -X POST http://localhost:3000/api/cv-parser \
-  -F 'cvFile=@path/to/cv.pdf' \
-  -F 'userId=test-user'
+  -H "Authorization: Bearer $FIREBASE_ID_TOKEN" \
+  -F 'file=@path/to/cv.pdf'
 
 # Content Suggester
 curl -X POST http://localhost:3000/api/content-suggester \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $FIREBASE_ID_TOKEN" \
   -d '{"text":"My project","contentType":"description"}'
 ```
 

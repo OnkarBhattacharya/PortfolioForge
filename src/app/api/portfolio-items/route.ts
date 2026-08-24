@@ -127,7 +127,7 @@ function extractItemPayload(body: RequestBody): RequestBody {
 function normalizeStoredItem(payload: RequestBody, uid: string, itemId?: string) {
   return {
     ...payload,
-    id: itemId ?? typeof payload.id === 'string' ? payload.id : undefined,
+    id: itemId ?? (typeof payload.id === 'string' ? payload.id : undefined),
     userId: uid,
     uid,
     createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : new Date().toISOString(),

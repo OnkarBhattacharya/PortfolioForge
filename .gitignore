@@ -52,5 +52,9 @@ Thumbs.db
 # Misc
 *.pem
 
-# Test tool
-playwright.config.ts
+# TypeScript incremental build artifact
+tsconfig.tsbuildinfo
+
+# Playwright artifacts
+test-results/
+playwright-report/

@@ -15,7 +15,7 @@ All AI routes/flows updated with validation, logging, user-friendly errors.
 ## 4. 🧪 Test Commands
 gcloud init
 ## 4. 🧪 Test
-- Local: Set env var, `pnpm dev`, test APIs.
+- Local: Set env var, `npm run dev`, test APIs.
 - Prod: Deploy, check console/Network.
 
 ## 5. ✅ Docs & cleanup

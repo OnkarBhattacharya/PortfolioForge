@@ -36,9 +36,9 @@ Tests are organised by scope and speed. Faster, more isolated tests run first; s
 ### Unit and component tests
 
 ```bash
-pnpm test           # run once
-pnpm test:watch     # watch mode — re-runs on file save
-pnpm test:ui        # Vitest browser UI
+npm run test           # run once
+npm run test:watch     # watch mode — re-runs on file save
+npm run test:ui        # Vitest browser UI
 ```
 
 These tests run in jsdom and are fast. They cover utility functions and React components in isolation.
@@ -49,7 +49,7 @@ These tests run in jsdom and are fast. They cover utility functions and React co
 # First time only — install browser binaries
 npx playwright install
 
-pnpm test:e2e
+npm run test:e2e
 ```
 
 E2E tests run in a real Chromium (and optionally Firefox/WebKit) browser. They cover critical user journeys end-to-end.
@@ -57,13 +57,13 @@ E2E tests run in a real Chromium (and optionally Firefox/WebKit) browser. They c
 ### Type checking (not a test runner, but part of CI)
 
 ```bash
-pnpm typecheck      # tsc --noEmit
+npm run typecheck      # tsc --noEmit
 ```
 
 ### Full pre-deploy check
 
 ```bash
-pnpm predeploy      # lint + typecheck + build
+npm run predeploy      # lint + typecheck + build
 ```
 
 ---
@@ -154,8 +154,8 @@ The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets mus
 
 | Suite | Status |
 |---|---|
-| Unit (`tests/unit/`) | Active — runs with `pnpm test` |
-| Frontend (`tests/frontend/`) | Active — runs with `pnpm test` |
-| E2E (`tests/e2e/`) | Active — runs with `pnpm test:e2e` after `npx playwright install` |
+| Unit (`tests/unit/`) | Active — runs with `npm run test` |
+| Frontend (`tests/frontend/`) | Active — runs with `npm run test` |
+| E2E (`tests/e2e/`) | Active — runs with `npm run test:e2e` after `npx playwright install` |
 | Contract (`tests/contract/`) | Placeholder — not yet implemented |
 | Performance (`tests/performance/`) | Placeholder — not yet implemented |

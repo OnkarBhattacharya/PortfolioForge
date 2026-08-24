@@ -12,9 +12,9 @@ Thank you for taking the time to contribute. All help is welcome — bug reports
    git clone https://github.com/<your-username>/portfolioforge.git
    cd portfolioforge
    ```
-3. **Install dependencies** (pnpm is preferred):
+3. **Install dependencies** (npm — the repo ships a package-lock.json):
    ```bash
-   pnpm install
+   npm install
    ```
 4. **Set up environment variables**:
    ```bash
@@ -23,7 +23,7 @@ Thank you for taking the time to contribute. All help is welcome — bug reports
    ```
 5. **Start the dev server**:
    ```bash
-   pnpm dev
+   npm run dev
    ```
 
 ---
@@ -60,13 +60,13 @@ Open a GitHub issue describing:
 2. Make your changes.
 3. Run the full check suite before committing:
    ```bash
-   pnpm lint          # ESLint
-   pnpm typecheck     # TypeScript (no emit)
-   pnpm test          # Vitest unit + component tests
+   npm run lint          # ESLint
+   npm run typecheck     # TypeScript (no emit)
+   npm run test          # Vitest unit + component tests
    ```
 4. For end-to-end tests (requires Playwright browsers installed once via `npx playwright install`):
    ```bash
-   pnpm test:e2e
+   npm run test:e2e
    ```
 5. Commit with a meaningful message:
    ```bash
@@ -108,8 +108,8 @@ tests/
 
 ## Coding standards
 
-- **Style**: Follow the existing code style. Run `pnpm lint` before committing.
-- **TypeScript**: All new code must be typed. Run `pnpm typecheck` to verify.
+- **Style**: Follow the existing code style. Run `npm run lint` before committing.
+- **TypeScript**: All new code must be typed. Run `npm run typecheck` to verify.
 - **Imports**: Always import `z` from `@/ai/genkit`, never directly from `genkit` or `zod`.
 - **AI flows**: Use `ai.generate()` with a Zod `output.schema` — do not use `ai.definePrompt` with Handlebars templates.
 - **Design tokens**: Use Tailwind design-system tokens (`bg-background`, `text-foreground`, etc.) — never raw colour classes like `bg-gray-100` or `bg-white`.
@@ -153,9 +153,9 @@ tests/
 
 ## Pull request checklist
 
-- [ ] `pnpm lint` passes with no errors
-- [ ] `pnpm typecheck` passes with no errors
-- [ ] `pnpm test` passes
+- [ ] `npm run lint` passes with no errors
+- [ ] `npm run typecheck` passes with no errors
+- [ ] `npm run test` passes
 - [ ] No hardcoded dummy/placeholder data in UI
 - [ ] Design-system tokens used (no raw gray/white classes)
 - [ ] Portfolio item creation goes through `/api/portfolio-items`
