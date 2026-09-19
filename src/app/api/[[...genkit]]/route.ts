@@ -1,13 +1,18 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { appRoute } from '@genkit-ai/next';
+import { NextResponse } from 'next/server';
 
-function handler(req: NextRequest) {
+// Genkit dev UI endpoint - disabled in production
+export async function GET() {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  return appRoute(req);
+  return NextResponse.json({ message: 'Genkit dev UI not configured' });
 }
 
-export { handler as GET, handler as POST };
+export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  return NextResponse.json({ message: 'Genkit dev UI not configured' });
+}

@@ -16,8 +16,7 @@ import { ArrowUpRight, CheckCircle, Circle, KeyRound } from 'lucide-react';
 import Image from 'next/image';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
-import { useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, limit, doc } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,7 +37,7 @@ type PortfolioItem = {
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const isReadOnly = !user || user.isAnonymous;
   const [isMounted, setIsMounted] = useState(false);
 
@@ -47,23 +46,22 @@ export default function DashboardPage() {
   }, []);
 
   // All hooks must be called unconditionally before any early return
-  const itemsQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return query(
-      collection(firestore, 'users', user.uid, 'portfolioItems'),
-      limit(3)
-    );
-  }, [user, firestore, isReadOnly]);
+  const itemsQuery = supabase
+    .from('portfolio_items')
+    .select('*')
+    .eq('user_id', user?.uid || '')
+    .order('sort_order', { ascending: true })
+    .limit(3);
 
-  const { data: dbItems, isLoading: areItemsLoading } =
-    useCollection<PortfolioItem>(itemsQuery);
+  const { data: dbItems, isLoading: areItemsLoading, error: itemsError } = useCollection<PortfolioItem>(itemsQuery);
 
-  const userProfileQuery = useMemoFirebase(() => {
-    if (isReadOnly || !firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore, isReadOnly]);
+  const userProfileQuery = supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user?.uid || '')
+    .single();
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileQuery);
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileQuery);
 
   if (!isMounted || isUserLoading || (!isReadOnly && (isProfileLoading || areItemsLoading))) {
     return (
@@ -186,7 +184,7 @@ export default function DashboardPage() {
     !!userProfile?.summary ||
     (userProfile?.experience?.length || 0) > 0 ||
     (userProfile?.education?.length || 0) > 0;
-  const hasLinkedIn = !!userProfile?.personalInfo?.linkedin;
+  const hasLinkedIn = !!userProfile?.links?.linkedin;
   const hasExternalLinks = (dbItems?.length || 0) > 0;
 
   const liveSiteUrl = user && !user.isAnonymous ? `/portfolio/${user.uid}` : `/login`;
@@ -265,7 +263,7 @@ export default function DashboardPage() {
               <Skeleton className="h-5 w-full" />
               <Skeleton className="h-5 w-full" />
             </div>
-    ) : (
+      ) : (
             <ul className="space-y-4 text-sm font-medium">
               <li className="flex items-center">
                 {isReadOnly ? (
@@ -387,7 +385,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {recentItems?.map((item) => {
-              const image = getPlaceholderImage(item.imageId);
+              const image = getPlaceholderImage(item.image_id || item.imageId);
               return (
                 <Card key={item.id} className="overflow-hidden">
                   {image && (
