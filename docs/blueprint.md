@@ -9,21 +9,22 @@ PortfolioForge
 ## Core features
 
 ### Data import
-- **CV upload & parsing** — Upload a PDF or image; a multi-modal Genkit flow extracts name, summary, experience, education, skills, and profession.
-- **LinkedIn import** — Paste raw LinkedIn profile text; AI infers the same structured fields.
-- **GitHub project import** — Fetch up to 5 public repos per user, generate AI README summaries via the `readme-summarizer` flow, and seed portfolio items automatically.
-- **URL importer** — Crawl any public URL, clean the HTML, and create a portfolio item with AI-crafted tags and description.
+- **CV upload & parsing** — Upload a PDF or image; a multi-modal OpenRouter flow (Llama 3.2 Vision) extracts name, summary, experience, education, skills, and profession.
+- **LinkedIn import** — Paste raw LinkedIn profile text; AI infers the same structured fields (Llama 3.1).
+- **GitHub project import** — Fetch up to 10 public repos per user, generate AI README summaries via OpenRouter, and seed portfolio items automatically.
+- **URL importer** — Crawl any public URL, clean the HTML, and create a portfolio item with AI-crafted tags and description (Llama 3.1 / Phi-3 Mini).
 
 ### AI content
 - **Content suggester** — Inline AI rewrites for any text field (project descriptions, summaries).
 - **Portfolio content assistant** — Generates a portfolio headline and professional summary from all imported data combined.
-- **AI theme generator** — Describe a style in plain text; Genkit returns a full `ThemeConfig` (light + dark palettes, fonts, border radius).
+- **AI theme generator** — Describe a style in plain text; OpenRouter returns a full `ThemeConfig` (light + dark palettes, fonts, border radius).
 - **Translator** — Translates portfolio content into other languages.
+- **README Summarization** — 1-2 sentence repo summaries for GitHub imports.
 
 ### Portfolio & themes
-- **9 built-in themes** — Free and premium, stored in Firestore `/themes/`.
-- **3 public portfolio layouts** — Freelancer, Agency, Stylish Portfolio; selected via `themeId` on the user profile.
-- **AI-generated custom themes** — Stored as `customTheme` on the user document; applied at render time via CSS custom properties.
+- **4 built-in themes** — Minimal, Developer, Creative, Dark; stored in Supabase `themes` table.
+- **3 public portfolio layouts** — Freelancer, Agency, Stylish Portfolio; selected via `theme_id` on the user profile.
+- **AI-generated custom themes** — Stored as `custom_theme` on the user profile; applied at render time via CSS custom properties.
 - **Theme preview dialog** — Full-page preview before saving.
 
 ### Monetisation
@@ -32,16 +33,18 @@ PortfolioForge
 - **Studio plan ($29/mo)** — Everything in Pro plus multiple portfolios, client-ready case study layouts, team collaboration.
 - **Stripe Checkout** — `/api/stripe/checkout` creates a Checkout session for Pro or Studio.
 - **Stripe Billing Portal** — `/api/stripe/portal` opens the customer portal for plan management.
-- **Webhook sync** — `/api/stripe/webhook` listens for `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted` events and writes `subscriptionTier`, `subscriptionStatus`, and `subscriptionPeriodEndDate` to Firestore.
+- **Webhook sync** — `/api/stripe/webhook` listens for `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed` and writes `subscription_tier`, `subscription_status`, `subscription_period_end_date` to Supabase `profiles`.
 
 ### Auth & access control
-- Google and Apple federated sign-in via Firebase Auth.
-- Anonymous sign-in for read-only guest mode (no data saved).
-- All authenticated app pages show a "Read-Only Mode" banner to anonymous users.
-- Free-plan item limit enforced both client-side (UI disabled) and server-side (`POST /api/portfolio-items` checks tier before writing; direct client creates are blocked by Firestore rules).
+- Google, Apple, GitHub federated sign-in via Supabase Auth (OAuth + Magic Links).
+- Email/Password authentication.
+- Anonymous/read-only mode for unauthenticated users (UI shows read-only banners).
+- All authenticated app pages redirect to `/login` if no session.
+- Free-plan item limit enforced both client-side (UI disabled) and server-side (`POST /api/portfolio-items` checks tier; RLS blocks direct writes).
+- Admin panel at `/admin` visible only to users with `role: 'admin'` in Supabase.
 
 ### Admin
-- Admin panel at `/admin` visible only to users with `role: 'admin'` in Firestore.
+- Admin panel at `/admin` — lists all users with subscription tier, status, and role.
 
 ---
 
@@ -53,15 +56,15 @@ PortfolioForge
 | Language | TypeScript 5 |
 | UI components | ShadCN UI (Radix primitives) |
 | Styling | Tailwind CSS v3, CSS custom properties for theming |
-| Backend | Next.js API routes |
-| Database | Cloud Firestore |
-| Auth | Firebase Authentication |
-| File storage | Firebase Storage |
-| Hosting | Firebase App Hosting |
-| AI runtime | Genkit 1.x |
-| AI model | Google AI — Gemini (via `@genkit-ai/google-genai`) |
+| Backend | Next.js API routes (serverless functions) |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth |
+| File storage | Supabase Storage |
+| Hosting | Vercel |
+| AI runtime | OpenRouter (free models: Llama 3.2 Vision, Llama 3.1, Gemma 2, Phi-3 Mini) |
+| AI abstraction | Custom `OpenRouterAI` class with fallback chains + Zod validation |
 | Payments | Stripe |
-| Observability | Firebase Performance, Core Web Vitals, OpenTelemetry (server) |
+| Observability | Vercel Analytics, Core Web Vitals, OpenTelemetry (server), structured logger |
 | Testing | Vitest, React Testing Library, Playwright |
 
 ---
@@ -83,11 +86,10 @@ PortfolioForge
 ## Current status
 
 - All public pages (landing, pricing, legal) are live and production-ready.
-- All app shell pages (dashboard, portfolio items, AI assistant, billing, settings) are connected to Firestore with real data — no dummy/placeholder data remains.
-- All AI flows use `ai.generate()` with structured Zod schemas; `z` is always imported from `@/ai/genkit`.
-- Portfolio item creation is routed through `POST /api/portfolio-items` (Admin SDK); direct client creates are blocked by Firestore rules.
-- Stripe Checkout / Portal / webhook and Firestore rules enforce monetisation commitments. Stripe secrets are pending Secret Manager configuration for production.
-- React hydration is stable: Firebase is initialised client-side via `useEffect`, eliminating the SSR/client mismatch (React error #418).
-- Firebase Performance attribute length issue resolved by extracting long Tailwind class strings into named CSS utility classes.
+- All app shell pages (dashboard, portfolio items, AI assistant, billing, settings, import-data, admin) connected to Supabase with real data.
+- All AI flows use OpenRouter free models with structured Zod schemas and fallback chains.
+- Portfolio item creation routed through `POST /api/portfolio-items` (Supabase server client); direct client creates blocked by RLS.
+- Stripe Checkout / Portal / webhook and Supabase RLS enforce monetisation commitments.
+- React hydration stable: Supabase SSR auth via `@supabase/ssr` middleware eliminates SSR/client mismatch.
 - `tsconfig.json` uses `moduleResolution: bundler`; deprecated `baseUrl` removed.
-- App Hosting configured with VPC connector (`managed-vpc`) and auto-scaling (1–10 instances).
+- Vercel deployment configured with 30s function timeout for AI routes.

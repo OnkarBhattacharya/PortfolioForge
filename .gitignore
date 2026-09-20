@@ -13,17 +13,9 @@ next-env.d.ts
 # Testing
 /coverage
 
-# Firebase
-# NEVER commit service account keys
-serviceAccountKey.json
-# Ignore Firebase Hosting and emulators cache/logs
-.firebase/
-firebase-debug.log
-database-debug.log
-firestore-debug.log
-pubsub-debug.log
-storage-debug.log
-firebaserc.json
+# Supabase
+# NEVER commit service role keys
+supabase-service-key.json
 
 # Local Environment Variables
 # Contains sensitive API keys and secrets
@@ -58,3 +50,9 @@ tsconfig.tsbuildinfo
 # Playwright artifacts
 test-results/
 playwright-report/
+
+# Vercel
+.vercel
+
+# Turbo
+.turbo

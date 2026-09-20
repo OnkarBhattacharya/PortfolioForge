@@ -83,15 +83,11 @@ it('merges class names', () => {
 
 ### `tests/frontend/dashboard.test.tsx`
 
-Renders the dashboard page with React Testing Library. Mocks Firebase hooks and `localStorage` to test:
+Renders the dashboard page with React Testing Library. Mocks Supabase hooks to test:
 
-- Guest (anonymous) user sees the Read-Only Mode banner.
+- Guest (unauthenticated) user sees the Read-Only Mode banner.
 - Authenticated user sees the Profile Status checklist.
 - Loading state renders skeletons.
-
-### `tests/frontend/admin.test.tsx`
-
-Renders the admin page and verifies access control — non-admin users are redirected or shown an access-denied state.
 
 ### `tests/e2e/auth.spec.ts`
 
@@ -104,7 +100,7 @@ Playwright tests covering:
 
 ### `tests/contract/placeholder.test.ts`
 
-Placeholder describing future contract tests that will verify the request/response schema between the frontend and API routes (e.g. `/api/cv-parser`, `/api/portfolio-items` input/output shape).
+Placeholder describing future contract tests that will verify the request/response schema between the frontend and API routes (e.g. `/api/ai/cv-parse`, `/api/portfolio-items` input/output shape).
 
 ### `tests/performance/placeholder.test.ts`
 
@@ -114,27 +110,41 @@ Placeholder describing future performance tests using k6 (API load testing) and 
 
 ## Mocking strategy
 
-All Firebase dependencies are mocked in `tests/setup.ts`, which Vitest loads automatically via `setupFiles` in `vite.config.ts`.
+All Supabase dependencies are mocked in `tests/setup.ts`, which Vitest loads automatically via `setupFiles` in `vite.config.ts`.
 
 Example — simulating different auth states:
 
 ```typescript
 import { vi } from 'vitest';
 
-vi.mock('@/firebase', () => ({
+vi.mock('@/hooks/use-supabase', () => ({
   useUser: vi.fn(() => ({
-    user: { uid: 'test-uid', isAnonymous: false, email: 'test@example.com' },
+    user: { id: 'test-uid', email: 'test@example.com', isAnonymous: false },
     isUserLoading: false,
     userError: null,
   })),
-  useFirestore: vi.fn(() => ({})),
-  useMemoFirebase: vi.fn((factory) => factory()),
-  useCollection: vi.fn(() => ({ data: [], isLoading: false })),
-  useDoc: vi.fn(() => ({ data: null, isLoading: false })),
+  useSupabase: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+    })),
+  })),
+  useAuth: vi.fn(() => ({
+    signInWithOAuth: vi.fn(),
+    signOut: vi.fn(),
+  })),
+}));
+
+vi.mock('lucide-react', () => new Proxy({}, {
+  get: (_, prop) => (props: any) => <div data-testid={`mock-icon-${String(prop)}`} {...props} />,
 }));
 ```
 
-To simulate a guest user, override `useUser` to return `{ user: { isAnonymous: true }, isUserLoading: false }`.
+To simulate a guest user, override `useUser` to return `{ user: null, isUserLoading: false, userError: null }`.
 
 ---
 
@@ -146,7 +156,7 @@ GitHub Actions runs the full check suite on every push and pull request:
 lint → typecheck → test (Vitest) → test:e2e (Playwright)
 ```
 
-The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets must be configured for Firebase and Stripe credentials before deployment steps will work.
+The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets must be configured for Supabase, OpenRouter, and Stripe credentials before deployment steps will work.
 
 ---
 
@@ -155,7 +165,14 @@ The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets mus
 | Suite | Status |
 |---|---|
 | Unit (`tests/unit/`) | Active — runs with `npm run test` |
-| Frontend (`tests/frontend/`) | Active — runs with `npm run test` |
+| Frontend (`tests/frontend/`) | Needs update — Firebase mocks removed |
 | E2E (`tests/e2e/`) | Active — runs with `npm run test:e2e` after `npx playwright install` |
 | Contract (`tests/contract/`) | Placeholder — not yet implemented |
 | Performance (`tests/performance/`) | Placeholder — not yet implemented |
+
+---
+
+## Notes
+
+- The `tests/frontend/admin.test.tsx` and `tests/frontend/dashboard.test.tsx` files were removed during the Firebase→Supabase migration because they relied on Firebase mocks. They need to be rewritten with Supabase mock patterns.
+- Run `npm run test` to verify current test suite passes.
