@@ -1,5 +1,5 @@
 
-import { onCLS, onFID, onFCP, onLCP, onTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
 import { logger } from './logger';
 
 function sendToAnalytics(metric: any) {
@@ -8,7 +8,7 @@ function sendToAnalytics(metric: any) {
 
 export function initWebVitals() {
   onCLS(sendToAnalytics);
-  onFID(sendToAnalytics);
+  onINP(sendToAnalytics);
   onFCP(sendToAnalytics);
   onLCP(sendToAnalytics);
   onTTFB(sendToAnalytics);

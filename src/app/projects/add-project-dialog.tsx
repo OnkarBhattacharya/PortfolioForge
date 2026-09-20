@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Wand2, Sparkles } from 'lucide-react';
 import { useState } from 'react';
@@ -56,7 +55,7 @@ export default function AddPortfolioItemDialog({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { user } = useUser();
   const { toast } = useToast();
-  const isReadOnly = !user || user.isAnonymous;
+  const isReadOnly = !user;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -67,27 +66,27 @@ export default function AddPortfolioItemDialog({
       itemUrl: '',
     },
   });
-  
+
   const handleTriggerClick = () => {
     if (isReadOnly) {
-       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to add a portfolio item.",
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in or sign up to add a portfolio item.',
       });
     } else if (!canAdd) {
       toast({
-        variant: "destructive",
-        title: "Upgrade Required",
-        description: limitMessage || "Free plans are limited to 3 portfolio items. Upgrade to add more.",
+        variant: 'destructive',
+        title: 'Upgrade Required',
+        description: limitMessage || 'Free plans are limited to 3 portfolio items. Upgrade to add more.',
       });
     } else {
-        setOpen(true);
+      setOpen(true);
     }
   };
 
   async function onSubmit(values: FormValues) {
-    if (!user || user.isAnonymous) return;
+    if (!user || isReadOnly) return;
     if (!canAdd) {
       toast({ variant: 'destructive', title: 'Upgrade Required', description: limitMessage || 'Free plans are limited to 3 portfolio items. Upgrade to add more.' });
       return;
@@ -99,7 +98,12 @@ export default function AddPortfolioItemDialog({
       const res = await fetch('/api/portfolio-items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: values.name, description: values.description, tags: values.tags, itemUrl: values.itemUrl }),
+        body: JSON.stringify({
+          title: values.name,
+          description: values.description,
+          tags: values.tags?.split(',').map(t => t.trim()).filter(Boolean) || [],
+          project_url: values.itemUrl || undefined,
+        }),
       });
 
       if (res.status === 403) {
@@ -118,17 +122,17 @@ export default function AddPortfolioItemDialog({
       setIsSubmitting(false);
     }
   }
-  
+
   async function getSuggestions() {
-    const description = form.getValues("description");
+    const description = form.getValues('description');
     if (!description) {
-      toast({ title: "Add a description first!", description: "The AI needs something to work with." });
+      toast({ title: 'Add a description first!', description: 'The AI needs something to work with.' });
       return;
     }
 
     setIsSuggesting(true);
     try {
-      const response = await fetch('/api/content-suggester', {
+      const response = await fetch('/api/ai/content-suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: description, contentType: 'project description' }),
@@ -141,7 +145,6 @@ export default function AddPortfolioItemDialog({
       const { suggestions } = await response.json();
       setSuggestions(suggestions);
       setShowSuggestions(true);
-
     } catch (error) {
       logger.error('Error getting suggestions:', { error });
       toast({ variant: 'destructive', title: 'Error', description: 'Could not get suggestions. Please try again.' });
@@ -153,9 +156,8 @@ export default function AddPortfolioItemDialog({
   function applySuggestion(suggestion: string) {
     form.setValue('description', suggestion);
     setShowSuggestions(false);
-    toast({ title: "Suggestion applied!" });
+    toast({ title: 'Suggestion applied!' });
   }
-
 
   return (
     <>

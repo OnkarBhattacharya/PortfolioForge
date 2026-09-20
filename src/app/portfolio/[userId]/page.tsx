@@ -1,15 +1,4 @@
-'use client';
-
-export const dynamic = 'force-dynamic';
-
-import { useEffect, useMemo } from 'react';
-import {
-  collection,
-  doc,
-  query,
-} from 'firebase/firestore';
-import { useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
 import { themes as staticThemes } from '@/lib/data';
 import { z } from 'zod';
 import { CvDataSchema } from '@/lib/types';
@@ -21,15 +10,32 @@ import { ContactForm } from './contact-form';
 
 type CvData = z.infer<typeof CvDataSchema>;
 
+// Types that match what the themes expect (camelCase)
 export type UserProfile = {
   id: string;
+  username?: string;
   fullName?: string;
-  email?: string;
+  headline?: string;
+  bio?: string;
+  avatarUrl?: string;
+  links?: {
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    website?: string;
+  };
+  // Separate fields that themes expect
   linkedinUrl?: string;
   githubUrl?: string;
+  email?: string;
+  location?: string;
   themeId?: string;
   customTheme?: ThemeConfig;
   subscriptionTier?: 'free' | 'pro' | 'studio';
+  summary?: string;
+  experience?: any[];
+  education?: any[];
+  skills?: string[];
 } & Partial<CvData>;
 
 export type PortfolioItem = {
@@ -38,106 +44,19 @@ export type PortfolioItem = {
   description: string;
   tags: string[];
   itemUrl?: string;
-  imageId: string;
+  imageId?: string;
 };
 
-export default function PortfolioPage({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = use(params);
-  const firestore = useFirestore();
+export default async function PortfolioPage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  const supabase = await createClient();
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return doc(firestore, 'users', userId);
-  }, [firestore, userId]);
-  
-  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userDocRef);
-
-  const themeDocRef = useMemoFirebase(() => {
-    if (!firestore || !profile?.themeId || profile.themeId === 'custom') return null;
-    return doc(firestore, 'themes', profile.themeId);
-  }, [firestore, profile?.themeId]);
-
-  const { data: theme, isLoading: isThemeLoading } = useDoc<any>(themeDocRef);
-
-  const itemsQuery = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return query(collection(firestore, 'users', userId, 'portfolioItems'));
-  }, [firestore, userId]);
-
-  const { data: items, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
-  
-  const isLoading = isProfileLoading || isThemeLoading || areItemsLoading;
-  const fallbackTheme = staticThemes.find((themeItem) => themeItem.id === 'freelancer-teal') || staticThemes[0];
-
-  const selectedTheme = useMemo(() => {
-    if (profile?.customTheme) {
-      return profile.customTheme;
-    }
-
-    const themeId = profile?.themeId;
-
-    if (themeId && themeId !== 'custom') {
-      return theme || staticThemes.find((themeItem) => themeItem.id === themeId) || fallbackTheme;
-    }
-
-    return fallbackTheme;
-  }, [fallbackTheme, profile?.customTheme, profile?.themeId, theme]);
-
-  const selectedThemeStyles = selectedTheme as {
-    light?: Record<string, string>;
-    primary?: string;
-    font?: {
-      heading: { family: string; url: string };
-      body: { family: string; url: string };
-    };
-    borderRadius?: number;
-  };
-
-  useEffect(() => {
-    if (selectedThemeStyles) {
-      const themeToApply = (selectedThemeStyles.light || selectedThemeStyles) as Record<string, string>;
-      Object.entries(themeToApply).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(`--${key}`, String(value));
-      });
-
-      if (selectedThemeStyles.font) {
-        const headingFont = selectedThemeStyles.font.heading;
-        const bodyFont = selectedThemeStyles.font.body;
-
-        document.documentElement.style.setProperty('--font-heading', headingFont.family);
-        document.documentElement.style.setProperty('--font-body', bodyFont.family);
-
-        const link = document.createElement('link');
-        link.href = selectedThemeStyles.font.heading.url;
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-
-        if (headingFont.url !== bodyFont.url) {
-          const bodyLink = document.createElement('link');
-          bodyLink.href = bodyFont.url;
-          bodyLink.rel = 'stylesheet';
-          document.head.appendChild(bodyLink);
-        }
-      }
-      
-      if (selectedThemeStyles.borderRadius) {
-        document.documentElement.style.setProperty('--border-radius', `${selectedThemeStyles.borderRadius}rem`);
-      }
-    }
-
-    return () => {
-      // Cleanup logic if needed
-    };
-  }, [selectedThemeStyles]);
-
-  
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center" style={{ backgroundColor: `hsl(${selectedThemeStyles.primary || fallbackTheme.primary})` }}>
-        <Loader2 className="h-16 w-16 animate-spin text-white" />
-      </div>
-    );
-  }
+  // Fetch user profile by username or id
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .or(`id.eq.${userId},username.eq.${userId}`)
+    .single();
 
   if (profileError || !profile) {
     return (
@@ -149,14 +68,82 @@ export default function PortfolioPage({ params }: { params: Promise<{ userId: st
       </div>
     );
   }
-  
-  const themeProps = { profile, items: items || [], theme: selectedTheme };
 
-  if (profile?.themeId === 'agency') {
+  // Fetch theme if not custom
+  let theme = null;
+  if (profile.theme_id && profile.theme_id !== 'custom') {
+    const { data } = await supabase
+      .from('themes')
+      .select('*')
+      .eq('id', profile.theme_id)
+      .single();
+    theme = data;
+  }
+
+  // Fetch portfolio items
+  const { data: items, error: itemsError } = await supabase
+    .from('portfolio_items')
+    .select('*')
+    .eq('user_id', profile.id)
+    .order('sort_order', { ascending: true });
+
+  const fallbackTheme = staticThemes.find((themeItem) => themeItem.id === 'freelancer-teal') || staticThemes[0];
+
+  const selectedTheme = profile.custom_theme
+    ? profile.custom_theme
+    : profile.theme_id && profile.theme_id !== 'custom'
+      ? theme || staticThemes.find((themeItem) => themeItem.id === profile.theme_id) || fallbackTheme
+      : fallbackTheme;
+
+  const selectedThemeStyles = selectedTheme as {
+    light?: Record<string, string>;
+    primary?: string;
+    font?: {
+      heading: { family: string; url: string };
+      body: { family: string; url: string };
+    };
+    borderRadius?: number;
+    css_vars?: Record<string, string>;
+  };
+
+  // Map database fields to theme-expected camelCase
+  const mappedItems = (items || []).map((item) => ({
+    id: item.id,
+    name: item.title,
+    description: item.description || '',
+    tags: item.tags || [],
+    itemUrl: item.project_url || item.repo_url,
+    imageId: item.image_url || 'project-1',
+  }));
+
+  const mappedProfile = {
+    id: profile.id,
+    username: profile.username,
+    fullName: profile.full_name,
+    headline: profile.headline,
+    bio: profile.bio,
+    avatarUrl: profile.avatar_url,
+    links: profile.links,
+    linkedinUrl: profile.links?.linkedin,
+    githubUrl: profile.links?.github,
+    themeId: profile.theme_id,
+    customTheme: profile.custom_theme,
+    subscriptionTier: profile.subscription_tier,
+    email: profile.email,
+    location: profile.location,
+    summary: profile.summary,
+    experience: profile.experience,
+    education: profile.education,
+    skills: profile.skills,
+  };
+
+  const themeProps = { profile: mappedProfile, items: mappedItems, theme: selectedTheme };
+
+  if (profile.theme_id === 'agency') {
     return <AgencyTheme {...themeProps} />;
   }
-  
-  if (profile?.themeId === 'stylish-portfolio') {
+
+  if (profile.theme_id === 'stylish-portfolio') {
     return <StylishPortfolioTheme {...themeProps} />;
   }
 

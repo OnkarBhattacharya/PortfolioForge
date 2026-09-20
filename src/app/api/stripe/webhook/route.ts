@@ -213,13 +213,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: 'Webhook processing failed' }, { status: 500 });
   }
 }
-
-async function findUserByCustomerId(supabase: any, customerId: string) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('stripe_customer_id', customerId)
-    .limit(1)
-    .single();
-  return data;
-}

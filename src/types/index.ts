@@ -99,7 +99,6 @@ export type Profile = z.infer<typeof ProfileSchema>;
 
 export const UpdateProfileInputSchema = ProfileSchema.omit({
   id: true,
-  username: true,
   created_at: true,
   updated_at: true,
   subscription_tier: true,
@@ -247,16 +246,19 @@ export const GithubImporterInputSchema = z.object({
 });
 
 export type GithubImporterInput = z.infer<typeof GithubImporterInputSchema>;
-export type GithubImporterOutput = z.infer<typeof z.array(GithubRepositorySchema)>;
+export type GithubImporterOutput = GithubRepository[];
 
 export const WebImporterInputSchema = z.object({
   url: z.string().url().describe('The URL to import.'),
 });
 
 export type WebImporterInput = z.infer<typeof WebImporterInputSchema>;
-export type WebImporterOutput = z.infer<typeof z.object({
+
+const WebImporterOutputSchema = z.object({
   title: z.string(),
   description: z.string(),
   tags: z.array(z.string()),
   content_md: z.string(),
-})>;
+});
+
+export type WebImporterOutput = z.infer<typeof WebImporterOutputSchema>;

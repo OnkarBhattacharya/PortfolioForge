@@ -6,28 +6,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
-import { useAuth } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup, OAuthProvider } from 'firebase/auth';
+import { useAuth } from '@/hooks/use-supabase';
 import { useRouter } from 'next/navigation';
-import { logger } from '@/lib/logger';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
-
-const getAuthErrorMessage = (error: unknown) => {
-  const code = typeof error === 'object' && error && 'code' in error ? String((error as { code?: string }).code) : '';
-  switch (code) {
-    case 'auth/popup-closed-by-user':
-      return 'The sign-in popup was closed before completing authentication.';
-    case 'auth/cancelled-popup-request':
-      return 'The sign-in request was cancelled. Please try again.';
-    case 'auth/popup-blocked':
-      return 'Your browser blocked the sign-in popup. Please allow popups and try again.';
-    case 'auth/account-exists-with-different-credential':
-      return 'An account already exists with this email using a different sign-in method.';
-    default:
-      return error instanceof Error && error.message ? error.message : 'Unable to sign in right now. Please try again.';
-  }
-};
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -35,7 +17,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleSignIn = async (provider: GoogleAuthProvider | OAuthProvider, providerName: string) => {
+  const handleSignIn = async (provider: 'google' | 'apple') => {
     if (!auth || isLoading) {
       return;
     }
@@ -44,12 +26,20 @@ export default function LoginPage() {
     setAuthError(null);
 
     try {
-      await signInWithPopup(auth, provider);
+      const { error } = await auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+
       router.replace('/dashboard');
       router.refresh();
     } catch (error) {
-      logger.error(`Error signing in with ${providerName}`, { error });
-      setAuthError(getAuthErrorMessage(error));
+      console.error(`Error signing in with ${provider}`, { error });
+      setAuthError(error instanceof Error ? error.message : `Unable to sign in with ${provider}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +71,7 @@ export default function LoginPage() {
 
         <div className="space-y-4">
           <Button
-            onClick={() => handleSignIn(new GoogleAuthProvider(), 'Google')}
+            onClick={() => handleSignIn('google')}
             className="flex w-full items-center justify-center"
             variant="outline"
             disabled={!canSignIn}
@@ -90,7 +80,7 @@ export default function LoginPage() {
             Sign in with Google
           </Button>
           <Button
-            onClick={() => handleSignIn(new OAuthProvider('apple.com'), 'Apple')}
+            onClick={() => handleSignIn('apple')}
             className="flex w-full items-center justify-center"
             variant="outline"
             disabled={!canSignIn}

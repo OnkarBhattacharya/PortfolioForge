@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -12,12 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 import { CreditCard, Loader2, LogOut, User, LogIn, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
 import { LanguageSwitcher } from './language-switcher';
 
 type UserProfile = {
@@ -26,27 +25,50 @@ type UserProfile = {
 
 export function UserNav() {
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || user.isAnonymous || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
+  // Fetch user profile
+  React.useEffect(() => {
+    if (!user) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
 
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+    const fetchProfile = async () => {
+      setIsProfileLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, supabase]);
 
   const handleLogout = async () => {
-    if (!auth || isSigningOut) {
+    if (isSigningOut) {
       return;
     }
 
     setIsSigningOut(true);
 
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       router.replace('/');
       router.refresh();
     } finally {
@@ -58,7 +80,7 @@ export function UserNav() {
     return null;
   }
 
-  if (!user || user.isAnonymous) {
+  if (!user) {
     return (
       <div className="flex items-center gap-2">
         <LanguageSwitcher />
@@ -66,6 +88,19 @@ export function UserNav() {
           <Link href="/login">
             <LogIn className="mr-2" /> Login
           </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (isProfileLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled>
+          <Avatar className="h-9 w-9">
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
         </Button>
       </div>
     );
@@ -79,11 +114,11 @@ export function UserNav() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-9 w-9">
               <AvatarImage
-                src={user.photoURL || 'https://picsum.photos/seed/user-avatar/100/100'}
-                alt={user.displayName || 'User'}
+                src={user.user_metadata?.avatar_url || `https://picsum.photos/seed/${user.id}/100/100`}
+                alt={user.user_metadata?.full_name || 'User'}
               />
               <AvatarFallback>
-                {user.email?.charAt(0).toUpperCase() || 'U'}
+                {user.user_metadata?.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -92,7 +127,7 @@ export function UserNav() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">
-                {user.displayName || user.email?.split('@')[0] || 'User'}
+                {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
               </p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user.email}

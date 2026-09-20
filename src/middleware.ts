@@ -17,9 +17,8 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
   
-  const response = await updateSession(request);
+  const { supabaseResponse, supabase } = await updateSession(request);
   
-  const supabase = response.supabase;
   const { data: { user } } = await supabase.auth.getUser();
   
   if (isProtected && !user) {
@@ -33,7 +32,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirect, request.url));
   }
   
-  return response;
+  return supabaseResponse;
 }
 
 export const config = {

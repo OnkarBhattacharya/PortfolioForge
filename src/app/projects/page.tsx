@@ -12,8 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
-import { collection, doc, query, deleteDoc } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 import { ArrowUpRight, KeyRound, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -22,15 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import AddPortfolioItemDialog from './add-project-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
-
-type PortfolioItem = {
-  id: string;
-  name: string;
-  description: string;
-  tags: string[];
-  itemUrl?: string;
-  imageId: string;
-};
+import type { PortfolioItem } from '@/types';
 
 const ProjectCard = ({
   project,
@@ -39,21 +30,20 @@ const ProjectCard = ({
   project: PortfolioItem;
   onDelete: (id: string) => void;
 }) => {
-  const image = getPlaceholderImage(project.imageId);
+  const image = getPlaceholderImage(project.image_url ?? undefined);
   return (
     <Card className="flex h-full flex-col">
-      {image && (
+      {project.image_url && (
         <Image
-          src={image.imageUrl}
-          alt={project.name}
+          src={project.image_url}
+          alt={project.title}
           width={600}
           height={400}
-          data-ai-hint={image.imageHint}
           className="aspect-video w-full rounded-t-lg object-cover"
         />
       )}
       <CardHeader>
-        <CardTitle className="font-headline">{project.name}</CardTitle>
+        <CardTitle className="font-headline">{project.title}</CardTitle>
         <CardDescription className="line-clamp-3 min-h-[3.75rem]">
           {project.description}
         </CardDescription>
@@ -68,9 +58,9 @@ const ProjectCard = ({
         </div>
       </CardContent>
       <CardFooter className="flex gap-2">
-        {project.itemUrl ? (
+        {project.project_url ? (
           <Button asChild variant="secondary" className="flex-1">
-            <Link href={project.itemUrl} target="_blank" rel="noopener noreferrer">
+            <Link href={project.project_url} target="_blank" rel="noopener noreferrer">
               View Project <ArrowUpRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -95,45 +85,107 @@ const ProjectCard = ({
 
 export default function ProjectsPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { toast } = useToast();
-  const isReadOnly = !user || user.isAnonymous;
+  const isReadOnly = !user;
   const [isMounted, setIsMounted] = useState(false);
+
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  const [items, setItems] = useState<PortfolioItem[]>([]);
+  const [areItemsLoading, setAreItemsLoading] = useState(true);
+
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (isReadOnly || !user || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore, isReadOnly]);
+  // Fetch user profile
+  useEffect(() => {
+    if (!user || isReadOnly) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
+    setIsProfileLoading(true);
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
 
-  const itemsQuery = useMemoFirebase(() => {
-    if (isReadOnly || !user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'portfolioItems'));
-  }, [user, firestore, isReadOnly]);
+    fetchProfile();
+  }, [user, isReadOnly, supabase]);
 
-  const { data: items, isLoading: areItemsLoading } = useCollection<PortfolioItem>(itemsQuery);
+  // Fetch portfolio items
+  useEffect(() => {
+    if (!user || isReadOnly) {
+      setItems([]);
+      setAreItemsLoading(false);
+      return;
+    }
 
-  const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
+    setAreItemsLoading(true);
+    const fetchItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_items')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('sort_order', { ascending: true });
+        if (error) throw error;
+        setItems(data || []);
+      } catch (error) {
+        console.error('Failed to fetch items:', error);
+      } finally {
+        setAreItemsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [user, isReadOnly, supabase]);
+
+  const handleDelete = async (itemId: string) => {
+    if (isDeleting === itemId) return;
+
+    setIsDeleting(itemId);
+    try {
+      const { error } = await supabase
+        .from('portfolio_items')
+        .delete()
+        .eq('id', itemId)
+        .eq('user_id', user?.id);
+      if (error) throw error;
+
+      setItems((prev) => prev.filter((item) => item.id !== itemId));
+      toast({ title: 'Item deleted', description: 'Portfolio item removed successfully.' });
+    } catch (error) {
+      console.error('Delete failed:', error);
+      toast({ variant: 'destructive', title: 'Delete failed', description: 'Could not delete the item.' });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const isPro = userProfile?.subscription_tier === 'pro' || userProfile?.subscription_tier === 'studio';
   const maxFreeItems = 3;
   const itemCount = items?.length || 0;
   const canAdd = isPro || itemCount < maxFreeItems;
 
-  const handleDelete = async (itemId: string) => {
-    if (!firestore || !user) return;
-    try {
-      await deleteDoc(doc(firestore, 'users', user.uid, 'portfolioItems', itemId));
-      toast({ title: 'Item deleted', description: 'Portfolio item removed successfully.' });
-    } catch {
-      toast({ variant: 'destructive', title: 'Delete failed', description: 'Could not delete the item.' });
-    }
-  };
-
-  if (!isMounted || isUserLoading || (!isReadOnly && isProfileLoading) || areItemsLoading) {
+  if (!isMounted || isUserLoading || (!isReadOnly && (isProfileLoading || areItemsLoading))) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6">
         <div className="flex items-center justify-between">
@@ -224,7 +276,11 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {items?.map((item) => (
-            <ProjectCard key={item.id} project={item} onDelete={handleDelete} />
+            <ProjectCard
+              key={item.id}
+              project={item}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}

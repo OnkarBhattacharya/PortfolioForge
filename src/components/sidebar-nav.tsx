@@ -16,7 +16,7 @@ import {
   CreditCard,
   Loader2,
 } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/hooks/use-supabase';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },

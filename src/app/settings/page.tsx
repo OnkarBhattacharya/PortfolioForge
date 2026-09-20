@@ -1,31 +1,20 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
-import { collection, doc, updateDoc } from "firebase/firestore";
-import { Check, Loader2, KeyRound, Copy, Wand2 } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useState, useEffect, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { themes as staticThemes } from "@/lib/data";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ThemePreview } from "@/components/theme-preview";
-import { Textarea } from "@/components/ui/textarea";
-import { ThemeConfig } from "@/lib/theme-schema";
-import { logger } from "@/lib/logger";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useState, useEffect, useMemo } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { themes as staticThemes } from '@/lib/data';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ThemePreview } from '@/components/theme-preview';
+import { Textarea } from '@/components/ui/textarea';
+import { ThemeConfig } from '@/lib/theme-schema';
+import { useUser } from '@/hooks/use-supabase';
+import { useSupabase } from '@/hooks/use-supabase';
+import { Loader2, Check, Link, Copy, KeyRound, Wand2, Image as LucideImage } from 'lucide-react';
+import Image from 'next/image';
 
 type Theme = {
   id: string;
@@ -38,15 +27,17 @@ type Theme = {
   foreground: string;
   primary: string;
   accent: string;
+  css_vars?: Record<string, string>;
 };
 
 type UserProfile = {
-    id: string;
-    themeId?: string;
-    customDomain?: string;
-    customDomainStatus?: 'pending' | 'active' | 'error';
-    customTheme?: ThemeConfig;
-    subscriptionTier?: 'free' | 'pro' | 'studio';
+  id: string;
+  username?: string;
+  themeId?: string;
+  customDomain?: string;
+  customDomainStatus?: 'pending' | 'active' | 'error';
+  customTheme?: ThemeConfig;
+  subscriptionTier?: 'free' | 'pro' | 'studio';
 };
 
 const convertThemeConfigToTheme = (config: ThemeConfig): Theme => {
@@ -54,10 +45,9 @@ const convertThemeConfigToTheme = (config: ThemeConfig): Theme => {
     id: 'custom',
     name: config.name,
     description: config.description,
-    previewImageUrl: '', // No image for generated themes
+    previewImageUrl: '',
     price: 0,
-    isPremium: true, // AI generation can be considered a premium feature
-    // Using light theme for the preview for consistency
+    isPremium: true,
     background: config.light.background,
     foreground: config.light.foreground,
     primary: config.light.primary,
@@ -66,13 +56,13 @@ const convertThemeConfigToTheme = (config: ThemeConfig): Theme => {
 };
 
 export default function SettingsPage() {
-  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const supabase = useSupabase();
   const { toast } = useToast();
 
-  const isReadOnly = !user || user.isAnonymous;
+  const isReadOnly = !user;
   const [isMounted, setIsMounted] = useState(false);
-  
+
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [domainName, setDomainName] = useState('');
@@ -82,78 +72,128 @@ export default function SettingsPage() {
   const [generatedTheme, setGeneratedTheme] = useState<ThemeConfig | null>(null);
   const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
 
-  const themesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'themes');
-  }, [firestore]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  const { data: themes, isLoading: areThemesLoading } = useCollection<Theme>(themesQuery);
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !firestore || user.isAnonymous) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
-
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [areThemesLoading, setAreThemesLoading] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Fetch user profile
   useEffect(() => {
-      if (userProfile?.themeId) {
-          setSelectedThemeId(userProfile.themeId);
+    if (!user || isReadOnly) {
+      setProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      setIsProfileLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
       }
-      if (userProfile?.customDomain) {
-          setDomainName(userProfile.customDomain);
+    };
+
+    fetchProfile();
+  }, [user, isReadOnly]);
+
+  // Fetch themes
+  useEffect(() => {
+    const fetchThemes = async () => {
+      setAreThemesLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('themes')
+          .select('*')
+          .order('name', { ascending: true });
+        if (!error && data) {
+          setThemes(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch themes:', error);
+      } finally {
+        setAreThemesLoading(false);
       }
-      if (userProfile?.customTheme) {
-          setGeneratedTheme(userProfile.customTheme);
-      }
-  }, [userProfile]);
+    };
+
+    fetchThemes();
+  }, []);
+
+  useEffect(() => {
+    if (profile?.themeId) {
+      setSelectedThemeId(profile.themeId);
+    }
+    if (profile?.customDomain) {
+      setDomainName(profile.customDomain);
+    }
+    if (profile?.customTheme) {
+      setGeneratedTheme(profile.customTheme);
+    }
+  }, [profile]);
 
   const displayedThemes = useMemo(() => {
     return themes && themes.length > 0 ? themes : staticThemes;
   }, [themes]);
 
+  const isLoading = areThemesLoading || isUserLoading || (!isReadOnly && isProfileLoading);
+  const isPro = profile?.subscriptionTier === 'pro' || profile?.subscriptionTier === 'studio';
+
   const handleSelectTheme = (themeId: string, isPremium: boolean) => {
-    if (isReadOnly) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to change your theme.",
-      });
-      return;
-    }
     if (isPremium && !isPro) {
       toast({
-        variant: "destructive",
-        title: "Upgrade Required",
-        description: "Premium themes are available on the Pro plan.",
+        title: 'Premium Theme',
+        description: 'Upgrade to Pro or Studio to use this theme.',
+        variant: 'destructive',
       });
       return;
     }
     setSelectedThemeId(themeId);
-    setGeneratedTheme(null); // Clear generated theme when selecting a pre-made one
   };
-  
+
   const handleSaveTheme = async () => {
-    if (!userProfileRef || (!selectedThemeId && !generatedTheme)) return;
+    if (!user || isReadOnly) return;
 
     setIsSaving(true);
     try {
-      const themeToSave = generatedTheme ? { customTheme: generatedTheme, themeId: 'custom' } : { themeId: selectedThemeId, customTheme: null };
-      await updateDoc(userProfileRef, themeToSave);
+      const updateData: Record<string, unknown> = {};
+      if (selectedThemeId) {
+        updateData.theme_id = selectedThemeId;
+      }
+      if (generatedTheme && selectedThemeId === 'custom') {
+        updateData.custom_theme = generatedTheme;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
       toast({
-        title: "Theme Updated!",
-        description: "Your portfolio will now use the new theme.",
+        title: 'Theme Saved',
+        description: 'Your portfolio theme has been updated.',
       });
     } catch (error) {
-      logger.error("Error saving theme:", { error });
+      console.error('Failed to save theme:', error);
       toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: "Could not save theme selection. Please try again.",
+        title: 'Error',
+        description: 'Failed to save theme. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);
@@ -161,334 +201,308 @@ export default function SettingsPage() {
   };
 
   const handleConnectDomain = async () => {
-      if (!userProfileRef || !domainName) {
-           toast({
-                variant: "destructive",
-                title: "Invalid Domain",
-                description: "Please enter a valid domain name.",
-            });
-        return;
-      }
+    if (!domainName.trim()) return;
 
-      setIsConnectingDomain(true);
-      try {
-          await updateDoc(userProfileRef, {
-              customDomain: domainName,
-              customDomainStatus: 'pending',
-          });
-          toast({
-              title: "Domain Connection Initiated",
-              description: `Verification process started for ${domainName}.`,
-          });
-      } catch (error) {
-          logger.error("Error connecting domain:", { error });
-          toast({
-              variant: "destructive",
-              title: "Connection Failed",
-              description: "Could not initiate domain connection.",
-          });
-      } finally {
-          setIsConnectingDomain(false);
-      }
+    setIsConnectingDomain(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_domain: domainName.trim() })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Domain Connected',
+        description: `${domainName} has been connected to your portfolio.`,
+      });
+    } catch (error) {
+      console.error('Failed to connect domain:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to connect domain. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConnectingDomain(false);
+    }
   };
 
   const handleGenerateTheme = async () => {
-    if (!aiPrompt) return;
+    if (!aiPrompt.trim()) return;
+
     setIsGeneratingTheme(true);
     try {
-      const response = await fetch('/api/theme-generator', {
+      const response = await fetch('/api/ai/theme-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: aiPrompt }),
       });
-      if (!response.ok) {
-        throw new Error('Failed to generate theme');
-      }
-      const theme = await response.json();
-      setGeneratedTheme(theme);
-      setSelectedThemeId('custom'); // Select the new custom theme
-    } catch (error) {
-      logger.error("Error generating theme:", { error });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || 'Failed to generate theme');
+
+      setGeneratedTheme(result.data);
+      setSelectedThemeId('custom');
       toast({
-        variant: "destructive",
-        title: "Theme Generation Failed",
-        description: "Could not generate a new theme. Please try a different prompt.",
+        title: 'Theme Generated',
+        description: 'Your custom theme has been created.',
+      });
+    } catch (error) {
+      console.error('Failed to generate theme:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to generate theme.',
+        variant: 'destructive',
       });
     } finally {
       setIsGeneratingTheme(false);
     }
   };
-  
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: "Copied to clipboard!" });
+
+  const handleCopyLink = () => {
+    if (profile?.username) {
+      const url = `${window.location.origin}/${profile.username}`;
+      navigator.clipboard.writeText(url);
+      toast({
+        title: 'Link Copied',
+        description: 'Portfolio link copied to clipboard.',
+      });
+    }
   };
 
-  const isLoading = areThemesLoading || isUserLoading || (!isReadOnly && isProfileLoading);
-  const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
-
-  if (!isMounted || isLoading) {
-    return (
-      <div className="flex min-h-[50vh] flex-1 items-center justify-center p-4 md:p-6">
-        <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading settings...
-        </div>
-      </div>
-    );
-  }
+  if (!isMounted) return null;
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="font-headline text-3xl font-bold tracking-tighter">
-          Settings
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Control your portfolio appearance, domains, and AI theme generation.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">Manage your portfolio settings and appearance.</p>
+        </div>
       </div>
 
-       {isReadOnly && (
-        <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50">
-            <CardHeader className="flex flex-row items-center gap-4">
-                <KeyRound className="h-8 w-8 text-yellow-600 dark:text-yellow-500" />
-                <div>
-                    <CardTitle className="font-headline text-yellow-800 dark:text-yellow-300">Read-Only Mode</CardTitle>
-                    <CardDescription className="text-yellow-700 dark:text-yellow-400">
-                        Please <Link href="/login" className="font-bold underline">log in</Link> or <Link href="/signup" className="font-bold underline">sign up</Link> to manage your settings.
-                    </CardDescription>
+      <Card>
+        <CardHeader>
+          <CardTitle>Theme Selection</CardTitle>
+          <CardDescription>Choose a theme to change the look and feel of your live portfolio. Click to preview.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {generatedTheme && (
+            <div key="custom" className="relative" onClick={() => setSelectedThemeId('custom')}>
+              <Card className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === 'custom' ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}>
+                <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} showBranding={!isPro} />
+                <div className="p-4">
+                  <div className="font-bold text-lg">Your AI Theme</div>
+                  <p className="text-sm text-muted-foreground h-10">The custom theme generated by AI.</p>
                 </div>
-            </CardHeader>
-        </Card>
-      )}
+              </Card>
+              {selectedThemeId === 'custom' && (
+                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Check className="h-4 w-4" />
+                </div>
+              )}
+            </div>
+          )}
+          {isLoading ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="aspect-video w-full rounded-md bg-muted animate-pulse" />
+                <div className="h-5 w-3/4 rounded-md bg-muted animate-pulse" />
+                <div className="h-4 w-1/2 rounded-md bg-muted animate-pulse" />
+              </div>
+            ))
+          ) : (
+            displayedThemes.map((theme) => (
+              <div
+                key={theme.id}
+                className="relative"
+                onClick={() => handleSelectTheme(theme.id, theme.isPremium)}
+              >
+                <DialogTrigger asChild onClick={() => setPreviewTheme(theme)}>
+                  <Card
+                    className={`overflow-hidden cursor-pointer transition-all ${
+                      selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'
+                    } ${theme.isPremium && !isPro ? 'opacity-60' : ''}`}
+                  >
+                    <Image
+                      src={theme.previewImageUrl}
+                      alt={theme.name}
+                      width={600}
+                      height={400}
+                      className="aspect-video w-full object-cover"
+                    />
+                    <div className="p-4">
+                      <div className="font-bold text-lg">{theme.name}</div>
+                      <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
+                    </div>
+                  </Card>
+                </DialogTrigger>
+                {theme.isPremium && !isPro && (
+                  <div className="absolute inset-0 flex items-start justify-end p-3 pointer-events-none">
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                      Pro
+                    </span>
+                  </div>
+                )}
+                {selectedThemeId === theme.id && (
+                  <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button onClick={handleSaveTheme} disabled={isSaving || (!selectedThemeId && !generatedTheme) || isReadOnly}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Selection'
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <Dialog open={!!previewTheme} onOpenChange={(open) => !open && setPreviewTheme(null)}>
+        <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col">
+          {previewTheme && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto rounded-lg border">
+                <ThemePreview theme={previewTheme} showBranding={!isPro} />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wand2 className="h-5 w-5" />
+            AI Theme Generator
+          </CardTitle>
+          <CardDescription>Generate a custom theme using AI. Available on Pro and Studio plans.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isPro ? (
+            <>
+              <Textarea
+                placeholder="Describe your ideal theme... (e.g., 'Dark cyberpunk theme with neon green accents and monospace fonts')"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                className="min-h-[100px]"
+                disabled={isGeneratingTheme}
+              />
+              <Button
+                onClick={handleGenerateTheme}
+                disabled={!aiPrompt.trim() || isGeneratingTheme || isReadOnly}
+              >
+                {isGeneratingTheme ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Theme'
+                )}
+              </Button>
+            </>
+          ) : (
+            <Alert variant="default">
+              <AlertTitle>Upgrade Required</AlertTitle>
+              <AlertDescription>
+                AI theme generation is available on Pro and Studio plans.{' '}
+                <a href="/billing" className="underline">
+                  Upgrade now
+                </a>
+                {' '}to unlock this feature.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {profile && (
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Custom Domain</CardTitle>
-            <CardDescription>
-              Connect a custom domain to your portfolio for a professional
-              online presence. This is a premium feature.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Custom Domain
+            </CardTitle>
+            <CardDescription>Connect a custom domain to your portfolio. Available on Pro and Studio plans.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex w-full max-w-md items-center space-x-2">
-              <Input 
-                type="text" 
-                placeholder="your-domain.com" 
-                value={domainName}
-                onChange={(e) => setDomainName(e.target.value)}
-                disabled={isReadOnly || !!userProfile?.customDomain || !isPro}
-              />
-              <Button onClick={handleConnectDomain} disabled={isReadOnly || isConnectingDomain || !!userProfile?.customDomain || !isPro}>
-                {isConnectingDomain && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Connect
-              </Button>
-            </div>
-            {!isPro && !isReadOnly && (
-              <Alert className="mt-4">
-                <AlertTitle className="font-headline">Upgrade required</AlertTitle>
+          <CardContent className="space-y-4">
+            {isPro ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="yourdomain.com"
+                  value={domainName}
+                  onChange={(e) => setDomainName(e.target.value)}
+                  disabled={isConnectingDomain}
+                />
+                <Button onClick={handleConnectDomain} disabled={!domainName.trim() || isConnectingDomain || isReadOnly}>
+                  {isConnectingDomain ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    'Connect Domain'
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Alert variant="default">
+                <AlertTitle>Upgrade Required</AlertTitle>
                 <AlertDescription>
-                  Custom domains are available on the Pro plan. Upgrade to connect your own domain.
+                  Custom domains are available on Pro and Studio plans.{' '}
+                  <a href="/billing" className="underline">
+                    Upgrade now
+                  </a>
+                  {' '}to unlock this feature.
                 </AlertDescription>
               </Alert>
             )}
-            {userProfile?.customDomainStatus === 'pending' && (
-                <Alert className="mt-4">
-                    <AlertTitle className="font-headline">Verify Your Domain</AlertTitle>
-                    <AlertDescription>
-                        <p>To complete the connection, add the following TXT record to your domain's DNS settings.</p>
-                        <div className="mt-2 space-y-2 text-sm">
-                            <div><strong>Type:</strong> TXT</div>
-                            <div><strong>Host/Name:</strong> @ or your-domain.com</div>
-                            <div className="flex items-center gap-2">
-                                <strong>Value:</strong>
-                                <code className="bg-muted px-2 py-1 rounded-md text-xs truncate">
-                                    {`portfolioforge-verification=${user?.uid}`}
-                                </code>
-                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(`portfolioforge-verification=${user?.uid}`)}>
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                        <p className="mt-2 text-xs text-muted-foreground">DNS changes can take up to 24 hours to propagate. We will check for the record automatically.</p>
-                    </AlertDescription>
-                </Alert>
-            )}
-             {userProfile?.customDomainStatus === 'active' && (
-                <Alert variant="default" className="mt-4 border-green-500 text-green-700">
-                    <Check className="h-4 w-4 !text-green-500" />
-                    <AlertTitle className="font-headline text-green-800">Domain Active</AlertTitle>
-                    <AlertDescription>
-                        Your domain <a href={`https://${userProfile.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-bold underline">{userProfile.customDomain}</a> is successfully connected and pointing to your portfolio.
-                    </AlertDescription>
-                </Alert>
+            {profile.customDomain && (
+              <div className="text-sm text-muted-foreground">
+                Current domain: <span className="font-medium">{profile.customDomain}</span>
+              </div>
             )}
           </CardContent>
-          <CardFooter>
-            <p className="text-sm text-muted-foreground">
-              After connecting, you will need to update your DNS records.
-            </p>
-          </CardFooter>
         </Card>
+      )}
 
-        <Card className="h-fit">
+      {profile?.username && (
+        <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Upgrade for more</CardTitle>
-            <CardDescription>
-              Custom domains and premium themes are part of the Pro plan.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Link className="h-5 w-5" />
+              Portfolio Link
+            </CardTitle>
+            <CardDescription>Share your portfolio with the world.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Remove PortfolioForge branding.</p>
-            <p>Unlock premium theme templates.</p>
-            <p>Publish unlimited portfolio items.</p>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/billing">View billing</Link>
+          <CardContent className="flex items-center gap-4">
+            <Input
+              readOnly
+              value={`${window.location.origin}/${profile.username}`}
+              className="flex-1"
+            />
+            <Button variant="outline" onClick={handleCopyLink} size="icon">
+              <Copy className="h-4 w-4" />
+              <span className="sr-only">Copy link</span>
             </Button>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-              <CardTitle className="font-headline">AI Theme Generator</CardTitle>
-              <CardDescription>
-                  Describe the style you want, and our AI will create a unique theme for you. Try things like "a minimalist theme with a touch of neon" or "a professional theme for a photographer".
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-              <Textarea
-                  placeholder="e.g., A dark, futuristic theme with glowing blue accents..."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  disabled={isReadOnly || isGeneratingTheme || !isPro}
-              />
-              <Button onClick={handleGenerateTheme} disabled={isReadOnly || !aiPrompt || isGeneratingTheme || !isPro}>
-                  {isGeneratingTheme ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                  Generate Theme
-              </Button>
-              {!isPro && !isReadOnly && (
-                <Alert>
-                  <AlertTitle className="font-headline">Premium feature</AlertTitle>
-                  <AlertDescription>
-                    AI Theme Generator is available on the Pro plan. Upgrade to unlock it.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {generatedTheme && (
-                  <div className="space-y-4 rounded-lg border p-4">
-                      <h3 className="font-headline text-lg">Generated Theme Preview</h3>
-                      <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} showBranding={!isPro} />
-                  </div>
-              )}
-          </CardContent>
-        </Card>
-
-        <Dialog
-            open={!!previewTheme}
-            onOpenChange={(isOpen) => {
-                if (!isOpen) {
-                    setPreviewTheme(null);
-                }
-            }}
-        >
-            <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Portfolio Themes</CardTitle>
-                <CardDescription>
-                Choose a theme to change the look and feel of your live portfolio. Click to preview.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {generatedTheme && (
-                  <div key="custom" className="relative" onClick={() => setSelectedThemeId('custom')}>
-                    <Card 
-                        className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === 'custom' ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'}`}
-                    >
-                      <ThemePreview theme={convertThemeConfigToTheme(generatedTheme)} showBranding={!isPro} />
-                        <div className="p-4">
-                        <div className="font-bold text-lg">Your AI Theme</div>
-                        <p className="text-sm text-muted-foreground h-10">The custom theme generated by AI.</p>
-                        </div>
-                    </Card>
-                    {selectedThemeId === 'custom' && (
-                        <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                            <Check className="h-4 w-4" />
-                        </div>
-                    )}
-                  </div>
-                )}
-                {isLoading ? (
-                [...Array(6)].map((_, i) => (
-                    <div key={i} className="space-y-2">
-                        <div className="aspect-video w-full rounded-md bg-muted animate-pulse" />
-                        <div className="h-5 w-3/4 rounded-md bg-muted animate-pulse" />
-                        <div className="h-4 w-1/2 rounded-md bg-muted animate-pulse" />
-                    </div>
-                ))
-                ) : (
-                    displayedThemes.map((theme) => {
-                        const isLocked = theme.isPremium && !isPro;
-                        return (
-                        <div key={theme.id} className="relative" onClick={() => handleSelectTheme(theme.id, theme.isPremium)}>
-                            <DialogTrigger asChild onClick={() => setPreviewTheme(theme)}>
-                                <Card 
-                                    className={`overflow-hidden cursor-pointer transition-all ${selectedThemeId === theme.id ? 'ring-2 ring-primary ring-offset-2' : 'ring-0'} ${isLocked ? 'opacity-60' : ''}`}
-                                >
-                                    <Image
-                                        src={theme.previewImageUrl}
-                                        alt={theme.name}
-                                        width={600}
-                                        height={400}
-                                        className="aspect-video w-full object-cover"
-                                    />
-                                    <div className="p-4">
-                                    <div className="font-bold text-lg">{theme.name}</div>
-                                    <p className="text-sm text-muted-foreground h-10">{theme.description}</p>
-                                    </div>
-                                </Card>
-                            </DialogTrigger>
-                            {isLocked && (
-                              <div className="absolute inset-0 flex items-start justify-end p-3 pointer-events-none">
-                                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Pro</span>
-                              </div>
-                            )}
-                            {selectedThemeId === theme.id && (
-                                <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                    <Check className="h-4 w-4" />
-                                </div>
-                                )}
-                        </div>
-                    )})
-                )}
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSaveTheme} disabled={isSaving || (!selectedThemeId && !generatedTheme) || isReadOnly}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSaving ? "Saving..." : "Save Selection"}
-                </Button>
-            </CardFooter>
-            </Card>
-            <DialogContent
-                className="max-w-4xl w-full h-[90vh] flex flex-col"
-            >
-                {previewTheme && (
-                    <>
-                        <DialogHeader>
-                            <DialogTitle>Theme Preview: {previewTheme.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="flex-1 overflow-auto rounded-lg border">
-                            <ThemePreview theme={previewTheme} showBranding={!isPro} />
-                        </div>
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
-      </div>
+      )}
     </div>
   );
 }

@@ -16,9 +16,9 @@ function getSupabase() {
 }
 
 // Collection reference - mimics Firebase's collection()
-export function collection<T = any>(path: string): PostgrestQueryBuilder<T> {
+export function collection<T = any>(path: string) {
   const supabase = getSupabase();
-  return supabase.from(path) as any;
+  return supabase.from(path);
 }
 
 // Document reference - mimics Firebase's doc()
@@ -199,9 +199,9 @@ export async function getDocs<T = any>(query: any): Promise<{
 
 // addDoc - mimics Firebase's addDoc
 export async function addDoc(ref: any, data: any): Promise<{ id: string }> {
-  const { data, error } = await ref.insert(data).select('id').single();
+  const { data: newData, error } = await ref.insert(data).select('id').single();
   if (error) throw error;
-  return { id: data.id };
+  return { id: newData.id };
 }
 
 // updateDoc - mimics Firebase's updateDoc

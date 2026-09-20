@@ -126,7 +126,7 @@ Your tone should be professional but also creative and engaging. Highlight the c
 
 const THEME_GEN_PROMPT = `You are an expert theme designer. Your task is to generate a unique and visually appealing theme configuration based on the user's prompt. The output must be a valid JSON object that conforms to the provided schema.
 
-User Prompt: "${input.prompt}"`;
+User Prompt: "{{prompt}}"`;
 
 const README_SUMMARY_PROMPT = `You are an expert technical writer. Your task is to read the following README.md file content and generate a concise, compelling 1-2 sentence summary for a developer portfolio.
 
@@ -388,7 +388,7 @@ export class OpenRouterAI {
       () => this.callModel({
         model: FREE_MODELS.CREATIVE,
         messages: [
-          { role: 'system', content: THEME_GEN_PROMPT.replace('${input.prompt}', prompt) },
+          { role: 'system', content: THEME_GEN_PROMPT.replace('{{prompt}}', prompt) },
           { role: 'user', content: prompt },
         ],
         responseSchema: ThemeConfigSchema,
@@ -397,7 +397,7 @@ export class OpenRouterAI {
         () => this.callModel({
           model: FREE_MODELS.TEXT,
           messages: [
-            { role: 'system', content: THEME_GEN_PROMPT.replace('${input.prompt}', prompt) },
+            { role: 'system', content: THEME_GEN_PROMPT.replace('{{prompt}}', prompt) },
             { role: 'user', content: prompt },
           ],
           responseSchema: ThemeConfigSchema,

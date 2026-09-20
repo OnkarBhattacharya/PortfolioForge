@@ -4,8 +4,14 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { User } from '@supabase/supabase-js';
 
+export interface ExtendedUser extends User {
+  isAnonymous: boolean;
+  uid: string;
+  getIdToken: (forceRefresh?: boolean) => Promise<string>;
+}
+
 export interface UserHookResult {
-  user: User | null;
+  user: ExtendedUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
@@ -22,8 +28,23 @@ function getSupabase() {
   return supabaseClient;
 }
 
+function extendUser(user: User | null): ExtendedUser | null {
+  if (!user) return null;
+  return {
+    ...user,
+    isAnonymous: false,
+    uid: user.id,
+    getIdToken: async (forceRefresh = false) => {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+      return session.access_token;
+    },
+  };
+}
+
 export function useUser(): UserHookResult {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [userError, setUserError] = useState<Error | null>(null);
 
@@ -32,14 +53,14 @@ export function useUser(): UserHookResult {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
+        setUser(extendUser(session?.user ?? null));
         setIsUserLoading(false);
       }
     );
 
     // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      setUser(extendUser(session?.user ?? null));
       setIsUserLoading(false);
     });
 

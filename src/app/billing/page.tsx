@@ -16,9 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Check, KeyRound, Loader2, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 
 type UserProfile = {
   id: string;
@@ -67,23 +66,47 @@ type PendingAction = 'checkout' | 'portal' | null;
 
 export default function BillingPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { toast } = useToast();
   const [isMounted, setIsMounted] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const isReadOnly = !user || user.isAnonymous;
+  const isReadOnly = !user;
+
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (isReadOnly || !user || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user, isReadOnly]);
+  // Fetch user profile
+  useEffect(() => {
+    if (!user || isReadOnly) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+    setIsProfileLoading(true);
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, isReadOnly, supabase]);
 
   const currentTier =
     userProfile?.subscriptionTier && userProfile.subscriptionTier in Tiers
@@ -117,7 +140,7 @@ export default function BillingPage() {
       return;
     }
 
-    if (!user || user.isAnonymous) {
+    if (!user || isReadOnly) {
       const message = 'Please log in or sign up to manage your billing.';
       setActionError(message);
       toast({

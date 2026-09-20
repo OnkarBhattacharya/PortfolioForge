@@ -1,4 +1,3 @@
-
 "use client";
 
 export const dynamic = 'force-dynamic';
@@ -6,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,23 +14,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../components/ui/form";
+} from "@/components/ui/form";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Textarea } from "../../components/ui/textarea";
+} from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles, KeyRound, CheckCircle2 } from "lucide-react";
-import { Skeleton } from "../../components/ui/skeleton";
-import { useToast } from "../../hooks/use-toast";
-import { useUser } from "../../firebase";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-supabase";
 import Link from "next/link";
-import { CvDataSchema } from "../../lib/types";
-import { logger } from "../../lib/logger";
+import { logger } from "@/lib/logger";
 
 const formSchema = z.object({
   profession: z.string().optional(),
@@ -42,15 +40,20 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type AIContentSuggestions = {
+  suggestedDescription: string;
+  suggestedSummary: string;
+};
+
 export default function AiAssistantPage() {
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<any | null>(null);
+  const [suggestions, setSuggestions] = useState<AIContentSuggestions | null>(null);
   const [hasCvData, setHasCvData] = useState(false);
   const [hasProfession, setHasProfession] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-  const isReadOnly = !user || user.isAnonymous;
+  const isReadOnly = !user;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,38 +69,38 @@ export default function AiAssistantPage() {
     setIsMounted(true);
 
     const updateFormData = () => {
-        try {
-            const cvDataString = localStorage.getItem("cvData");
-            if (cvDataString) {
-                const cvData = CvDataSchema.parse(JSON.parse(cvDataString));
-                form.setValue("cvData", JSON.stringify(cvData, null, 2));
-                if (cvData.profession) {
-                    form.setValue("profession", cvData.profession);
-                }
-                setHasCvData(true);
-                setHasProfession(!!cvData.profession);
-            } else {
-                setHasCvData(false);
-                setHasProfession(false);
-            }
-        } catch (error) {
-            logger.error("Failed to parse CV data from local storage", { error });
+      try {
+        const cvDataString = localStorage.getItem("cvData");
+        if (cvDataString) {
+          const cvData = JSON.parse(cvDataString);
+          form.setValue("cvData", JSON.stringify(cvData, null, 2));
+          if (cvData.profession) {
+            form.setValue("profession", cvData.profession);
+          }
+          setHasCvData(true);
+          setHasProfession(!!cvData.profession);
+        } else {
+          setHasCvData(false);
+          setHasProfession(false);
         }
+      } catch (error) {
+        logger.error("Failed to parse CV data from local storage", { error });
+      }
     };
-    
+
     updateFormData();
     window.addEventListener('storage', updateFormData);
     window.addEventListener('profileUpdate', updateFormData);
-    
+
     return () => {
-        window.removeEventListener('storage', updateFormData);
-        window.removeEventListener('profileUpdate', updateFormData);
+      window.removeEventListener('storage', updateFormData);
+      window.removeEventListener('profileUpdate', updateFormData);
     };
   }, [form]);
 
   async function onSubmit(values: FormValues) {
     if (isReadOnly) {
-       toast({
+      toast({
         variant: "destructive",
         title: "Authentication Required",
         description: "Please log in or sign up to use the AI Assistant.",
@@ -107,7 +110,7 @@ export default function AiAssistantPage() {
     setLoading(true);
     setSuggestions(null);
     try {
-      const response = await fetch("/api/ai/ai-powered-content-suggestions", {
+      const response = await fetch("/api/ai/content-suggest", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

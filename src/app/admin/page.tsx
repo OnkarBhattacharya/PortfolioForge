@@ -1,7 +1,7 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
-import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -10,7 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../components/ui/card';
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -18,49 +18,96 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../components/ui/table';
-import { Badge } from '../../components/ui/badge';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '../../firebase';
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 
 type UserProfile = {
   id: string;
-  fullName: string;
-  email: string;
-  subscriptionTier?: 'free' | 'pro';
+  full_name?: string;
+  email?: string;
+  subscription_tier?: 'free' | 'pro' | 'studio';
   role?: 'user' | 'admin';
 };
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const supabase = useSupabase();
   const [isMounted, setIsMounted] = useState(false);
+
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isUsersLoading, setIsUsersLoading] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || user.isAnonymous || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  // Fetch current user profile
+  React.useEffect(() => {
+    if (!user) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+    setIsProfileLoading(true);
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, supabase]);
+
   const isAdmin = userProfile?.role === 'admin';
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!isAdmin || !firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore, isAdmin]);
+  // Fetch all users if admin
+  React.useEffect(() => {
+    if (!isAdmin) {
+      setUsers([]);
+      setIsUsersLoading(false);
+      return;
+    }
 
-  const { data: users, isLoading: isUsersLoading } = useCollection<UserProfile>(usersQuery);
+    setIsUsersLoading(true);
+    const fetchUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, subscription_tier, role');
+        if (error) throw error;
+        setUsers(data || []);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        setIsUsersLoading(false);
+      }
+    };
 
-  useEffect(() => {
+    fetchUsers();
+  }, [isAdmin, supabase]);
+
+  React.useEffect(() => {
     if (!isMounted || isUserLoading || isProfileLoading) {
       return;
     }
 
-    if (!user || user.isAnonymous || !isAdmin) {
+    if (!user || !isAdmin) {
       router.replace('/dashboard');
       router.refresh();
     }
@@ -82,7 +129,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!user || user.isAnonymous || !isAdmin) {
+  if (!user || !isAdmin) {
     return (
       <div className="flex min-h-[50vh] flex-1 items-center justify-center p-4 md:p-6">
         <Card className="w-full max-w-lg">
@@ -131,11 +178,11 @@ export default function AdminDashboardPage() {
               <TableBody>
                 {users?.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.fullName || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{user.full_name || 'N/A'}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant={user.subscriptionTier === 'pro' ? 'default' : 'secondary'}>
-                        {user.subscriptionTier || 'free'}
+                      <Badge variant={user.subscription_tier === 'pro' || user.subscription_tier === 'studio' ? 'default' : 'secondary'}>
+                        {user.subscription_tier || 'free'}
                       </Badge>
                     </TableCell>
                     <TableCell>

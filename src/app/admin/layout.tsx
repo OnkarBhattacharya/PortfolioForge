@@ -1,8 +1,7 @@
-
 'use client';
 
-import { useUser, useDoc, useMemoFirebase, useFirestore } from '../../firebase';
-import { doc } from 'firebase/firestore';
+import React from 'react';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
@@ -16,14 +15,37 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || user.isAnonymous || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [user, firestore]);
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = React.useState(true);
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  React.useEffect(() => {
+    if (!user) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
+
+    setIsProfileLoading(true);
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, supabase]);
 
   const isLoading = isUserLoading || isProfileLoading;
 

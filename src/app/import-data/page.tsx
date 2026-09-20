@@ -2,30 +2,29 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Circle, Link2, KeyRound, Loader2, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import Link from "next/link";
-import { logger } from "@/lib/logger";
-import { collection, doc, query } from "firebase/firestore";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { FileText, Github, Linkedin, UploadCloud, CheckCircle, Circle, Link2, KeyRound, Loader2, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useUser, useSupabase } from '@/hooks/use-supabase';
+import Link from 'next/link';
+import { logger } from '@/lib/logger';
 
 export default function ImportDataPage() {
   const { user, isUserLoading } = useUser();
-  const isReadOnly = !user || user.isAnonymous;
-  const firestore = useFirestore();
+  const supabase = useSupabase();
+  const isReadOnly = !user;
   const maxFreeItems = 3;
   const [isMounted, setIsMounted] = useState(false);
 
@@ -45,37 +44,85 @@ export default function ImportDataPage() {
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [importUrlSuccess, setImportUrlSuccess] = useState(false);
 
-
   const { toast } = useToast();
-  
-  const itemsQuery = useMemoFirebase(() => {
-    if (isReadOnly || !user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'portfolioItems'));
-  }, [firestore, user, isReadOnly]);
 
-  const { data: items } = useCollection<{ id: string }>(itemsQuery);
+  const [items, setItems] = useState<{ id: string }[]>([]);
+  const [isItemsLoading, setIsItemsLoading] = useState(true);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (isReadOnly || !user || !firestore) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user, isReadOnly]);
+  const [userProfile, setUserProfile] = useState<{ subscriptionTier?: 'free' | 'pro' | 'studio' } | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<{ subscriptionTier?: 'free' | 'pro' | 'studio' }>(userProfileRef);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('cvUploadSuccess') === 'true') {
+      setCvUploadSuccess(true);
+    }
+    if (localStorage.getItem('linkedInSuccess') === 'true') {
+      setLinkedInSuccess(true);
+    }
+  }, []);
+
+  // Fetch portfolio items count
+  useEffect(() => {
+    if (isReadOnly || !user) {
+      setItems([]);
+      setIsItemsLoading(false);
+      return;
+    }
+
+    setIsItemsLoading(true);
+    const fetchItems = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('portfolio_items')
+          .select('id')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        setItems(data || []);
+      } catch (error) {
+        console.error('Failed to fetch items:', error);
+      } finally {
+        setIsItemsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [user, isReadOnly, supabase]);
+
+  // Fetch user profile
+  useEffect(() => {
+    if (isReadOnly || !user) {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+      return;
+    }
+
+    setIsProfileLoading(true);
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, isReadOnly, supabase]);
 
   const isPro = userProfile?.subscriptionTier === 'pro' || userProfile?.subscriptionTier === 'studio';
   const itemCount = items?.length || 0;
   const isFreeLimitReached = !isPro && !isReadOnly && itemCount >= maxFreeItems;
-
-  useEffect(() => {
-    setIsMounted(true);
-
-    if (localStorage.getItem("cvUploadSuccess") === "true") {
-      setCvUploadSuccess(true);
-    }
-    if (localStorage.getItem("linkedInSuccess") === "true") {
-      setLinkedInSuccess(true);
-    }
-  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -95,18 +142,18 @@ export default function ImportDataPage() {
 
   const handleUpload = async () => {
     if (isReadOnly || !user) {
-       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to upload your CV.",
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in or sign up to upload your CV.',
       });
       return;
     }
     if (!selectedFile) {
       toast({
-        variant: "destructive",
-        title: "No file selected",
-        description: "Please select a file to upload.",
+        variant: 'destructive',
+        title: 'No file selected',
+        description: 'Please select a file to upload.',
       });
       return;
     }
@@ -116,12 +163,14 @@ export default function ImportDataPage() {
     try {
       const cvFile = await fileToDataURI(selectedFile);
       
-      const response = await fetch('/api/cv-parser', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ cvFile, userId: user.uid }),
+      const token = await user.getIdToken();
+      const response = await fetch('/api/ai/cv-parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cvFile }),
       });
       
       if (!response.ok) {
@@ -132,23 +181,22 @@ export default function ImportDataPage() {
       const result = await response.json();
       
       localStorage.setItem('cvData', JSON.stringify(result.data));
-      localStorage.setItem("cvUploadSuccess", "true");
+      localStorage.setItem('cvUploadSuccess', 'true');
       setCvUploadSuccess(true);
       
-      // Dispatch a storage event to notify other components (like the dashboard)
       window.dispatchEvent(new Event('storage'));
       
       toast({
-        title: "AI-Powered CV Scan Successful",
-        description: "Your CV has been parsed and the data is now available in your portfolio and the AI Assistant.",
+        title: 'AI-Powered CV Scan Successful',
+        description: 'Your CV has been parsed and the data is now available in your portfolio and the AI Assistant.',
       });
 
     } catch (error: any) {
-      logger.error("CV Upload Failed", { error });
+      logger.error('CV Upload Failed', { error });
       toast({
-        variant: "destructive",
-        title: "Upload Failed",
-        description: error.message || "An unexpected error occurred.",
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'An unexpected error occurred.',
       });
     } finally {
       setIsUploading(false);
@@ -157,22 +205,24 @@ export default function ImportDataPage() {
   };
 
   const handleParseLinkedIn = async () => {
-     if (isReadOnly || !user) {
-       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to parse your data.",
+    if (isReadOnly || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in or sign up to parse your data.',
       });
       return;
     }
     setIsParsingLinkedIn(true);
     try {
-       const response = await fetch('/api/linkedin-parser', {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/ai/linkedin-parse', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ profileText: linkedInData, userId: user.uid }),
+        body: JSON.stringify({ profileText: linkedInData }),
       });
 
       if (!response.ok) {
@@ -186,14 +236,14 @@ export default function ImportDataPage() {
       setLinkedInSuccess(true);
       window.dispatchEvent(new Event('storage'));
       toast({
-        title: "AI-Powered LinkedIn Import Successful",
-        description: "Your LinkedIn data has been parsed and saved to your profile.",
+        title: 'AI-Powered LinkedIn Import Successful',
+        description: 'Your LinkedIn data has been parsed and saved to your profile.',
       });
     } catch (error: any) {
       toast({
-        variant: "destructive",
-        title: "Parsing Failed",
-        description: error.message || "Could not parse LinkedIn data.",
+        variant: 'destructive',
+        title: 'Parsing Failed',
+        description: error.message || 'Could not parse LinkedIn data.',
       });
     } finally {
       setIsParsingLinkedIn(false);
@@ -203,37 +253,39 @@ export default function ImportDataPage() {
   const handleConnectGitHub = async () => {
     if (isReadOnly || !user) {
       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to import from GitHub.",
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in or sign up to import from GitHub.',
       });
       return;
     }
     if (isFreeLimitReached) {
       toast({
-        variant: "destructive",
-        title: "Upgrade Required",
-        description: "Free plans are limited to 3 portfolio items. Upgrade to import more projects.",
+        variant: 'destructive',
+        title: 'Upgrade Required',
+        description: 'Free plans are limited to 3 portfolio items. Upgrade to import more projects.',
       });
       return;
     }
     if (!githubUsername) {
       toast({
-        variant: "destructive",
-        title: "Username Required",
-        description: "Please enter a GitHub username.",
+        variant: 'destructive',
+        title: 'Username Required',
+        description: 'Please enter a GitHub username.',
       });
       return;
     }
 
     setIsImportingGithub(true);
     try {
-      const response = await fetch('/api/github-importer', {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/ai/github-import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ username: githubUsername, userId: user.uid }),
+        body: JSON.stringify({ username: githubUsername }),
       });
 
       if (!response.ok) {
@@ -244,13 +296,13 @@ export default function ImportDataPage() {
       const result = await response.json();
       setGithubSuccess(true);
       toast({
-        title: "GitHub Import Successful",
-        description: `${result.importedCount} repositories have been added to your portfolio.`,
+        title: 'GitHub Import Successful',
+        description: `${result.data?.imported || 0} repositories have been added to your portfolio.`,
       });
     } catch (error: any) {
       toast({
-        variant: "destructive",
-        title: "GitHub Import Failed",
+        variant: 'destructive',
+        title: 'GitHub Import Failed',
         description: error.message,
       });
     } finally {
@@ -261,37 +313,39 @@ export default function ImportDataPage() {
   const handleAddLink = async () => {
     if (isReadOnly || !user) {
       toast({
-        variant: "destructive",
-        title: "Authentication Required",
-        description: "Please log in or sign up to import from a URL.",
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please log in or sign up to import from a URL.',
       });
       return;
     }
     if (isFreeLimitReached) {
       toast({
-        variant: "destructive",
-        title: "Upgrade Required",
-        description: "Free plans are limited to 3 portfolio items. Upgrade to import more projects.",
+        variant: 'destructive',
+        title: 'Upgrade Required',
+        description: 'Free plans are limited to 3 portfolio items. Upgrade to import more projects.',
       });
       return;
     }
     if (!importUrl) {
       toast({
-        variant: "destructive",
-        title: "URL Required",
-        description: "Please enter a URL to import.",
+        variant: 'destructive',
+        title: 'URL Required',
+        description: 'Please enter a URL to import.',
       });
       return;
     }
 
     setIsImportingUrl(true);
     try {
-      const response = await fetch('/api/web-importer', {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/ai/web-import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ url: importUrl, userId: user.uid }),
+        body: JSON.stringify({ url: importUrl }),
       });
 
       if (!response.ok) {
@@ -301,14 +355,14 @@ export default function ImportDataPage() {
 
       const result = await response.json();
       toast({
-        title: "AI-Powered Import Successful",
-        description: `"${result.name}" has been added to your portfolio.`,
+        title: 'AI-Powered Import Successful',
+        description: `"${result.data?.title || 'item'}" has been added to your portfolio.`,
       });
       setImportUrlSuccess(true);
     } catch (error: any) {
       toast({
-        variant: "destructive",
-        title: "Import Failed",
+        variant: 'destructive',
+        title: 'Import Failed',
         description: error.message,
       });
     } finally {
