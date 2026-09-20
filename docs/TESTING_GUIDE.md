@@ -9,7 +9,7 @@ This document describes the testing strategy, tools, and instructions for runnin
 Tests are organised by scope and speed. Faster, more isolated tests run first; slower browser tests run last.
 
 | Layer | Tool | Location | Speed |
-|---|---|---|---|
+|-------|------|----------|-------|
 | Unit | Vitest | `tests/unit/` | Fast |
 | Component | Vitest + React Testing Library | `tests/frontend/` | Fast |
 | End-to-end | Playwright | `tests/e2e/` | Slow |
@@ -21,7 +21,7 @@ Tests are organised by scope and speed. Faster, more isolated tests run first; s
 ## Tools
 
 | Tool | Version | Purpose |
-|---|---|---|
+|------|---------|---------|
 | **Vitest** | ^4.x | Unit and component test runner |
 | **React Testing Library** | ^16.x | Component rendering and interaction |
 | **@testing-library/jest-dom** | ^6.x | Custom DOM matchers |
@@ -81,22 +81,24 @@ it('merges class names', () => {
 });
 ```
 
-### `tests/frontend/dashboard.test.tsx`
+### `tests/frontend/` (empty — needs tests)
 
-Renders the dashboard page with React Testing Library. Mocks Supabase hooks to test:
+The directory exists but contains no test files (the old `dashboard.test.tsx` / `admin.test.tsx` were removed during the Firebase→Supabase migration and never rewritten). Priority additions:
 
-- Guest (unauthenticated) user sees the Read-Only Mode banner.
-- Authenticated user sees the Profile Status checklist.
-- Loading state renders skeletons.
+- Dashboard page: guest sees Read-Only banner; authenticated user sees Profile Status checklist; loading state renders skeletons.
+- Login/signup pages: Google OAuth button renders; Apple button is gone.
+- Billing page: plan cards + portal button render for the current tier.
 
-### `tests/e2e/auth.spec.ts`
+Use the Supabase mock pattern from `tests/setup.ts` (see Mocking strategy below).
 
-Playwright tests covering:
+### `tests/e2e/auth.spec.ts` (stale — needs rewrite)
 
-- Landing page loads and CTAs are visible.
-- Sign-up and login pages render correctly.
-- Cookie consent banner appears and can be dismissed.
-- Navigation to legal pages (Terms, Privacy, Cookie Policy) from the footer.
+The spec exists but tests an **email/password signup flow that no longer exists** (it fills "Full Name / Email / Password" fields; login/signup are now OAuth-buttons-only), so it currently fails. It also covers admin access-denied and legal-footer navigation, which are still valid scenarios. Rewrite plan:
+
+- Replace email/password flows with OAuth-aware flows (mock Supabase session or seed a test user via service role).
+- Keep admin-denied + legal-link tests, updated to current routes (`/terms-and-conditions`, `/privacy-policy`, `/cookie-policy`).
+
+⚠️ Config mismatch: `playwright.config.ts` serves `http://localhost:9002` but `npm run dev` defaults to port 3000 — set `PORT=9002` when running e2e, or align the config, or the webServer wait times out.
 
 ### `tests/contract/placeholder.test.ts`
 
@@ -146,6 +148,22 @@ vi.mock('lucide-react', () => new Proxy({}, {
 
 To simulate a guest user, override `useUser` to return `{ user: null, isUserLoading: false, userError: null }`.
 
+### Mocking OpenRouter AI
+
+For component tests that use AI features, mock the API response:
+
+```typescript
+vi.mock('@/lib/ai/openrouter', () => ({
+  openRouterAI: {
+    suggestContent: vi.fn().mockResolvedValue({
+      headline: 'Test Headline',
+      summary: 'Test Summary',
+    }),
+    // ... other methods
+  },
+}));
+```
+
 ---
 
 ## Continuous integration
@@ -163,10 +181,10 @@ The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets mus
 ## Current status
 
 | Suite | Status |
-|---|---|
-| Unit (`tests/unit/`) | Active — runs with `npm run test` |
-| Frontend (`tests/frontend/`) | Needs update — Firebase mocks removed |
-| E2E (`tests/e2e/`) | Active — runs with `npm run test:e2e` after `npx playwright install` |
+|-------|--------|
+| Unit (`tests/unit/utils.test.ts`) | Active — runs with `npm run test` |
+| Frontend (`tests/frontend/`) | Empty — no test files; needs rewrite with Supabase mocks |
+| E2E (`tests/e2e/auth.spec.ts`) | Stale — specs target the removed email/password flow; needs rewrite for OAuth-only UI |
 | Contract (`tests/contract/`) | Placeholder — not yet implemented |
 | Performance (`tests/performance/`) | Placeholder — not yet implemented |
 
@@ -174,5 +192,7 @@ The CI configuration lives in `.github/workflows/ci.yml`. Repository secrets mus
 
 ## Notes
 
-- The `tests/frontend/admin.test.tsx` and `tests/frontend/dashboard.test.tsx` files were removed during the Firebase→Supabase migration because they relied on Firebase mocks. They need to be rewritten with Supabase mock patterns.
-- Run `npm run test` to verify current test suite passes.
+- Run `npm run test` to verify current test suite passes (unit only, until frontend tests are rewritten).
+- Component tests should use Supabase mock patterns (see `tests/setup.ts`).
+- E2E tests require `PORT=9002 npm run dev` (or fix the port mismatch in `playwright.config.ts`) — and rewritten specs (see above).
+- AI feature tests should mock `openRouterAI` to avoid external API calls.

@@ -66,10 +66,20 @@ export async function POST(request: Request) {
       );
     }
     
+    // Payment methods offered at checkout. Configure via STRIPE_PAYMENT_METHODS
+    // (comma-separated, e.g. "card" or "card,paypal"). Any method listed here
+    // must also be enabled in Stripe Dashboard → Settings → Payment Methods,
+    // otherwise session creation fails.
+    const paymentMethodTypes = (process.env.STRIPE_PAYMENT_METHODS ?? 'card')
+      .split(',')
+      .map((m) => m.trim().toLowerCase())
+      .filter(Boolean) as Stripe.Checkout.SessionCreateParams.PaymentMethodType[];
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      payment_method_types: paymentMethodTypes.length > 0 ? paymentMethodTypes : ['card'],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?checkout=cancelled`,
       allow_promotion_codes: true,

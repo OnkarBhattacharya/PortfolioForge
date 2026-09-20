@@ -19,9 +19,12 @@ Thank you for taking the time to contribute. All help is welcome — bug reports
 4. **Set up environment variables**:
    ```bash
    cp .env.example .env.local
-   # Fill in Firebase, Google AI, and Stripe credentials — see README for details
+   # Fill in Supabase, OpenRouter, and Stripe credentials — see README for details
    ```
-5. **Start the dev server**:
+5. **Set up Supabase** (local or cloud):
+   - Local: `npx supabase start` (requires Docker)
+   - Cloud: Create project at supabase.com, run migrations
+6. **Start the dev server**:
    ```bash
    npm run dev
    ```
@@ -80,22 +83,34 @@ Open a GitHub issue describing:
 
 ```
 src/
-├── ai/
-│   ├── flows/          # Genkit AI flows — one file per capability
-│   ├── genkit.ts       # Shared ai instance; always import z from here
-│   └── dev.ts          # Genkit dev server entry point
 ├── app/
 │   ├── api/            # Next.js API routes (AI endpoints, Stripe, portfolio-items, contact)
+│   ├── auth/callback/  # Supabase OAuth callback route (code exchange, honors ?next=)
 │   ├── dashboard/      # Authenticated app pages
 │   ├── portfolio/      # Public portfolio renderer
+│   ├── admin/          # Admin panel
+│   ├── import-data/    # Data import UI
+│   ├── ai-assistant/   # AI content assistant
+│   ├── billing/        # Stripe billing UI
+│   ├── settings/       # User settings
 │   └── …               # Public pages (landing, pricing, login, signup, legal)
 ├── components/
 │   ├── ui/             # ShadCN UI primitives (do not edit directly)
 │   └── …               # Shared layout and feature components
-├── firebase/           # Firebase client init, context provider, hooks
-├── hooks/              # Custom React hooks
-├── lib/                # Utilities, types, theme schema, Stripe helpers, logger
-└── telemetry/          # OpenTelemetry server-side init
+├── hooks/
+│   └── use-supabase.ts # useUser(), useSupabase(), useAuth()
+├── lib/
+│   ├── supabase/       # Supabase clients (browser, server, middleware)
+│   ├── ai/
+│   │   └── openrouter.ts  # OpenRouterAI class with fallback chains
+│   ├── stripe.ts           # Stripe instance (lazy proxy)
+│   ├── logger.ts           # Structured JSON logger
+│   ├── utils.ts            # cn() helper, etc.
+│   └── ...                 # data, theme-schema, web-vitals
+├── middleware.ts       # Route protection (Supabase SSR)
+├── telemetry/
+│   └── init.ts         # OpenTelemetry server init
+└── types/index.ts      # Zod schemas + TS types for all data models
 tests/
 ├── unit/               # Pure utility function tests (Vitest)
 ├── frontend/           # Component tests (Vitest + React Testing Library)
@@ -110,44 +125,54 @@ tests/
 
 - **Style**: Follow the existing code style. Run `npm run lint` before committing.
 - **TypeScript**: All new code must be typed. Run `npm run typecheck` to verify.
-- **Imports**: Always import `z` from `@/ai/genkit`, never directly from `genkit` or `zod`.
-- **AI flows**: Use `ai.generate()` with a Zod `output.schema` — do not use `ai.definePrompt` with Handlebars templates.
+- **Imports**: Import Supabase clients from `@/lib/supabase/client` (browser) or `@/lib/supabase/server` (server). Import AI from `@/lib/ai/openrouter`.
+- **AI flows**: Use `OpenRouterAI` class methods — do not call OpenRouter API directly. All responses validated with Zod schemas.
 - **Design tokens**: Use Tailwind design-system tokens (`bg-background`, `text-foreground`, etc.) — never raw colour classes like `bg-gray-100` or `bg-white`.
 - **Hooks**: Never call React hooks after an early `return`. All hooks must be at the top of the component.
 - **No dummy data**: Do not commit hardcoded placeholder data in pages. Use empty states and loading skeletons instead.
-- **Portfolio item creation**: Always route through `POST /api/portfolio-items` — never write directly from the client. This enforces the free-plan limit server-side.
+- **Portfolio item creation**: Always route through `POST /api/portfolio-items` — never write directly from the client. Note: the route currently validates auth + schema only; the free-plan 3-item limit is enforced client-side (UI), and RLS enforces owner-only writes. Do not claim server-side tier gating until it is implemented.
 - **Comments**: Write self-documenting code. Add comments only where the *why* is non-obvious.
 - **Tests**: Add tests for new features or bug fixes. Do not remove existing tests.
+- **Supabase RLS**: All database writes must respect RLS. Use service role client only in API routes for admin operations.
 
 ---
 
-## Adding a new AI flow
+## Adding a new AI feature
 
-1. Create `src/ai/flows/my-flow.ts`:
+1. Add Zod schemas to `src/types/index.ts` (all models live there — there is no `src/lib/schemas.ts`):
    ```typescript
-   import { ai, z } from '@/ai/genkit';
-
-   const InputSchema = z.object({ … });
-   const OutputSchema = z.object({ … });
-
-   export async function myFlow(input: z.infer<typeof InputSchema>) {
-     return myFlowDef(input);
-   }
-
-   const myFlowDef = ai.defineFlow(
-     { name: 'myFlow', inputSchema: InputSchema, outputSchema: OutputSchema },
-     async (input) => {
-       const { output } = await ai.generate({
-         prompt: `…${input.someField}…`,
-         output: { schema: OutputSchema },
-       });
-       if (!output) throw new Error('Model returned no output');
-       return output;
-     }
-   );
+   export const MyFeatureInputSchema = z.object({ … });
+   export const MyFeatureOutputSchema = z.object({ … });
    ```
-2. Create the API route at `src/app/api/my-flow/route.ts`.
-3. Register the flow in `src/ai/dev.ts` if you want it visible in the Genkit dev UI.
+2. Add method to `OpenRouterAI` class in `src/lib/ai/openrouter.ts`:
+   ```typescript
+   async myFeature(userId: string, input: z.infer<typeof MyFeatureInputSchema>) {
+     if (!(await this.checkRateLimit(userId, 'my_feature'))) {
+       throw new Error('Rate limit exceeded');
+     }
+     return this.callModel({
+       model: FREE_MODELS.TEXT,
+       messages: [
+         { role: 'system', content: MY_FEATURE_PROMPT },
+         { role: 'user', content: JSON.stringify(input) },
+       ],
+       responseSchema: MyFeatureOutputSchema,
+     });
+   }
+   ```
+3. Create API route at `src/app/api/ai/my-feature/route.ts`:
+   ```typescript
+   import { openRouterAI } from '@/lib/ai/openrouter';
+   import { MyFeatureInputSchema } from '@/types';
+   
+   export async function POST(req: Request) {
+     const user = await getUserFromRequest(req); // validate auth
+     const body = MyFeatureInputSchema.parse(await req.json());
+     const result = await openRouterAI.myFeature(user.id, body);
+     return Response.json(result);
+   }
+   ```
+4. Add rate limit key to `FREE_MODELS` usage tracking in `ai_usage` table.
 
 ---
 
@@ -159,7 +184,28 @@ tests/
 - [ ] No hardcoded dummy/placeholder data in UI
 - [ ] Design-system tokens used (no raw gray/white classes)
 - [ ] Portfolio item creation goes through `/api/portfolio-items`
+- [ ] New AI features use `OpenRouterAI` class with Zod validation
+- [ ] Supabase RLS respected (no direct client writes to protected tables)
 - [ ] PR description explains *what* changed and *why*
+
+---
+
+## Architecture Notes
+
+### Current Stack (Post-Migration)
+- **Database**: Supabase (PostgreSQL) with RLS
+- **Auth**: Supabase Auth (Google, GitHub, Magic Links, Email/Password)
+- **AI**: OpenRouter free models via custom `OpenRouterAI` abstraction
+- **Payments**: Stripe Checkout + Billing Portal + Webhooks (card + optional PayPal via `STRIPE_PAYMENT_METHODS`)
+- **Hosting**: Vercel (`portfolio-forge` → `https://portfolio-forge-beige.vercel.app`)
+
+### Removed (Legacy Firebase/Genkit)
+- `src/firebase/` — entire directory
+- `src/ai/flows/` — Genkit flows
+- `src/app/api/[[...genkit]]/` — Genkit dev UI
+- Firebase config files: `firebase.json`, `firestore.rules`, `storage.rules`, `.firebaserc`
+- Firebase App Hosting: `.apphosting.yaml`, `.apphosting.emulator.yaml`
+- Dependencies: `firebase`, `firebase-admin`, `genkit`, `@genkit-ai/*`
 
 ---
 

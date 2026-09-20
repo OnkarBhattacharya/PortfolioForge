@@ -28,19 +28,19 @@ PortfolioForge
 - **Theme preview dialog** — Full-page preview before saving.
 
 ### Monetisation
-- **Free plan** — 3 portfolio items, standard themes, hosted on `portfolioforge.app`.
+- **Free plan** — 3 portfolio items, standard themes, hosted on `portfolio-forge-beige.vercel.app`.
 - **Pro plan ($12/mo)** — Unlimited items, premium themes, custom domain, remove branding, AI theme generator.
 - **Studio plan ($29/mo)** — Everything in Pro plus multiple portfolios, client-ready case study layouts, team collaboration.
-- **Stripe Checkout** — `/api/stripe/checkout` creates a Checkout session for Pro or Studio.
+- **Stripe Checkout** — `/api/stripe/checkout` creates a Checkout session for Pro or Studio (card; PayPal optional via `STRIPE_PAYMENT_METHODS=card,paypal`).
 - **Stripe Billing Portal** — `/api/stripe/portal` opens the customer portal for plan management.
 - **Webhook sync** — `/api/stripe/webhook` listens for `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed` and writes `subscription_tier`, `subscription_status`, `subscription_period_end_date` to Supabase `profiles`.
 
 ### Auth & access control
-- Google, Apple, GitHub federated sign-in via Supabase Auth (OAuth + Magic Links).
+- Google, GitHub federated sign-in via Supabase Auth (OAuth + Magic Links).
 - Email/Password authentication.
 - Anonymous/read-only mode for unauthenticated users (UI shows read-only banners).
 - All authenticated app pages redirect to `/login` if no session.
-- Free-plan item limit enforced both client-side (UI disabled) and server-side (`POST /api/portfolio-items` checks tier; RLS blocks direct writes).
+- Free-plan item limit enforced client-side only (UI disabled at 3 items). `POST /api/portfolio-items` validates auth + schema but performs no tier check; RLS enforces owner-only writes, not plan limits (server-side gate is TODO).
 - Admin panel at `/admin` visible only to users with `role: 'admin'` in Supabase.
 
 ### Admin
@@ -63,7 +63,7 @@ PortfolioForge
 | Hosting | Vercel |
 | AI runtime | OpenRouter (free models: Llama 3.2 Vision, Llama 3.1, Gemma 2, Phi-3 Mini) |
 | AI abstraction | Custom `OpenRouterAI` class with fallback chains + Zod validation |
-| Payments | Stripe |
+| Payments | Stripe (Checkout + Billing Portal + Webhooks; card + optional PayPal) |
 | Observability | Vercel Analytics, Core Web Vitals, OpenTelemetry (server), structured logger |
 | Testing | Vitest, React Testing Library, Playwright |
 
@@ -88,8 +88,8 @@ PortfolioForge
 - All public pages (landing, pricing, legal) are live and production-ready.
 - All app shell pages (dashboard, portfolio items, AI assistant, billing, settings, import-data, admin) connected to Supabase with real data.
 - All AI flows use OpenRouter free models with structured Zod schemas and fallback chains.
-- Portfolio item creation routed through `POST /api/portfolio-items` (Supabase server client); direct client creates blocked by RLS.
-- Stripe Checkout / Portal / webhook and Supabase RLS enforce monetisation commitments.
+- Portfolio item creation routed through `POST /api/portfolio-items` (Supabase server client); RLS enforces owner-only writes.
+- Stripe Checkout / Portal / webhook sync subscription state to `profiles`; free-plan item limit is client-side only (server gate TODO).
 - React hydration stable: Supabase SSR auth via `@supabase/ssr` middleware eliminates SSR/client mismatch.
 - `tsconfig.json` uses `moduleResolution: bundler`; deprecated `baseUrl` removed.
 - Vercel deployment configured with 30s function timeout for AI routes.

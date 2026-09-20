@@ -137,7 +137,6 @@ All tables have RLS enabled. Policies:
 |---|---|
 | Email/Password | Enabled |
 | Google OAuth | Enabled (via Supabase dashboard) |
-| Apple OAuth | Enabled (via Supabase dashboard) |
 | GitHub OAuth | Enabled (for GitHub import flow) |
 | Magic Links | Enabled (passwordless option) |
 
@@ -184,43 +183,42 @@ All tables have RLS enabled. Policies:
 | `POST /api/ai/content-suggest` | `suggestContent()` | Returns headline + summary suggestions |
 | `POST /api/ai/theme-generate` | `generateTheme()` | Returns `ThemeConfig` from prompt |
 | `POST /api/ai/translate` | `translate()` | Translates text array to target language |
-| `POST /api/ai/readme-summary` | `summarizeReadme()` | 1-2 sentence repo summary |
+
+> Note: `summarizeReadme()` exists on the `OpenRouterAI` class but has **no HTTP route** — there is no `/api/ai/readme-summary`. Expose one before documenting it.
 
 ---
 
 ## 5. API Route Structure (Next.js App Router)
 
 ```
-/app/api/
-├── auth/
-│   └── callback/route.ts          # Supabase OAuth callback
-├── profile/
-│   ├── route.ts                   # GET/PUT profile
-│   └── check-username/route.ts    # Check username availability
-├── portfolio-items/
-│   ├── route.ts                   # GET/POST items
-│   └── [id]/route.ts              # GET/PUT/DELETE item
-│   └── reorder/route.ts           # POST reorder items
-├── themes/
-│   └── route.ts                   # GET themes
-├── ai/
-│   ├── cv-parse/route.ts          # POST parse CV
-│   ├── linkedin-parse/route.ts    # POST parse LinkedIn
-│   ├── github-import/route.ts     # POST import GitHub
-│   ├── web-import/route.ts        # POST import web URL
-│   ├── content-suggest/route.ts   # POST content suggestions
-│   ├── theme-generate/route.ts    # POST generate theme
-│   ├── translate/route.ts         # POST translate
-│   └── readme-summary/route.ts    # POST summarize README
-├── stripe/
-│   ├── checkout/route.ts          # POST create checkout
-│   ├── portal/route.ts            # POST billing portal
-│   └── webhook/route.ts           # POST Stripe webhook
-├── upload/
-│   └── route.ts                   # POST signed upload URLs
-├── contact/
-│   └── route.ts                   # POST contact form
-└── [...genkit]/                   # REMOVED (was Genkit dev UI)
+/app/
+├── auth/callback/route.ts         # Supabase OAuth callback (page route, NOT under /api)
+├── api/
+│   ├── profile/
+│   │   ├── route.ts               # GET/PUT profile
+│   │   └── check-username/route.ts # Check username availability
+│   ├── portfolio-items/
+│   │   ├── route.ts               # GET/POST items (auth + schema validation; no tier gate)
+│   │   ├── [id]/route.ts          # GET/PUT/DELETE item
+│   │   └── reorder/route.ts       # POST reorder items
+│   ├── themes/
+│   │   └── route.ts               # GET themes
+│   ├── ai/
+│   │   ├── cv-parse/route.ts          # POST parse CV
+│   │   ├── linkedin-parse/route.ts    # POST parse LinkedIn
+│   │   ├── github-import/route.ts     # POST import GitHub
+│   │   ├── web-import/route.ts        # POST import web URL
+│   │   ├── content-suggest/route.ts   # POST content suggestions
+│   │   ├── theme-generate/route.ts    # POST generate theme
+│   │   └── translate/route.ts         # POST translate
+│   ├── stripe/
+│   │   ├── checkout/route.ts      # POST create checkout (payment_method_types from STRIPE_PAYMENT_METHODS)
+│   │   ├── portal/route.ts        # POST billing portal
+│   │   └── webhook/route.ts       # POST Stripe webhook
+│   ├── upload/
+│   │   └── route.ts               # POST signed upload URLs
+│   └── contact/
+│       └── route.ts               # POST contact form
 ```
 
 ### Middleware (auth protection)
@@ -244,13 +242,16 @@ All tables have RLS enabled. Policies:
 | Remove Branding | ❌ | ✅ | ✅ |
 | AI Usage/Day | 10 | 100 | 500 |
 
-### Server-Side Enforcement (`src/lib/entitlements.ts`)
+### Enforcement (current state)
 
-```typescript
-export async function checkEntitlement(userId: string, feature: string): Promise<boolean>
-```
+There is **no `entitlements` module and no server-side tier gate**. Concretely:
 
-Checks `subscription_tier` and `subscription_status` from `profiles`, then counts current usage against limits.
+- `POST /api/portfolio-items` checks auth + Zod schema only — it never reads `subscription_tier` and never counts items. A free user can exceed 3 items via direct API calls.
+- The 3-item free limit is enforced **client-side only** (`projects` page, `add-project-dialog`, `import-data`).
+- RLS enforces **ownership** (`auth.uid() = user_id`), not plan limits.
+- Stripe webhook syncs `subscription_tier` / `subscription_status` to `profiles`, and the billing UI reads them — but no API route gates on them.
+
+⚠️ **TODO:** add a server-side count check in `POST /api/portfolio-items` (and durable `ai_usage`-based AI rate limiting) before claiming enforcement.
 
 ---
 
@@ -260,9 +261,13 @@ Checks `subscription_tier` and `subscription_status` from `profiles`, then count
 
 | Route | Description |
 |---|---|
-| `POST /api/stripe/checkout` | Creates Checkout Session with `metadata.userId` |
+| `POST /api/stripe/checkout` | Creates Checkout Session with `metadata.userId`; `payment_method_types` from `STRIPE_PAYMENT_METHODS` (`card` default, `card,paypal` for PayPal) |
 | `POST /api/stripe/portal` | Creates Billing Portal Session |
 | `POST /api/stripe/webhook` | Updates `profiles` table with subscription status |
+
+### Payment methods
+
+Card is default. PayPal is offered **through Stripe Checkout** (no separate PayPal integration): enable PayPal in Stripe Dashboard → Settings → Payment Methods, then set `STRIPE_PAYMENT_METHODS=card,paypal`. Env var and dashboard must stay in sync — listing a disabled method fails session creation. Tier is derived from the price nickname (`Pro`/`Studio`, see webhook route).
 
 ### Webhook Events Handled
 
@@ -315,6 +320,7 @@ STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 STRIPE_PRICE_PRO_MONTHLY=price_xxx
 STRIPE_PRICE_STUDIO_MONTHLY=price_xxx
+STRIPE_PAYMENT_METHODS=card
 
 # Optional: Analytics
 NEXT_PUBLIC_GA_ID=G-XXXXXXXX
@@ -343,7 +349,7 @@ NEXT_PUBLIC_GA_ID=G-XXXXXXXX
 
 1. Create Supabase project
 2. Run schema migration (`supabase/migrations/001_initial_schema.sql`)
-3. Enable Auth providers (Google, Apple, GitHub)
+3. Enable Auth providers (Google, GitHub)
 4. Configure Storage buckets: `portfolio-images`, `cv-uploads`
 5. Set up Storage policies
 6. Add Stripe webhook URL in Stripe dashboard
@@ -400,15 +406,15 @@ src/
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts      # Browser client
-│   │   ├── server.ts      # Server client + service role
-│   │   └── middleware.ts  # Auth middleware helper
+│   │   ├── server.ts      # createClient() + createServiceClient()
+│   │   └── middleware.ts  # updateSession() helper
 │   ├── ai/
 │   │   └── openrouter.ts  # OpenRouterAI class with fallbacks
-│   ├── entitlements.ts    # Subscription gating
-│   └── stripe.ts          # Stripe instance
+│   └── stripe.ts          # Lazy Stripe proxy (getStripe)
 ├── hooks/
 │   └── use-supabase.ts    # useUser(), useSupabase(), useAuth()
 ├── middleware.ts          # Route protection
+├── app/auth/callback/route.ts  # OAuth code exchange (src/app, not src/app/api)
 ├── app/api/               # All API routes (see section 5)
-└── types/index.ts         # Zod schemas for all data models
+└── types/index.ts         # Zod schemas + TS types for all data models
 ```

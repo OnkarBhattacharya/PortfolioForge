@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FcGoogle } from 'react-icons/fc';
-import { FaApple } from 'react-icons/fa';
 import { useAuth } from '@/hooks/use-supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -17,7 +16,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const handleSignIn = async (provider: 'google' | 'apple') => {
+  const handleSignIn = async (provider: 'google') => {
     if (!auth || isLoading) {
       return;
     }
@@ -80,15 +79,6 @@ export default function SignupPage() {
           >
             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FcGoogle className="mr-2 h-5 w-5" />}
             Continue with Google
-          </Button>
-          <Button
-            onClick={() => handleSignIn('apple')}
-            className="flex w-full items-center justify-center"
-            variant="outline"
-            disabled={!canSignIn}
-          >
-            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FaApple className="mr-2 h-5 w-5" />}
-            Continue with Apple
           </Button>
         </div>
 
