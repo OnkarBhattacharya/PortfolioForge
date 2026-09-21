@@ -275,7 +275,7 @@ Key tables: `profiles`, `portfolio_items`, `themes`, `messages`, `ai_usage`
 
 **Live:** Vercel project `portfolio-forge` → `https://portfolio-forge-beige.vercel.app` (Git CI/CD: PR → Preview, `main` → Production). Firebase App Hosting is fully decommissioned.
 
-Full runbook: **[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** — Supabase setup (including the required `handle_new_user()` fix), Auth providers (Google + GitHub only, no Apple), Storage buckets, env vars, Stripe + PayPal, pre-deploy gate, smoke tests.
+Full runbook: **[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** — Supabase setup, Auth providers (Google + GitHub only, no Apple), Storage buckets, env vars, Stripe + PayPal, pre-deploy gate, smoke tests.
 
 Quick reference:
 1. Env vars live in Vercel → `portfolio-forge` → Settings → Environment Variables (see table above)

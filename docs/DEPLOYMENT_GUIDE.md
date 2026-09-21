@@ -77,16 +77,9 @@ supabase db push
 # If using local migrations folder, ensure 001_initial_schema.sql is applied
 ```
 
-### 2.3 ⚠️ CRITICAL: fix `handle_new_user()` before running
+### 2.3 `handle_new_user()` trigger (fixed in-repo)
 
-The checked-in migration has a bug: `handle_new_user()` inserts into a non-existent `email` column:
-
-```sql
--- BROKEN (in repo):
-INSERT INTO public.profiles (id, username, full_name, email, role)
-```
-
-`profiles` has **no `email` column**. Running as-is will make **every signup fail**. Fix it before applying:
+The migration's `handle_new_user()` inserts only into columns that exist on `profiles` (`id`, `username`, `full_name`, `role` — there is intentionally no `email` column; email lives in `auth.users`). Run the migration as-is — no manual patch needed:
 
 ```sql
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -109,7 +102,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-> TODO for maintainers: patch `001_initial_schema.sql` in-repo so future environments don't need this manual fix.
+> Historical note: an earlier version of this migration inserted into a non-existent `profiles.email` column, which made every signup fail. This was fixed in `supabase/migrations/001_initial_schema.sql` — if your database was created before the fix, apply the function above via SQL Editor to repair it.
 
 ### 2.4 Verify database
 
@@ -497,7 +490,7 @@ curl -s -X POST $BASE/api/stripe/webhook -H "Content-Type: application/json" -d 
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Signup succeeds but no `profiles` row / app 500s | `handle_new_user()` bug (§2.3) | Apply fixed function, retry signup |
+| Signup succeeds but no `profiles` row / app 500s | Stale `handle_new_user()` on a DB created before the fix (§2.3) | Re-apply fixed function from §2.3, retry signup |
 | OAuth hangs / `redirect_uri_mismatch` | Supabase redirect URLs missing prod domain | Add URLs per §3.2, redeploy |
 | `NEXT_PUBLIC_SUPABASE_URL` undefined in prod | Env var set for Preview only | Set for Production in Vercel, redeploy |
 | Images 400 with `next/image` | Supabase hostname missing from `remotePatterns` | Add pattern per §4.3 |
@@ -513,7 +506,7 @@ curl -s -X POST $BASE/api/stripe/webhook -H "Content-Type: application/json" -d 
 
 ```text
 [ ] Supabase project created, URL + anon + service_role saved
-[ ] 001_initial_schema.sql applied WITH handle_new_user() fix
+[ ] 001_initial_schema.sql applied (handle_new_user() already fixed in-repo)
 [ ] Tables/RLS/triggers/themes verified via SQL
 [ ] Auth providers enabled, Site URL + redirect URLs set for prod domain
 [ ] Storage buckets + policies created, next/image remote pattern added

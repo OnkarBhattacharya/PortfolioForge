@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/ai/**/*.js": { "maxDuration": 30 },
+    "src/app/api/stripe/webhook/**/*.js": { "maxDuration": 30 }
+  }
+}
