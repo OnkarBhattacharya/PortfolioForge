@@ -71,9 +71,10 @@ export async function POST(request: Request) {
     });
     
     if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch URL' },
-        { status: 400 }
+        { success: false, error: errorBody.message || 'Failed to fetch URL' },
+        { status: response.status }
       );
     }
     
