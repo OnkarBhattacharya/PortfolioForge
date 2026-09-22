@@ -22,63 +22,23 @@ const FREE_MODELS = {
 
 export type ModelKey = keyof typeof FREE_MODELS;
 
-const openrouter = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL!,
-    'X-Title': 'PortfolioForge',
-  },
-});
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimiter = new Map<string, RateLimitEntry>();
-
-async function checkRateLimit(userId: string, feature: string): Promise<boolean> {
-  const key = `${userId}:${feature}`;
-  const now = Date.now();
-  const limit = rateLimiter.get(key);
-
-  if (!limit || now > limit.resetAt) {
-    rateLimiter.set(key, { count: 1, resetAt: now + 60000 });
-    return true;
+function getOpenRouterClient(): OpenAI {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENROUTER_API_KEY is not configured');
   }
-
-  if (limit.count >= 10) return false;
-  limit.count++;
-  return true;
+  return new OpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey,
+    defaultHeaders: {
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL!,
+      'X-Title': 'PortfolioForge',
+    },
+  });
 }
 
-async function callModel<T>({
-  model,
-  messages,
-  responseSchema,
-  maxTokens = 2000,
-  temperature = 0.3,
-}: {
-  model: string;
-  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
-  responseSchema: z.ZodSchema<T>;
-  maxTokens?: number;
-  temperature?: number;
-}): Promise<T> {
-  const completion = await openrouter.chat.completions.create({
-    model,
-    messages,
-    response_format: { type: 'json_object' },
-    max_tokens: maxTokens,
-    temperature,
-  });
-
-  const content = completion.choices[0]?.message?.content;
-  if (!content) throw new Error('Empty AI response');
-
-  const parsed = JSON.parse(content);
-  return responseSchema.parse(parsed);
+function getOpenRouter(): OpenAI {
+  return getOpenRouterClient();
 }
 
 const CV_PARSE_PROMPT = `You are an expert document analyst. Your task is to parse the following CV/Resume and extract structured data based on the provided schema. The document can be an image or a PDF.
@@ -186,7 +146,7 @@ export class OpenRouterAI {
     maxTokens?: number;
     temperature?: number;
   }): Promise<T> {
-    const completion = await openrouter.chat.completions.create({
+    const completion = await getOpenRouter().chat.completions.create({
       model,
       messages,
       response_format: { type: 'json_object' },
